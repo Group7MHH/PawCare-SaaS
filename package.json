@@ -1,0 +1,16 @@
+{
+  "name": "petcare-platform", "version": "2.0.0", "private": true,
+  "workspaces": ["apps/api", "apps/web"],
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c blue,green \"npm run dev -w @petcare/api\" \"npm run dev -w @petcare/web\"",
+    "build": "npm run build -w @petcare/api && npm run build -w @petcare/web",
+    "start": "npm run start -w @petcare/api",
+    "test": "npm run test -w @petcare/api && npm run test -w @petcare/web",
+    "db:migrate": "npm run db:migrate -w @petcare/api",
+    "db:bootstrap-owner": "npm run db:bootstrap-owner -w @petcare/api",
+    "db:seed": "npm run db:seed -w @petcare/api",
+    "test:postgres": "node --test tests/postgres.test.mjs"
+  },
+  "devDependencies": {"concurrently": "^9.1.2"},
+  "engines": {"node": ">=22.13.0"}
+}

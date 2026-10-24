@@ -1,0 +1,4 @@
+-- Fresh SaaS installations start with no tenants or global services.
+-- Historical databases have already applied the original 002 data; migration 003
+-- attaches their records to a legacy organization without data loss.
+-- Every newly created organization receives a service catalog of its own.
