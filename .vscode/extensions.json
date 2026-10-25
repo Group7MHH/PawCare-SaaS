@@ -1,1 +1,8 @@
-{"recommendations":["dbaeumer.vscode-eslint","esbenp.prettier-vscode","bradlc.vscode-tailwindcss","ms-azuretools.vscode-docker","mtxr.sqltools"]}
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "mtxr.sqltools"
+  ]
+}

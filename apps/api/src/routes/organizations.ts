@@ -88,7 +88,7 @@ router.post('/organizations/:id/invitations',asyncRoute(async(req,res)=>{
   VALUES(?,?,?,?,?,now()+interval '7 days')`,[id,d.email,d.role,hashToken(token),req.user!.id]);
  await exec('INSERT INTO role_audit_logs(actor_id,organization_id,action,details) VALUES(?,?,?,?::jsonb)',[req.user!.id,id,'invitation.create',JSON.stringify({email:d.email,role:d.role})]);
  // Manual copy/share until an email provider is connected. Token is only returned once.
- const origin=process.env.APP_ORIGIN|| (process.env.RAILWAY_PUBLIC_DOMAIN?`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`:'http://localhost:5173');
+ const origin=process.env.APP_ORIGIN || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
  res.status(201).json({invite_url:`${origin}/invite/${token}`,expires_in_days:7,message:'Đã tạo link mời. Hãy gửi riêng cho người được mời.'});
 }));
 router.get('/organizations/:id/invitations',asyncRoute(async(req,res)=>{
