@@ -4,7 +4,7 @@ import {isoUTC} from '../lib/scheduling.js';
 import {asyncRoute,HttpError,idParam,pageParams} from '../lib/http.js';
 import {orgId,requireAuth,requireRole} from '../lib/auth.js';
 const router=Router();router.use(requireAuth);
-router.get('/customers',requireRole('admin','staff','owner'),asyncRoute(async(req,res)=>{
+router.get('/customers',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
  const org=orgId(req),{page,limit}=pageParams(req);const q=`%${String(req.query.search||'').slice(0,90)}%`;
  const condition=`FROM users u WHERE EXISTS(SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=? ${req.user!.role==='staff'?'AND a.staff_id=?':''})
   AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.phone ILIKE ?)`;
@@ -16,7 +16,7 @@ router.get('/customers',requireRole('admin','staff','owner'),asyncRoute(async(re
  ${condition} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,[org,org,...scope,q,q,q,limit,(page-1)*limit]);
  res.json({items,total,page,limit});
 }));
-router.get('/customers/:id',requireRole('admin','staff','owner'),asyncRoute(async(req,res)=>{
+router.get('/customers/:id',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id),org=orgId(req);
  const [customer]=await rows<any>(`SELECT u.id,u.full_name,u.email,u.phone,u.address,u.created_at FROM users u
   WHERE u.id=? AND EXISTS(SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=? ${req.user!.role==='staff'?'AND a.staff_id=?':''})`,[id,org,...(req.user!.role==='staff'?[req.user!.id]:[])]);
