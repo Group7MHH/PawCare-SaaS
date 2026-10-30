@@ -6,10 +6,10 @@ import {isPrivileged,orgId,requireAuth} from '../lib/auth.js';
 const router=Router();router.use(requireAuth);
 const petSchema=z.object({name:z.string().trim().min(1).max(100),species:z.enum(['dog','cat','other']),breed:z.string().max(120).nullable().optional(),gender:z.enum(['male','female','unknown']).default('unknown'),birthday:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),weight_kg:z.coerce.number().positive().max(500).nullable().optional(),color:z.string().max(80).nullable().optional(),notes:z.string().max(2000).nullable().optional(),owner_id:z.coerce.number().int().positive().optional()});
 async function ownedPet(id:number,req:import('express').Request){const [pet]=await rows<any>('SELECT * FROM pets WHERE id=?',[id]);if(!pet)throw new HttpError(404,'Không tìm thấy thú cưng');if(!isPrivileged(req)&&pet.owner_id!==req.user!.id)throw new HttpError(403,'Không có quyền truy cập');
- if(isPrivileged(req)&&!(await rows("SELECT 1 FROM appointments WHERE pet_id=? AND organization_id=? AND (? <> 'staff' OR staff_id=?) LIMIT 1",[id,orgId(req),req.user!.role,req.user!.id])).length)throw new HttpError(404,'Không tìm thấy thú cưng trong cửa hàng');return pet;}
+ if(req.user!.role==='staff'&&!(await rows('SELECT 1 FROM appointments WHERE pet_id=? AND organization_id=? AND staff_id=? LIMIT 1',[id,orgId(req),req.user!.id])).length)throw new HttpError(404,'Không tìm thấy thú cưng trong cửa hàng');return pet;}
 router.get('/',asyncRoute(async(req,res)=>{
  const filters:string[]=[];const params:unknown[]=[];
- if(!isPrivileged(req)){filters.push('p.owner_id=?');params.push(req.user!.id);}else { filters.push(`EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=? ${req.user!.role==='staff'?'AND a.staff_id=?':''})`);params.push(orgId(req)); if(req.user!.role==='staff')params.push(req.user!.id); if(req.query.owner_id){filters.push('p.owner_id=?');params.push(idParam(String(req.query.owner_id)));}}
+ if(!isPrivileged(req)){filters.push('p.owner_id=?');params.push(req.user!.id);}else { if(req.user!.role==='staff'){filters.push('EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=? AND a.staff_id=?)');params.push(orgId(req),req.user!.id);} if(req.query.owner_id){filters.push('p.owner_id=?');params.push(idParam(String(req.query.owner_id)));}}
  if(req.query.search){filters.push('(p.name ILIKE ? OR p.breed ILIKE ?)');params.push(...Array(2).fill(`%${String(req.query.search).slice(0,80)}%`));}
  if(isPrivileged(req))params.unshift(orgId(req));
  const pets=await rows<any>(`SELECT p.*,u.full_name AS owner_name,(SELECT COUNT(*) FROM care_records r WHERE r.pet_id=p.id ${isPrivileged(req)?'AND r.organization_id=?':''}) AS record_count FROM pets p JOIN users u ON p.owner_id=u.id ${filters.length?'WHERE '+filters.join(' AND '):''} ORDER BY p.created_at DESC`,params);
@@ -18,7 +18,8 @@ router.get('/',asyncRoute(async(req,res)=>{
 router.post('/',asyncRoute(async(req,res)=>{
  const d=parse(petSchema,req.body);const owner=isPrivileged(req)?(d.owner_id||req.user!.id):req.user!.id;
  if(!(await rows('SELECT id FROM users WHERE id=? AND is_active=TRUE',[owner])).length)throw new HttpError(422,'Chủ thú cưng phải là khách hàng hợp lệ');
- if(isPrivileged(req)&&!(await rows('SELECT 1 FROM appointments WHERE customer_id=? AND organization_id=? LIMIT 1',[owner,orgId(req)])).length)throw new HttpError(403,'Khách hàng chưa có lịch tại cửa hàng này');
+ if(isPrivileged(req)&&req.user!.role!=='admin')throw new HttpError(403,'Chỉ Admin có thể tạo hồ sơ thay khách');
+ if(isPrivileged(req)&&!(await rows("SELECT 1 FROM users WHERE id=? AND role='customer'",[owner])).length)throw new HttpError(422,'Chủ thú cưng phải là Customer');
  const r=await exec('INSERT INTO pets(owner_id,name,species,breed,gender,birthday,weight_kg,color,notes) VALUES(?,?,?,?,?,?,?,?,?)',[owner,d.name,d.species,d.breed||null,d.gender,d.birthday||null,d.weight_kg??null,d.color||null,d.notes||null]);
  res.status(201).json({id:r.insertId,message:'Đã thêm thú cưng'});
 }));
