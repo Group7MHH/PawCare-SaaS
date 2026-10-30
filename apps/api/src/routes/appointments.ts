@@ -128,8 +128,13 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
  });res.json({message:'Đã cập nhật lịch hẹn'});
 }));
 router.delete('/:id',asyncRoute(async(req,res)=>{
- const a=await accessible(idParam(req.params.id),req);
- if(!canTransition(a.status,'cancelled',req.user!.role))throw new HttpError(409,'Không thể hủy lịch ở trạng thái này');
- await exec("UPDATE appointments SET status='cancelled' WHERE id=? AND organization_id=?",[a.id,orgId(req)]);res.json({message:'Đã hủy lịch hẹn'});
+ const id=idParam(req.params.id);
+ await transaction(async db=>{
+  const a=await accessible(id,req,db);
+  const [locked]=await rows<any>('SELECT status FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
+  if(!locked || !canTransition(locked.status,'cancelled',req.user!.role))throw new HttpError(409,'Không thể hủy lịch ở trạng thái này');
+  await exec("UPDATE appointments SET status='cancelled' WHERE id=? AND organization_id=?",[id,orgId(req)],db);
+ });
+ res.json({message:'Đã hủy lịch hẹn'});
 }));
 export default router;
