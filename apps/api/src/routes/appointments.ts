@@ -45,6 +45,13 @@ router.get('/availability',asyncRoute(async(req,res)=>{
      const conflict=await rows<any>("SELECT id FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[input.staff_id,sqlUTC(new Date(start.getTime()+service.duration_minutes*60000)),sqlUTC(start)]);
      if(conflict.length)available=false;
    }
+   if(available&&!input.staff_id){
+     const free=await rows<any>(`SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id
+       WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE
+       AND NOT EXISTS(SELECT 1 FROM appointments a WHERE a.staff_id=m.user_id AND a.status<>'cancelled' AND a.starts_at<? AND a.ends_at>?) LIMIT 1`,
+       [orgId(req),sqlUTC(new Date(start.getTime()+service.duration_minutes*60000)),sqlUTC(start)]);
+     available=free.length>0;
+   }
    slots.push({time,available});
  }
  res.json({date:input.date,slots});
