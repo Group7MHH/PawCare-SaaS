@@ -14,7 +14,7 @@ import {optionalAuth} from './lib/auth.js';
 import {handleError,HttpError} from './lib/http.js';
 import {rows} from './lib/db.js';
 import {migrate} from './migrate.js';
-import {bootstrapAdmin} from './bootstrap-owner.js';
+import {bootstrapAdmin} from './bootstrap-admin.js';
 import {existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 const app=express();app.disable('x-powered-by');
