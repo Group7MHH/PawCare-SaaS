@@ -46,9 +46,11 @@ router.post('/accept-invitation',requireAuth,asyncRoute(async(req,res)=>{
   const [invite]=await rows<any>(`SELECT i.* FROM invitations i JOIN organizations o ON o.id=i.organization_id
    WHERE i.token_hash=? AND i.accepted_at IS NULL AND i.expires_at>now() AND o.is_active=TRUE FOR UPDATE OF i`,[hashToken(d.token)],db);
   if(!invite)throw new HttpError(404,'Lời mời đã hết hạn hoặc đã sử dụng');
+  if(invite.role!=='staff')throw new HttpError(403,'Chỉ chấp nhận lời mời Staff');
+  if(req.user!.role==='admin')throw new HttpError(403,'Không thể hạ quyền Admin');
   if(invite.email!==req.user!.email)throw new HttpError(403,'Lời mời thuộc email khác');
   const [existing]=await rows<any>('SELECT role FROM organization_members WHERE organization_id=? AND user_id=?',[invite.organization_id,req.user!.id],db);
-  if(existing&&existing.role!==invite.role)throw new HttpError(409,'Bạn đã có vai trò khác tại cửa hàng; liên hệ Owner');
+  if(existing&&existing.role!==invite.role)throw new HttpError(409,'Bạn đã có vai trò khác tại cửa hàng; liên hệ Admin');
   await exec(`INSERT INTO organization_members(organization_id,user_id,role,is_active) VALUES(?,?,?,TRUE)
     ON CONFLICT (organization_id,user_id) DO UPDATE SET is_active=TRUE`,[invite.organization_id,req.user!.id,invite.role],db);
   await exec('UPDATE users SET role=? WHERE id=?',[invite.role,req.user!.id],db);
