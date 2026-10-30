@@ -47,9 +47,12 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
  const recent=await rows<any>(`SELECT a.id,a.status,a.starts_at,u.full_name AS customer_name,p.name AS pet_name,s.name AS service_name,a.price_snapshot
   FROM appointments a JOIN users u ON u.id=a.customer_id JOIN pets p ON p.id=a.pet_id JOIN services s ON s.id=a.service_id
   WHERE a.organization_id=? ${staff?'AND a.staff_id=?':''} ORDER BY a.starts_at DESC LIMIT 7`,params);
- const series=await rows<any>(`SELECT to_char(starts_at AT TIME ZONE 'UTC', 'YYYY-MM') AS month,COALESCE(SUM(price_snapshot),0) AS revenue,COUNT(*) AS appointments
-  FROM appointments WHERE ${where} AND status='completed' AND starts_at>=(now() - interval '6 months')
-  GROUP BY to_char(starts_at AT TIME ZONE 'UTC', 'YYYY-MM') ORDER BY month ASC`,params);
+ const series=await rows<any>(`SELECT to_char(completed_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month,
+  COALESCE(SUM(price_snapshot),0) AS revenue,COUNT(*) AS appointments
+  FROM appointments WHERE ${where} AND status='completed'
+  AND completed_at >= (date_trunc('month', now() AT TIME ZONE 'Asia/Ho_Chi_Minh') - interval '5 months') AT TIME ZONE 'Asia/Ho_Chi_Minh'
+  AND completed_at < (date_trunc('month', now() AT TIME ZONE 'Asia/Ho_Chi_Minh') + interval '1 month') AT TIME ZONE 'Asia/Ho_Chi_Minh'
+  GROUP BY to_char(completed_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') ORDER BY month ASC`,params);
  const statuses=await rows<any>(`SELECT status,COUNT(*) AS value FROM appointments WHERE ${where} GROUP BY status`,params);
  res.json({stats:{customers:customers.value,pets:pets.value,appointments:appointments.value,revenue:revenue.value},recent:recent.map(a=>({...a,starts_at:isoUTC(a.starts_at)})),series,statuses});
 }));
