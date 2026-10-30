@@ -52,7 +52,7 @@ router.get('/availability',asyncRoute(async(req,res)=>{
 router.get('/:id',asyncRoute(async(req,res)=>res.json({appointment:mapAppointment(await accessible(idParam(req.params.id),req))})));
 // PostgreSQL advisory transaction locks coordinate staff bookings across replicas.
 async function verifyAvailability(db:DB,staffId:number|null,start:string,end:string,exceptId?:number){
- if(!staffId)return;
+ if(!staffId)throw new HttpError(422,'Cần phân công nhân viên trước khi xác nhận lịch');
  const conflicts=await rows<any>(`SELECT id FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? ${exceptId?'AND id<>?':''} LIMIT 1`,[staffId,end,start,...(exceptId?[exceptId]:[])],db);
  if(conflicts.length)throw new HttpError(409,'Nhân viên đã có lịch trong khung giờ này');
 }
@@ -67,9 +67,20 @@ router.post('/',asyncRoute(async(req,res)=>{
  if(d.staff_id){const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[d.staff_id,orgId(req)]);if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');}
  const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+service.duration_minutes*60000));const staffId=d.staff_id||null;
  const result=await transaction(async db=>{
-   await lockStaff(db,[staffId]);
-   await verifyAvailability(db,staffId,st,en);
-   return exec('INSERT INTO appointments(organization_id,customer_id,pet_id,service_id,staff_id,starts_at,ends_at,price_snapshot,notes) VALUES(?,?,?,?,?,?,?,?,?)',[orgId(req),customerId,d.pet_id,d.service_id,staffId,st,en,service.price,d.notes||null],db);
+   // Serialize selection for requests without a preferred staff member.
+   if(!staffId)await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
+   let assigned=staffId;
+   if(!assigned){
+     const candidates=await rows<any>("SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE ORDER BY m.user_id",[orgId(req)],db);
+     for(const candidate of candidates){
+       const occupied=await rows<any>("SELECT 1 FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[candidate.user_id,en,st],db);
+       if(!occupied.length){assigned=candidate.user_id;break;}
+     }
+     if(!assigned)throw new HttpError(409,'Không còn nhân viên trống trong khung giờ đã chọn');
+   }
+   await lockStaff(db,[assigned]);
+   await verifyAvailability(db,assigned,st,en);
+   return exec('INSERT INTO appointments(organization_id,customer_id,pet_id,service_id,staff_id,starts_at,ends_at,price_snapshot,notes) VALUES(?,?,?,?,?,?,?,?,?)',[orgId(req),customerId,d.pet_id,d.service_id,assigned,st,en,service.price,d.notes||null],db);
  });res.status(201).json({id:result.insertId,message:'Đặt lịch thành công'});
 }));
 router.patch('/:id',asyncRoute(async(req,res)=>{
@@ -77,6 +88,7 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
  const schema=z.object({status:z.enum(['pending','confirmed','in_progress','completed','cancelled']).optional(),staff_id:z.coerce.number().int().positive().nullable().optional(),starts_at:z.string().datetime({offset:true}).or(z.string().datetime()).optional(),notes:z.string().max(1000).nullable().optional()});
  const d=parse(schema,req.body);if(!Object.keys(d).length)throw new HttpError(422,'Thiếu dữ liệu');
  const current=await accessible(id,req);
+ if(req.user!.role==='customer' && d.status && d.status!=='cancelled' && d.status!==current.status)throw new HttpError(403,'Khách hàng chỉ được hủy lịch');
  if(d.status&&!canTransition(current.status,d.status,req.user!.role))throw new HttpError(422,'Chuyển trạng thái không hợp lệ');
  if(req.user!.role==='staff'&&(d.staff_id!==undefined||d.starts_at!==undefined))throw new HttpError(403,'Chỉ quản trị viên được đổi nhân viên hoặc giờ hẹn');
  if(req.user!.role==='customer'){
@@ -86,8 +98,9 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
  if(['completed','cancelled'].includes(current.status))throw new HttpError(409,'Lịch đã kết thúc hoặc hủy');
  if(d.staff_id){const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[d.staff_id,orgId(req)]);if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');}
  const start=d.starts_at?new Date(d.starts_at):new Date(isoUTC(current.starts_at));
- if(d.starts_at){if(req.user!.role==='customer')throw new HttpError(403,'Không có quyền đổi thời gian');validateBookingTime(start,current.duration_minutes);}
- const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+current.duration_minutes*60000));const staffId=d.staff_id===undefined?current.staff_id:d.staff_id;
+ if(d.starts_at){if(req.user!.role==='customer')throw new HttpError(403,'Không có quyền đổi thời gian');validateBookingTime(start,Math.round((new Date(isoUTC(current.ends_at)).getTime()-new Date(isoUTC(current.starts_at)).getTime())/60000));}
+ const originalDuration=Math.round((new Date(isoUTC(current.ends_at)).getTime()-new Date(isoUTC(current.starts_at)).getTime())/60000);
+ const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+originalDuration*60000));const staffId=d.staff_id===undefined?current.staff_id:d.staff_id;
  await transaction(async db=>{
    await lockStaff(db,[current.staff_id,staffId]);
    // Prevent stale writes to a schedule concurrently changed by another request.
