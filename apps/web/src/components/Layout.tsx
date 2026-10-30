@@ -1,5 +1,5 @@
 import {NavLink,Outlet,useLocation} from 'react-router-dom';
-import {LayoutDashboard,PawPrint,CalendarPlus,CalendarDays,Users,Scissors,UserRound,LogOut,Menu,X,HeartPulse,ChevronRight,Bell,ShieldCheck,UserCog,Store} from 'lucide-react';
+import {LayoutDashboard,PawPrint,CalendarPlus,CalendarDays,Users,Scissors,UserRound,LogOut,Menu,X,HeartPulse,ChevronRight,Bell,UserCog} from 'lucide-react';
 import {useState} from 'react';
 import {useAuth} from '../lib/auth';
 import {toast} from 'react-hot-toast';
