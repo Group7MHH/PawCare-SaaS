@@ -119,7 +119,7 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
    const [fresh]=await rows<any>('SELECT status,staff_id,starts_at,ends_at FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
    if(!fresh || fresh.status!==current.status || isoUTC(fresh.starts_at)!==isoUTC(current.starts_at) || fresh.staff_id!==current.staff_id)throw new HttpError(409,'Lịch đã thay đổi, hãy tải lại trang');
    if(d.starts_at!==undefined||d.staff_id!==undefined)await verifyAvailability(db,staffId,st,en,id);
-   await exec('UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=? WHERE id=? AND organization_id=?',[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result??current.care_result??null,id,orgId(req)],db);
+   await exec("UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=?,completed_at=CASE WHEN ?='completed' AND status<>'completed' THEN now() ELSE completed_at END WHERE id=? AND organization_id=?",[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result??current.care_result??null,d.status||current.status,id,orgId(req)],db);
    if(d.status==='completed' && current.status!=='completed'){
      await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id)
        VALUES(?,?,?,'Kết quả chăm sóc','grooming',(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?)`,
