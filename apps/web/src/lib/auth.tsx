@@ -7,7 +7,7 @@ const AuthContext=createContext<AuthContextType|null>(null);
 export function AuthProvider({children}:{children:ReactNode}){
  const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true);const queryClient=useQueryClient(),navigate=useNavigate();
  useEffect(()=>{let active=true;api<{user:User}>('/auth/me').then(data=>{if(active)setUser(data.user);}).catch(()=>{}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[]);
- const login=async(email:string,password:string)=>{const data=await api<{user:User}>('/auth/login',json('POST',{email,password}));setUser(data.user);queryClient.clear();navigate(data.user.role==='owner'?'/owner':data.user.role==='customer'?'/overview':'/admin/dashboard');};
+ const login=async(email:string,password:string)=>{const data=await api<{user:User}>('/auth/login',json('POST',{email,password}));setUser(data.user);queryClient.clear();navigate(data.user.role==='customer'?'/overview':'/admin/dashboard');};
  const register=async(data:{full_name:string;email:string;password:string;phone?:string})=>{const result=await api<{user:User}>('/auth/register',json('POST',data));setUser(result.user);queryClient.clear();navigate('/overview');};
  const selectOrganization=async(id:number)=>{const data=await api<{user:User}>('/auth/select-organization',json('POST',{organization_id:id}));setUser(data.user);queryClient.clear();navigate(data.user.role==='customer'?'/overview':'/admin/dashboard');};
  const logout=async()=>{await api('/auth/logout',json('POST'));setUser(null);queryClient.clear();navigate('/login');};
