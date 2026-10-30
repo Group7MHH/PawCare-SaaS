@@ -19,7 +19,7 @@ async function accessible(id:number,req:import('express').Request,db:DB=pool){
 router.get('/',asyncRoute(async(req,res)=>{
  const {page,limit}=pageParams(req),clauses:string[]=[];const params:unknown[]=[];
  clauses.push('a.organization_id=?');params.push(orgId(req));
- if(req.user!.role==='admin' && d.status==='completed')throw new HttpError(403,'Chỉ Staff phụ trách được hoàn thành công việc');
+ if(req.user!.role==='admin' && (d.status==='in_progress'||d.status==='completed'))throw new HttpError(403,'Chỉ Staff phụ trách được hoàn thành công việc');
  if(req.user!.role==='customer'){clauses.push('a.customer_id=?');params.push(req.user!.id);}
  if(req.user!.role==='staff'){clauses.push('a.staff_id=?');params.push(req.user!.id);}
  if(req.query.status&&req.query.status!=='all'){clauses.push('a.status=?');params.push(String(req.query.status));}
@@ -106,7 +106,7 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
  }
  if(['completed','cancelled'].includes(current.status))throw new HttpError(409,'Lịch đã kết thúc hoặc hủy');
  if(d.staff_id){const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[d.staff_id,orgId(req)]);if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');}
- if(d.care_result && req.user!.role!=='staff')throw new HttpError(403,'Chỉ Staff được ghi kết quả chăm sóc');
+ if(d.care_result!==undefined && req.user!.role!=='staff')throw new HttpError(403,'Chỉ Staff được ghi kết quả chăm sóc');
  if(d.status==='completed'&&req.user!.role==='staff'&&!d.care_result&&!current.care_result)throw new HttpError(422,'Vui lòng ghi kết quả chăm sóc trước khi hoàn thành');
  const start=d.starts_at?new Date(d.starts_at):new Date(isoUTC(current.starts_at));
  if(d.starts_at){if(req.user!.role==='customer')throw new HttpError(403,'Không có quyền đổi thời gian');validateBookingTime(start,Math.round((new Date(isoUTC(current.ends_at)).getTime()-new Date(isoUTC(current.starts_at)).getTime())/60000));}
