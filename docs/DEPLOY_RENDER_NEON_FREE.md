@@ -51,28 +51,28 @@ Root repo có `.node-version` đặt Node.js `22.16.0` để tránh dùng bản 
 | `PG_POOL_MAX` | `3` |
 | `SESSION_COOKIE_SECURE` | `true` |
 | `BOOTSTRAP_OWNER` | `true` (chỉ lần đầu) |
-| `OWNER_EMAIL` | Email đăng nhập Owner do bạn chọn |
-| `OWNER_PASSWORD` | Mật khẩu riêng, 12–100 ký tự, mạnh |
-| `OWNER_FULL_NAME` | Tên chủ nền tảng (tùy chọn) |
+| `ADMIN_EMAIL` | Email đăng nhập Admin do bạn chọn |
+| `ADMIN_PASSWORD` | Mật khẩu riêng, 12–100 ký tự, mạnh |
+| `ADMIN_FULL_NAME` | Tên chủ nền tảng (tùy chọn) |
 
 Render Web Service có `RENDER_EXTERNAL_URL` nên backend tự xác định domain HTTPS để kiểm tra Origin và tạo link mời. Nếu triển khai domain tùy chỉnh, đặt `APP_ORIGIN` **chính xác** thành `https://domain-cua-ban` (không dấu `/` ở cuối). Không đặt `APP_ORIGIN=http://localhost:5173` trong production.
 
 Không cần nhập `PORT` khi dùng Render; Express lấy `process.env.PORT` và lắng nghe `0.0.0.0`.
 
-## 5. Deploy, kiểm tra và khóa bootstrap Owner
+## 5. Deploy, kiểm tra và khóa bootstrap Admin
 
 - Chọn **Create Web Service / Deploy**, theo dõi Events/Logs. Build phải thực hiện install + TypeScript API + React/Vite frontend rồi start Express API.
-- Khi chạy, backend áp dụng migration 001, 002, 003 bằng PostgreSQL transaction, tạo Owner đầu tiên nếu chưa có.
+- Khi chạy, backend áp dụng migration 001, 002, 003, 004 bằng PostgreSQL transaction, tạo Admin đầu tiên nếu chưa có.
 - Sau khi service ở trạng thái Live, mở URL `https://...onrender.com` và `https://...onrender.com/api/health` (mong đợi `{"status":"ok"}`). Đường dẫn chỉ là ví dụ, lấy tên miền thực trong Render.
-- Đăng nhập bằng tài khoản Owner → truy cập `/owner` → tạo cửa hàng → mời Admin.
-- Sau khi xác minh Owner đăng nhập thành công, vào Render → Environment **xóa** `BOOTSTRAP_OWNER`, `OWNER_PASSWORD`, `OWNER_EMAIL`, lưu và redeploy.
+- Đăng nhập bằng tài khoản Admin → mở trang quản trị dịch vụ và mời Staff.
+- Sau khi xác minh Admin đăng nhập thành công, vào Render → Environment **xóa** `BOOTSTRAP_OWNER`, `ADMIN_PASSWORD`, `ADMIN_EMAIL`, lưu và redeploy.
 
-Tài khoản Owner tiếp theo chỉ có thể được cấp theo luồng bảo vệ trong trang Owner. Không để bootstrap password tồn tại dài hạn.
+Tài khoản Admin tiếp theo chỉ có thể được cấp theo luồng bảo vệ trong trang Admin. Không để bootstrap password tồn tại dài hạn.
 
 ## 6. Tài khoản và phân quyền
 
-- Owner tạo cửa hàng và gửi link mời Admin bằng tay (hiện chưa tự động gửi email).
-- Admin quản lý dịch vụ và Staff của cửa hàng được cấp; không thể tự cấp Owner.
+- Admin tạo cửa hàng và gửi link mời Admin bằng tay (hiện chưa tự động gửi email).
+- Admin quản lý dịch vụ và Staff của cửa hàng được cấp; không thể tự cấp Admin.
 - Customer đăng ký và đặt lịch tại cửa hàng đã chọn.
 - Staff dùng tên mẫu **Trần Mạnh Hùng** chỉ trong demo/dev, không tự sinh tài khoản demo ở production.
 
