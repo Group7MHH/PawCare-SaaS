@@ -1,4 +1,4 @@
-export type Role='customer'|'staff'|'admin'|'owner';
+export type Role='customer'|'staff'|'admin';
 export type User={id:number;full_name:string;email:string;role:Role;phone?:string|null;address?:string|null;organization_id:number|null;organization_name:string|null};
 export type Organization={id:number;name:string;slug:string;is_active:boolean};
 export type Pet={id:number;owner_id:number;owner_name?:string;name:string;species:'dog'|'cat'|'other';breed:string|null;gender:string;birthday:string|null;weight_kg:number|null;color:string|null;notes:string|null;record_count?:number};
