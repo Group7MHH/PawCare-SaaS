@@ -31,6 +31,8 @@ router.get('/staff',asyncRoute(async(req,res)=>{
  res.json({items});
 }));
 const staffSchema=z.object({full_name:z.string().trim().min(2).max(120),email:z.string().email().max(190),password:z.string().min(8).max(100).optional(),phone:z.string().max(25).nullable().optional(),specialty:z.string().max(160).nullable().optional(),bio:z.string().max(500).nullable().optional(),is_active:z.boolean().optional()});
+router.post('/staff',requireRole('admin'),asyncRoute(async(_req,_res)=>{throw new HttpError(410,'Hãy mời Staff qua trang Thành viên cửa hàng');}));
+/* Legacy password-based staff creation disabled.
 router.post('/staff',requireRole('admin'),asyncRoute(async(req,res)=>{
  const d=parse(staffSchema.extend({password:z.string().min(12)}),req.body);
  // Prefer invitations for existing accounts. A temporary password is a fallback for new staff only.
@@ -42,6 +44,7 @@ router.post('/staff',requireRole('admin'),asyncRoute(async(req,res)=>{
   return r.insertId;
  });res.status(201).json({id});
 }));
+*/
 router.patch('/staff/:id',requireRole('admin'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id),d=parse(z.object({specialty:z.string().max(160).nullable().optional(),bio:z.string().max(500).nullable().optional(),is_active:z.boolean().optional()}),req.body);
  if(!Object.keys(d).length)throw new HttpError(422,'Thiếu dữ liệu');
