@@ -1,24 +1,32 @@
-# PawCare — Single-store cloud SaaS (target architecture)
+# PawCare Single-Store Cloud SaaS — Workflow and Roles
 
-## Scope
-One pet-care store, one centrally hosted PostgreSQL database, three application roles: Admin, Staff and Customer. Retain React/Vite, Node/Express, Render and Neon. SaaS delivery does **not** require multi-tenancy.
+PawCare runs as one cloud-hosted application for **one pet-care store**, with shared PostgreSQL and the roles **Admin, Staff, Customer**. Multi-store and platform Owner screens have been removed from the operational UI. Internal legacy organization foreign keys remain to preserve history.
 
-## Business workflow
-Customer signs up, manages pets, chooses service and available time; server reserves a real staff member and creates a pending appointment. Admin reviews/confirms/assigns, Staff starts the confirmed job, records its result, and completes it. Customer reads the result; Admin tracks operations. Cancellation before work begins must release the slot.
+## Customer
+1. Register/login, create a pet profile.
+2. Choose service, available staff (or automatic assignment), date and time.
+3. Backend validates schedule and reserves a real staff member in a transaction; appointment becomes `pending`.
+4. View/cancel eligible appointments; see completed care results in history and pet profile.
 
-## Migration plan — NOT YET EXECUTED
-1. Back up Neon/PostgreSQL and record counts/ownership by organization.
-2. Require explicit selection of the one store to keep if legacy data has multiple organizations. Never silently delete other organizations' data.
-3. Reconcile global `users.role` with `organization_members` for that store; resolve conflicting cross-store roles and historical Owner accounts deliberately.
-4. Migrate staff specialties from `organization_staff_profiles` into `staff_profiles`, and ensure all appointments/services/care records belong to the selected store.
-5. Introduce a versioned, transactional migration; remove tenant keys only **after** all API and UI queries are rewritten and tested.
-6. Keep one administrator bootstrap pathway and invitation-based staff enrollment; remove platform Owner and organization-switching UI/routes.
-7. Test signup, authorization, double-booking, state transitions, reassignments, deactivation, historic record visibility, backups and Render deployment against a separate test database.
+## Admin
+1. Log in as the initial Admin or existing migrated Admin.
+2. Create/edit/disable services and invite Staff using a single-use link.
+3. Review pending bookings; reassign staff if necessary and confirm.
+4. View all customers and appointments. Can cancel eligible bookings and deactivate Staff only after active assignments are cleared.
+5. View store-wide completed-service totals and booking reports.
 
-## Incremental work in this branch
-- Separate allowed Staff transitions from Admin transitions.
-- Improve automatic assignment and available-slot responses when customer chooses any staff member.
-- Restrict staff customer/pet information to assigned appointments.
-- Narrow Staff navigation and add transition unit tests.
+## Staff
+1. Accept an invitation and sign in.
+2. Open Staff dashboard and assigned appointment queue (no store-wide customer list or revenue dashboard).
+3. Start a confirmed appointment (`in_progress`).
+4. Record actual care outcome; complete the appointment (`completed`). This also creates a linked care record for the pet.
+5. Staff cannot confirm, cancel, or reassign appointments.
 
-**Important:** This branch is an intermediate workflow hardening change, not the completed single-store conversion. Do not deploy until reviewed and tests pass. Current tenant/Owner structures remain and require subsequent migration.
+## State machine
+- Customer: `pending → cancelled`, `confirmed → cancelled`.
+- Admin: `pending → confirmed/cancelled`, `confirmed → cancelled`, `in_progress → cancelled`.
+- Assigned Staff: `confirmed → in_progress → completed`.
+- `completed` and `cancelled` are terminal.
+
+## Safety / deployment
+Run `npm run build`, `npm test` and `node --test tests/*.test.mjs` in CI. Back up Neon before migration. `infra/004_single_store.sql` refuses upgrades when more than one organization exists; consolidate legacy data explicitly rather than deleting it. Do not merge/deploy to production until the migration and role mapping are validated against a separate restored database.
