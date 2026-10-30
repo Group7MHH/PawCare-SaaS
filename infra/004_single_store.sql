@@ -36,7 +36,7 @@ BEGIN
  ON CONFLICT(user_id) DO UPDATE SET specialty=EXCLUDED.specialty,bio=EXCLUDED.bio;
  -- Store ID remains a legacy FK but clients are no longer allowed to select/switch stores.
  UPDATE sessions SET organization_id=selected_store;
-END $;
+END $$;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('customer','staff','admin'));
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS duration_minutes_snapshot INTEGER;
