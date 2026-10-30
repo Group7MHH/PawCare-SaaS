@@ -120,6 +120,11 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
    if(!fresh || fresh.status!==current.status || isoUTC(fresh.starts_at)!==isoUTC(current.starts_at) || fresh.staff_id!==current.staff_id)throw new HttpError(409,'Lịch đã thay đổi, hãy tải lại trang');
    if(d.starts_at!==undefined||d.staff_id!==undefined)await verifyAvailability(db,staffId,st,en,id);
    await exec('UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=? WHERE id=? AND organization_id=?',[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result??current.care_result??null,id,orgId(req)],db);
+   if(d.status==='completed' && current.status!=='completed'){
+     await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id)
+       VALUES(?,?,?,'Kết quả chăm sóc','grooming',(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?)`,
+       [current.pet_id,orgId(req),req.user!.id,d.care_result??current.care_result,id],db);
+   }
  });res.json({message:'Đã cập nhật lịch hẹn'});
 }));
 router.delete('/:id',asyncRoute(async(req,res)=>{
