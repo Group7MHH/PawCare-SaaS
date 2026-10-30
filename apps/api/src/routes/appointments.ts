@@ -19,7 +19,6 @@ async function accessible(id:number,req:import('express').Request,db:DB=pool){
 router.get('/',asyncRoute(async(req,res)=>{
  const {page,limit}=pageParams(req),clauses:string[]=[];const params:unknown[]=[];
  clauses.push('a.organization_id=?');params.push(orgId(req));
- if(req.user!.role==='admin' && (d.status==='in_progress'||d.status==='completed'))throw new HttpError(403,'Chỉ Staff phụ trách được hoàn thành công việc');
  if(req.user!.role==='customer'){clauses.push('a.customer_id=?');params.push(req.user!.id);}
  if(req.user!.role==='staff'){clauses.push('a.staff_id=?');params.push(req.user!.id);}
  if(req.query.status&&req.query.status!=='all'){clauses.push('a.status=?');params.push(String(req.query.status));}
@@ -100,6 +99,7 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
  if(req.user!.role==='customer' && d.status && d.status!=='cancelled' && d.status!==current.status)throw new HttpError(403,'Khách hàng chỉ được hủy lịch');
  if(d.status&&!canTransition(current.status,d.status,req.user!.role))throw new HttpError(422,'Chuyển trạng thái không hợp lệ');
  if(req.user!.role==='staff'&&(d.staff_id!==undefined||d.starts_at!==undefined))throw new HttpError(403,'Chỉ quản trị viên được đổi nhân viên hoặc giờ hẹn');
+ if(req.user!.role==='admin' && (d.status==='in_progress'||d.status==='completed'))throw new HttpError(403,'Chỉ Staff phụ trách được hoàn thành công việc');
  if(req.user!.role==='customer'){
    if(Object.keys(d).some(k=>k!=='status'&&k!=='notes'))throw new HttpError(403,'Khách hàng chỉ được sửa ghi chú hoặc hủy lịch');
    if(!['pending','confirmed'].includes(current.status))throw new HttpError(409,'Không thể thay đổi lịch này');
