@@ -21,6 +21,51 @@ router.delete('/services/:id',requireRole('admin'),asyncRoute(async(req,res)=>{
  const r=await exec('UPDATE services SET is_active=FALSE WHERE id=? AND organization_id=?',[idParam(req.params.id),orgId(req)]);
  if(!r.affectedRows)throw new HttpError(404,'Không có dịch vụ');res.json({message:'Đã ngừng cung cấp dịch vụ'});
 }));
+
+/**
+ * Permanent deletion is intentionally separate from the existing soft-delete.
+ * Only an Admin who has reviewed the current impact and types the service name
+ * can remove the service and all associated appointments.
+ * Care records survive, but their deleted appointment references are cleared.
+ */
+router.get('/services/:id/delete-preview',requireRole('admin'),asyncRoute(async(req,res)=>{
+ const id=idParam(req.params.id);
+ const [service]=await rows<{id:number;name:string}>('SELECT id,name FROM services WHERE id=? AND organization_id=?',[id,orgId(req)]);
+ if(!service)throw new HttpError(404,'Không tìm thấy dịch vụ');
+ const [impact]=await rows<{appointments:number;active_appointments:number;completed_appointments:number;care_records:number}>(`
+  SELECT COUNT(*)::int AS appointments,
+         COUNT(*) FILTER (WHERE status IN ('pending','confirmed','in_progress'))::int AS active_appointments,
+         COUNT(*) FILTER (WHERE status='completed')::int AS completed_appointments,
+         (SELECT COUNT(*)::int FROM care_records cr JOIN appointments a ON cr.appointment_id=a.id
+          WHERE a.service_id=? AND a.organization_id=?) AS care_records
+  FROM appointments WHERE service_id=? AND organization_id=?`,[id,orgId(req),id,orgId(req)]);
+ res.json({service_id:id,service_name:service.name,...impact});
+}));
+router.post('/services/:id/permanent-delete',requireRole('admin'),asyncRoute(async(req,res)=>{
+ const id=idParam(req.params.id);
+ const payload=parse(z.object({
+  confirmation_name:z.string().min(1).max(120),
+  expected_appointments:z.number().int().nonnegative()
+ }).strict(),req.body);
+ const result=await transaction(async db=>{
+  const [service]=await rows<{id:number;name:string}>('SELECT id,name FROM services WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
+  if(!service)throw new HttpError(404,'Dịch vụ đã bị xóa hoặc không tồn tại');
+  if(payload.confirmation_name!==service.name)throw new HttpError(422,'Tên dịch vụ xác nhận không chính xác');
+  const [count]=await rows<{total:number}>('SELECT COUNT(*)::int AS total FROM appointments WHERE service_id=? AND organization_id=?',[id,orgId(req)],db);
+  if(count.total!==payload.expected_appointments)throw new HttpError(409,'Số lịch hẹn đã thay đổi. Hãy tải lại thông tin và xác nhận lần nữa');
+  // Keep pet care notes/results; they no longer point to deleted appointments.
+  await exec('UPDATE care_records SET appointment_id=NULL WHERE appointment_id IN (SELECT id FROM appointments WHERE service_id=? AND organization_id=?)',[id,orgId(req)],db);
+  const removed=await exec('DELETE FROM appointments WHERE service_id=? AND organization_id=?',[id,orgId(req)],db);
+  if(removed.affectedRows!==count.total)throw new HttpError(409,'Lịch hẹn đã thay đổi, hãy thực hiện lại');
+  await exec('DELETE FROM services WHERE id=? AND organization_id=?',[id,orgId(req)],db);
+  await exec('INSERT INTO role_audit_logs(actor_id,organization_id,action,details) VALUES(?,?,?,?::jsonb)',[
+   req.user!.id,orgId(req),'service.permanently_delete',
+   JSON.stringify({service_id:id,service_name:service.name,appointments_deleted:removed.affectedRows})
+  ],db);
+  return {deleted_appointments:removed.affectedRows};
+ });
+ res.json({message:'Đã xóa vĩnh viễn dịch vụ và tất cả lịch hẹn liên quan',...result});
+}));
 router.get('/staff',asyncRoute(async(req,res)=>{
  const internal=req.user!.role!=='customer';
  const items=await rows<any>(`SELECT u.id,u.full_name,${internal?'u.email,u.phone,':''} m.is_active,p.specialty,p.bio,
