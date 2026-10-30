@@ -19,14 +19,16 @@ BEGIN
  -- Users with active roles in the single store retain those roles.
  UPDATE users u SET role=m.role FROM organization_members m
  WHERE m.user_id=u.id AND m.organization_id=selected_store AND m.is_active=TRUE;
- -- Legacy platform owner becomes a regular shop administrator, no owner privilege.
+ -- Legacy platform Owner becomes a store Admin; existing account remains active.
  UPDATE users SET role='admin' WHERE role='owner';
- -- Deactivated staff must not retain staff privileges.
+ -- Old accounts not assigned to this store keep their credentials but become customers.
+ -- Do not silently demote the converted original Owner: only reset legacy staff/admin
+ -- where a historical (inactive) membership explicitly exists.
  UPDATE users u SET role='customer'
- WHERE u.role IN ('admin','staff') AND NOT EXISTS(
-  SELECT 1 FROM organization_members m
-  WHERE m.user_id=u.id AND m.organization_id=selected_store AND m.is_active=TRUE
- ) AND NOT EXISTS(SELECT 1 FROM users x WHERE x.id=u.id AND x.role='owner');
+ WHERE u.role IN ('admin','staff') AND EXISTS(
+  SELECT 1 FROM organization_members m WHERE m.user_id=u.id
+  AND m.organization_id=selected_store AND m.is_active=FALSE
+ );
  -- Backfill shop-specific staff profiles into the single-store profile table.
  INSERT INTO staff_profiles(user_id,specialty,bio)
  SELECT p.user_id,p.specialty,p.bio FROM organization_staff_profiles p
@@ -34,7 +36,9 @@ BEGIN
  ON CONFLICT(user_id) DO UPDATE SET specialty=EXCLUDED.specialty,bio=EXCLUDED.bio;
  -- Store ID remains a legacy FK but clients are no longer allowed to select/switch stores.
  UPDATE sessions SET organization_id=selected_store;
-END $$;
+END $;
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('customer','staff','admin'));
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS duration_minutes_snapshot INTEGER;
 UPDATE appointments SET duration_minutes_snapshot=
  GREATEST(1, ROUND(EXTRACT(EPOCH FROM (ends_at-starts_at))/60)::INTEGER)
