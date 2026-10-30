@@ -8,18 +8,16 @@ const router=Router();
 const credentials=z.object({email:z.string().email().max(190).transform(v=>v.toLowerCase().trim()),password:z.string().min(8).max(100)});
 const registration=credentials.extend({full_name:z.string().trim().min(2).max(120),phone:z.string().max(25).optional()});
 async function startingOrganization(userId:number,role:string){
- if(role==='owner')return (await rows<any>('SELECT id FROM organizations WHERE is_active=TRUE ORDER BY id LIMIT 1'))[0]?.id??null;
- const org=(await rows<any>(`SELECT o.id FROM organization_members m JOIN organizations o ON o.id=m.organization_id
-  WHERE m.user_id=? AND m.is_active=TRUE AND o.is_active=TRUE ORDER BY o.id LIMIT 1`,[userId]))[0];
- if(org)return org.id;
+ 
+
  return (await rows<any>('SELECT id FROM organizations WHERE is_active=TRUE ORDER BY id LIMIT 1'))[0]?.id??null;
 }
 async function currentUser(userId:number,organizationId:number|null){
  const [u]=await rows<any>(`SELECT u.id,u.full_name,u.email,u.phone,u.address,
-  CASE WHEN u.role='owner' THEN 'owner' WHEN m.is_active=TRUE THEN m.role ELSE 'customer' END AS role,
+  u.role AS role,
   o.id AS organization_id,o.name AS organization_name
   FROM users u LEFT JOIN organizations o ON o.id=? AND o.is_active=TRUE
-  LEFT JOIN organization_members m ON m.organization_id=o.id AND m.user_id=u.id
+  
   WHERE u.id=? AND u.is_active=TRUE`,[organizationId,userId]);return u;
 }
 router.post('/register',asyncRoute(async(req,res)=>{
@@ -40,19 +38,7 @@ router.post('/login',asyncRoute(async(req,res)=>{
 }));
 router.post('/logout',asyncRoute(async(req,res)=>{await revokeSession(req);clearSession(res);res.json({message:'Đã đăng xuất'});}));
 router.get('/me',requireAuth,(req,res)=>res.json({user:req.user}));
-router.post('/select-organization',requireAuth,asyncRoute(async(req,res)=>{
- const {organization_id}=parse(z.object({organization_id:z.coerce.number().int().positive()}),req.body);
- const [o]=await rows<any>('SELECT id,is_active FROM organizations WHERE id=?',[organization_id]);
- if(!o||!o.is_active)throw new HttpError(404,'Cửa hàng không hoạt động');
- if(req.user!.role!=='owner'){
-  // Staff/admin cannot switch into an unassigned tenant. Customers may choose any active store.
-  const [stored]=await rows<any>('SELECT role FROM users WHERE id=?',[req.user!.id]);
-  const [member]=await rows<any>('SELECT 1 FROM organization_members WHERE organization_id=? AND user_id=? AND is_active=TRUE',[organization_id,req.user!.id]);
-  if(stored?.role!=='customer' && !member)throw new HttpError(403,'Bạn không thuộc cửa hàng này');
- }
- await updateSessionOrganization(req,organization_id);
- res.json({user:await currentUser(req.user!.id,organization_id)});
-}));
+router.post('/select-organization',requireAuth,asyncRoute(async(_req,_res)=>{throw new HttpError(410,'Ứng dụng chỉ phục vụ một cửa hàng');}));
 router.post('/accept-invitation',requireAuth,asyncRoute(async(req,res)=>{
  const d=parse(z.object({token:z.string().regex(/^[a-f0-9]{64}$/)}),req.body);
  let targetOrg:number=0;
@@ -65,6 +51,7 @@ router.post('/accept-invitation',requireAuth,asyncRoute(async(req,res)=>{
   if(existing&&existing.role!==invite.role)throw new HttpError(409,'Bạn đã có vai trò khác tại cửa hàng; liên hệ Owner');
   await exec(`INSERT INTO organization_members(organization_id,user_id,role,is_active) VALUES(?,?,?,TRUE)
     ON CONFLICT (organization_id,user_id) DO UPDATE SET is_active=TRUE`,[invite.organization_id,req.user!.id,invite.role],db);
+  await exec('UPDATE users SET role=? WHERE id=?',[invite.role,req.user!.id],db);
   await exec('UPDATE invitations SET accepted_at=now() WHERE id=?',[invite.id],db);
   await exec('INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details) VALUES(?,?,?,?,?::jsonb)',[req.user!.id,invite.organization_id,req.user!.id,'invitation.accept',JSON.stringify({role:invite.role})],db);
   targetOrg=invite.organization_id;
