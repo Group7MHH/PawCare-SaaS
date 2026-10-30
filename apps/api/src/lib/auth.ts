@@ -30,11 +30,11 @@ export const optionalAuth:RequestHandler=asyncRoute(async(req,_res,next)=>{
 });
 export const requireAuth:RequestHandler=(req,_res,next)=>req.user?next():next(new HttpError(401,'Bạn cần đăng nhập'));
 export const requireRole=(...roles:Role[]):RequestHandler=>(req,_res,next)=>req.user&&roles.includes(req.user.role)?next():next(new HttpError(403,'Bạn không có quyền thực hiện'));
-export const requireOrganization:RequestHandler=(req,_res,next)=>req.user?.organization_id?next():next(new HttpError(400,'Vui lòng chọn cửa hàng trước'));
-export function orgId(req:Request):number {if(!req.user?.organization_id)throw new HttpError(400,'Vui lòng chọn cửa hàng');return req.user.organization_id;}
+export const requireOrganization:RequestHandler=(req,_res,next)=>req.user?.organization_id?next():next(new HttpError(400,'Cửa hàng chưa được cấu hình'));
+export function orgId(req:Request):number {if(!req.user?.organization_id)throw new HttpError(400,'Cửa hàng chưa được cấu hình');return req.user.organization_id;}
 export async function revokeSession(req:Request){const token=req.cookies?.[COOKIE];if(typeof token==='string')await exec('DELETE FROM sessions WHERE token_hash=?',[hashToken(token)]);}
 export async function updateSessionOrganization(req:Request,organizationId:number){
  const token=req.cookies?.[COOKIE];if(typeof token!=='string')throw new HttpError(401,'Phiên không hợp lệ');
  await exec('UPDATE sessions SET organization_id=? WHERE token_hash=?',[organizationId,hashToken(token)]);
 }
-export function isPrivileged(req:Request){return req.user?.role==='staff'||req.user?.role==='admin'||req.user?.role==='owner';}
+export function isPrivileged(req:Request){return req.user?.role==='staff'||req.user?.role==='admin';}
