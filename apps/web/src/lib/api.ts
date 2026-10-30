@@ -1,11 +1,11 @@
-export type Role='customer'|'staff'|'admin'|'owner';
+export type Role='customer'|'staff'|'admin';
 export type User={id:number;full_name:string;email:string;role:Role;phone?:string|null;address?:string|null;organization_id:number|null;organization_name:string|null};
 export type Organization={id:number;name:string;slug:string;is_active:boolean};
 export type Pet={id:number;owner_id:number;owner_name?:string;name:string;species:'dog'|'cat'|'other';breed:string|null;gender:string;birthday:string|null;weight_kg:number|null;color:string|null;notes:string|null;record_count?:number};
 export type CareRecord={id:number;pet_id:number;title:string;record_type:string;care_date:string;description:string|null;next_due_date:string|null};
 export type Service={id:number;name:string;category:string;description:string|null;duration_minutes:number;price:number;is_active:boolean};
 export type Staff={id:number;full_name:string;email:string;phone:string|null;specialty:string|null;bio:string|null;is_active:boolean;active_appointments:number};
-export type Appointment={id:number;customer_id:number;customer_name:string;customer_phone?:string|null;pet_id:number;pet_name:string;pet_species:string;service_id:number;service_name:string;staff_id:number|null;staff_name:string|null;starts_at:string;ends_at:string;duration_minutes:number;status:'pending'|'confirmed'|'in_progress'|'completed'|'cancelled';price_snapshot:number;notes:string|null};
+export type Appointment={id:number;customer_id:number;customer_name:string;customer_phone?:string|null;pet_id:number;pet_name:string;pet_species:string;service_id:number;service_name:string;staff_id:number|null;staff_name:string|null;starts_at:string;ends_at:string;duration_minutes:number;status:'pending'|'confirmed'|'in_progress'|'completed'|'cancelled';price_snapshot:number;notes:string|null;care_result?:string|null};
 export type Customer={id:number;full_name:string;email:string;phone:string|null;address:string|null;pet_count:number;appointment_count:number;created_at:string};
 export type Stats={stats:Record<string,number>;recent:Record<string,any>[];series?:{month:string;revenue:number;appointments:number}[];statuses?:{status:string;value:number}[]};
 export async function api<T>(path:string,options:RequestInit={}):Promise<T>{

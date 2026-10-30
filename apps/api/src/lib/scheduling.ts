@@ -23,7 +23,9 @@ export function isoUTC(value:string|Date){
 }
 export function canTransition(oldStatus:string,newStatus:string,role:string){
  if(oldStatus===newStatus)return true;
+ if(role==='staff')return (oldStatus==='confirmed'&&newStatus==='in_progress')||(oldStatus==='in_progress'&&newStatus==='completed');
+ if(role!=='admin'&&role!=='customer')return false;
  if(role==='customer')return newStatus==='cancelled'&&['pending','confirmed'].includes(oldStatus);
- const allowed:Record<string,string[]>={pending:['confirmed','cancelled'],confirmed:['in_progress','completed','cancelled'],in_progress:['completed','cancelled'],completed:[],cancelled:[]};
+ const allowed:Record<string,string[]>={pending:['confirmed','cancelled'],confirmed:['cancelled'],in_progress:['cancelled'],completed:[],cancelled:[]};
  return allowed[oldStatus]?.includes(newStatus)??false;
 }

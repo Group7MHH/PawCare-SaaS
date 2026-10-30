@@ -7,7 +7,7 @@
     "start": "npm run start -w @petcare/api",
     "test": "npm run test -w @petcare/api && npm run test -w @petcare/web",
     "db:migrate": "npm run db:migrate -w @petcare/api",
-    "db:bootstrap-owner": "npm run db:bootstrap-owner -w @petcare/api",
+    "db:bootstrap-admin": "npm run db:bootstrap-admin -w @petcare/api",
     "db:seed": "npm run db:seed -w @petcare/api",
     "test:postgres": "node --test tests/postgres.test.mjs"
   },

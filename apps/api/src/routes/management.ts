@@ -4,23 +4,25 @@ import {isoUTC} from '../lib/scheduling.js';
 import {asyncRoute,HttpError,idParam,pageParams} from '../lib/http.js';
 import {orgId,requireAuth,requireRole} from '../lib/auth.js';
 const router=Router();router.use(requireAuth);
-router.get('/customers',requireRole('admin','staff','owner'),asyncRoute(async(req,res)=>{
+router.get('/customers',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
  const org=orgId(req),{page,limit}=pageParams(req);const q=`%${String(req.query.search||'').slice(0,90)}%`;
- const condition=`FROM users u WHERE EXISTS(SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=?)
-  AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.phone ILIKE ?)`;
- const [{total}]=await rows<any>(`SELECT COUNT(*) AS total ${condition}`,[org,q,q,q]);
+ const condition=req.user!.role==='staff'
+  ? "FROM users u WHERE u.role='customer' AND EXISTS(SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=? AND a.staff_id=?) AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.phone ILIKE ?)"
+  : "FROM users u WHERE u.role='customer' AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.phone ILIKE ?)";
+ const scope=req.user!.role==='staff'?[org,req.user!.id]:[];
+ const [{total}]=await rows<any>(`SELECT COUNT(*) AS total ${condition}`,[...scope,q,q,q]);
  const items=await rows<any>(`SELECT u.id,u.full_name,u.email,u.phone,u.address,u.is_active,u.created_at,
  (SELECT COUNT(DISTINCT a.pet_id) FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=?) AS pet_count,
  (SELECT COUNT(*) FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=?) AS appointment_count
- ${condition} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,[org,org,org,q,q,q,limit,(page-1)*limit]);
+ ${condition} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,[org,org,...scope,q,q,q,limit,(page-1)*limit]);
  res.json({items,total,page,limit});
 }));
-router.get('/customers/:id',requireRole('admin','staff','owner'),asyncRoute(async(req,res)=>{
+router.get('/customers/:id',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id),org=orgId(req);
  const [customer]=await rows<any>(`SELECT u.id,u.full_name,u.email,u.phone,u.address,u.created_at FROM users u
-  WHERE u.id=? AND EXISTS(SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=?)`,[id,org]);
+  WHERE u.id=? AND u.role='customer' ${req.user!.role==='staff'?"AND EXISTS (SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=? AND a.staff_id=?)":""}`,[id,...(req.user!.role==='staff'?[org,req.user!.id]:[])]);
  if(!customer)throw new HttpError(404,'Không tìm thấy khách hàng tại cửa hàng này');
- const pets=await rows('SELECT p.* FROM pets p WHERE p.owner_id=? AND EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=?)',[id,org]);res.json({customer,pets});
+ const pets=await rows(`SELECT p.* FROM pets p WHERE p.owner_id=? ${req.user!.role==='staff'?"AND EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=? AND a.staff_id=?)":""}`,[id,...(req.user!.role==='staff'?[org,req.user!.id]:[])]);res.json({customer,pets});
 }));
 router.get('/dashboard',asyncRoute(async(req,res)=>{
  const id=req.user!.id,role=req.user!.role;

@@ -1,70 +1,46 @@
-# PawCare SaaS — React + Express + PostgreSQL (Render Node + Neon)
+# PawCare — Single-store cloud SaaS
 
-**Bản triển khai Render Native Node.js**, kết nối Neon PostgreSQL, một đường link HTTPS phục vụ React và REST API. Độc lập với Railway; không có cấu hình container trong repository này.
+PawCare is a cloud-hosted pet-care management application for **one store**, with three roles: **Admin, Staff, Customer**. Frontend React/Vite, backend Express/TypeScript, PostgreSQL on Neon, deployed as one Node Web Service on Render. No Docker required.
 
-## Phân quyền
+## Workflow
+1. Customer registers, manages pets, checks service/time availability and books.
+2. The server reserves an available staff member; appointment begins in `pending`.
+3. Admin confirms appointments and may reassign staff.
+4. Assigned Staff starts work (`in_progress`), records the result, then completes it.
+5. Customer sees appointment history and Admin sees store-wide metrics.
 
-- `owner`: quản lý toàn bộ nền tảng, tổ chức/cửa hàng và phân quyền Admin.
-- `admin`: quản lý dịch vụ, lịch hẹn, nhân viên của cửa hàng được cấp quyền; chỉ được mời Staff.
-- `staff`: xử lý lịch hẹn theo quyền tại cửa hàng.
-- `customer`: tự đăng ký, quản lý thú cưng và đặt lịch.
+## Roles
+- Admin: services, staff invitations/activation, assignments, customers, revenue.
+- Staff: only assigned appointments and their customer/pet details; record care results.
+- Customer: own pets, own bookings, cancellation before work begins.
 
-Một PostgreSQL trung tâm lưu nhiều cửa hàng, backend phải kiểm tra `organization_id` trong server-side session. Đây là bản MVP **chưa kiểm thử end-to-end và chưa sẵn sàng cho khách hàng trả phí**.
-
-## Triển khai công khai — GitHub + Render + Neon
-
-Đọc **[docs/DEPLOY_RENDER_NEON_FREE.md](docs/DEPLOY_RENDER_NEON_FREE.md)**.
-
-Tạo Render **Web Service**, Language **Node**, nhánh `main`, Root Directory để trống, Instance **Free** (nếu đủ điều kiện):
-
-- **Build Command:** `npm install && npm run build`
-- **Start Command:** `npm start`
-- **NODE_VERSION:** đặt từ file `.node-version` (22.16.0)
-
-Render và API dùng chung domain HTTPS; Neon lưu database từ `DATABASE_URL` trong secret environment của Render. Code tự chạy SQL migrations khi khởi động. Tạo Owner một lần bằng các biến `BOOTSTRAP_OWNER`, `OWNER_EMAIL`, `OWNER_PASSWORD`, rồi xóa biến nhạy cảm sau khi đăng nhập lần đầu.
-
-## Chạy phát triển trong VS Code (Node.js, không cần container)
-
-Cần Node.js >=22, npm và một PostgreSQL **development** đang chạy (có thể dùng một Neon project/branch riêng, không dùng database production để chạy test).
+## Development
+Requires Node.js >=22 and a **development** PostgreSQL database.
 
 ```powershell
 Copy-Item apps/api/.env.example apps/api/.env
-notepad apps/api/.env
+# Set DATABASE_URL and APP_ORIGIN in apps/api/.env
 npm.cmd install
 npm.cmd run db:migrate
+npm.cmd run db:bootstrap-admin
 npm.cmd run dev
 ```
 
-Điền `DATABASE_URL` và các cấu hình cần thiết vào `apps/api/.env` trước khi chạy migration. Giao diện ở `http://localhost:5173`, API ở port 4000 (Vite proxy `/api`).
+Initialize the first Admin with `ADMIN_EMAIL`, `ADMIN_PASSWORD` (12+ characters) and optionally `ADMIN_FULL_NAME`. Alternatively set `BOOTSTRAP_ADMIN=true` only for the first deployment; remove it and the credential variables immediately afterward. Do not commit secrets.
 
-Để tạo Owner đầu tiên trong development, đặt `OWNER_EMAIL` và `OWNER_PASSWORD` vào `apps/api/.env`, rồi:
+Optional local fixtures: configure `DEV_SEED_PASSWORD` (12+ characters) then run `npm.cmd run db:seed`. Never seed production.
 
-```powershell
-npm.cmd run db:bootstrap-owner
-```
+## Deployment
+On Render, build `npm install && npm run build`, start `npm start`; use `DATABASE_URL` (Neon), `NODE_ENV=production`, `SESSION_COOKIE_SECURE=true` and correct HTTPS `APP_ORIGIN` (or Render's `RENDER_EXTERNAL_URL`).
 
-**Demo chỉ ở development:** `npm.cmd run db:seed` có thể tạo nhân viên tên **Trần Mạnh Hùng**. Không chạy seed lên database công khai.
+### Existing data / migrations
+Migrations 001–004 run during startup. Migration 004 is **non-destructive** and refuses conversion if **more than one organization** exists. In that case, back up and explicitly consolidate historical data before enabling single-store mode. Legacy organization columns remain as foreign keys internally, but there is **no multi-store UI or owner role**. Do not deploy into production without verifying backup, build, tests, and migration in a separate database first.
 
-## Database / modules
-
-- `infra/001_postgres_schema.sql` — schema PostgreSQL nền.
-- `infra/002_default_services.sql` — điều chỉnh dịch vụ mặc định.
-- `infra/003_owner_multitenant.sql` — organizations, memberships, invites, audit logs và ràng buộc theo tenant.
-- `apps/api` — Express API, authentication, middleware, migrations.
-- `apps/web` — React + Vite frontend; build ra `apps/web/dist`, được Express phục vụ từ một URL.
-
-Migration chạy lúc backend start; **backup database trước khi chạy phiên bản mới trên dữ liệu cũ**.
-
-## Kiểm tra
-
+## Verification
 ```powershell
 npm.cmd run build
 npm.cmd run test
 node --test tests/*.test.mjs
 ```
 
-Bài test tích hợp PostgreSQL cần `TEST_DATABASE_URL` riêng có tên database chứa `test`. Không đặt bằng database production.
-
-## Chưa có trong bản MVP
-
-Email tự động, xác minh/khôi phục email-mật khẩu, tính tiền SaaS, PostgreSQL RLS, audit bảo mật chuyên sâu, hệ thống backup/monitoring chuẩn production. Tính năng mời thành viên hiện tạo **link để gửi thủ công**, chưa gửi SMTP.
+The original project was MVP; production billing, payment, messaging, password recovery and full end-to-end validation are still out of scope.
