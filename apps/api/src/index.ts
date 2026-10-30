@@ -54,7 +54,7 @@ app.use((_req,_res,next)=>next(new HttpError(404,'Không tìm thấy trang')));
 app.use(handleError);
 const port=Number(process.env.PORT||4000);
 await migrate();
-if(process.env.BOOTSTRAP_OWNER==='true')await bootstrapOwner();
+if(process.env.BOOTSTRAP_ADMIN==='true')await bootstrapOwner();
 if(process.env.NODE_ENV==='production' && appOrigin.startsWith('http:'))throw new Error('APP_ORIGIN phải là HTTPS khi chạy production');
 if(process.env.NODE_ENV==='production' && !process.env.APP_ORIGIN && !process.env.RENDER_EXTERNAL_URL)throw new Error('Cần APP_ORIGIN hoặc RENDER_EXTERNAL_URL để xác thực Origin');
 app.listen(port,'0.0.0.0',()=>console.log(`PawCare web + API on :${port} (PostgreSQL)`));
