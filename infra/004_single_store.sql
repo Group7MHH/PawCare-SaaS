@@ -45,6 +45,7 @@ UPDATE appointments SET duration_minutes_snapshot=
  WHERE duration_minutes_snapshot IS NULL;
 ALTER TABLE appointments ALTER COLUMN duration_minutes_snapshot SET NOT NULL;
 ALTER TABLE appointments ADD CONSTRAINT appointment_duration_snapshot_positive CHECK(duration_minutes_snapshot>0);
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS care_result TEXT;
 ALTER TABLE care_records ADD COLUMN IF NOT EXISTS appointment_id INTEGER REFERENCES appointments(id);
 CREATE INDEX IF NOT EXISTS idx_care_records_appointment_id ON care_records(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_appt_staff_status_time ON appointments(staff_id,status,starts_at);
