@@ -6,7 +6,26 @@ type AuthContextType={user:User|null;loading:boolean;login:(email:string,passwor
 const AuthContext=createContext<AuthContextType|null>(null);
 export function AuthProvider({children}:{children:ReactNode}){
  const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true);const queryClient=useQueryClient(),navigate=useNavigate();
- useEffect(()=>{let active=true;api<{user:User}>('/auth/me').then(data=>{if(active)setUser(data.user);}).catch(()=>{}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[]);
+ useEffect(()=>{
+  let active=true,latest=0;
+  const refresh=async()=>{
+    const request=++latest;
+    try{
+      const response=await fetch('/api/auth/me',{credentials:'include'});
+      if(!active||request!==latest)return;
+      if(response.status===401){setUser(null);queryClient.clear();return;}
+      if(!response.ok)return;
+      const data=await response.json() as {user:User};
+      if(active&&request===latest)setUser(data.user);
+    }catch{/* Keep the current UI on transient network errors. */}
+    finally{if(active&&request===latest)setLoading(false);}
+  };
+  const onVisibility=()=>{if(document.visibilityState==='visible')void refresh();};
+  void refresh();
+  window.addEventListener('focus',refresh);
+  document.addEventListener('visibilitychange',onVisibility);
+  return()=>{active=false;window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',onVisibility);};
+},[queryClient]);
  const login=async(email:string,password:string)=>{const data=await api<{user:User}>('/auth/login',json('POST',{email,password}));setUser(data.user);queryClient.clear();navigate(data.user.role==='customer'?'/overview':data.user.role==='staff'?'/staff/dashboard':'/admin/dashboard');};
  const register=async(data:{full_name:string;email:string;password:string;phone?:string})=>{const result=await api<{user:User}>('/auth/register',json('POST',data));setUser(result.user);queryClient.clear();navigate('/overview');};
  const selectOrganization=async(id:number)=>{const data=await api<{user:User}>('/auth/select-organization',json('POST',{organization_id:id}));setUser(data.user);queryClient.clear();navigate(data.user.role==='customer'?'/overview':data.user.role==='staff'?'/staff/dashboard':'/admin/dashboard');};
