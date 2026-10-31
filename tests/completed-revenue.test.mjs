@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const file = p => readFileSync(new URL(p,import.meta.url),'utf8');
-const migration=file('../infra/005_completed_revenue.sql');
-const runner=file('../apps/api/src/migrate.ts');
-const booking=file('../apps/api/src/routes/appointments.ts');
-const dashboard=file('../apps/api/src/routes/management.ts');
+const migration=file('../database/005_completed_revenue.sql');
+const runner=file('../backend/src/migrate.ts');
+const booking=file('../backend/src/routes/appointments.ts');
+const dashboard=file('../backend/src/routes/management.ts');
 
 test('completion timestamp migration runs and backfills prior completed appointments',()=>{
  assert.match(runner,/005_completed_revenue\.sql/);

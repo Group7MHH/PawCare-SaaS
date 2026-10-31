@@ -1,4 +1,4 @@
-> **Lưu ý:** Sơ đồ/phần chức năng dưới đây là bản nguyên gốc từ ứng dụng một cửa hàng. Với phiên bản SaaS Owner, xem `infra/003_owner_multitenant.sql`, `README.md` và `docs/DEPLOY_RENDER_NEON_FREE.md` để có cấu trúc chính xác hiện hành.
+> **Lưu ý:** Sơ đồ/phần chức năng dưới đây là bản nguyên gốc từ ứng dụng một cửa hàng. Với phiên bản SaaS Owner, xem `database/003_owner_multitenant.sql`, `README.md` và `docs/DEPLOY_RENDER_NEON_FREE.md` để có cấu trúc chính xác hiện hành.
 
 # Đối chiếu Figma – Chức năng – API – PostgreSQL
 

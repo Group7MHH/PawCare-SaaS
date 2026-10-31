@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const file = path => readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const schema=file('infra/004_single_store.sql');
-const auth=file('apps/api/src/lib/auth.ts');
-const appointments=file('apps/api/src/routes/appointments.ts');
-const org=file('apps/api/src/routes/organizations.ts');
-const ui=file('apps/web/src/main.tsx');
+const schema=file('database/004_single_store.sql');
+const auth=file('backend/src/lib/auth.ts');
+const appointments=file('backend/src/routes/appointments.ts');
+const org=file('backend/src/routes/organizations.ts');
+const ui=file('frontend/src/main.tsx');
 test('single store migration refuses ambiguous legacy database',()=>{
  assert.match(schema,/store_count > 1/);
  assert.match(schema,/RAISE EXCEPTION/);

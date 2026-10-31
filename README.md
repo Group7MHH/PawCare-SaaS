@@ -18,8 +18,8 @@ PawCare is a cloud-hosted pet-care management application for **one store**, wit
 Requires Node.js >=22 and a **development** PostgreSQL database.
 
 ```powershell
-Copy-Item apps/api/.env.example apps/api/.env
-# Set DATABASE_URL and APP_ORIGIN in apps/api/.env
+Copy-Item backend/.env.example backend/.env
+# Set DATABASE_URL and APP_ORIGIN in backend/.env
 npm.cmd install
 npm.cmd run db:migrate
 npm.cmd run db:bootstrap-admin
@@ -34,7 +34,7 @@ Optional local fixtures: configure `DEV_SEED_PASSWORD` (12+ characters) then run
 On Render, build `npm install && npm run build`, start `npm start`; use `DATABASE_URL` (Neon), `NODE_ENV=production`, `SESSION_COOKIE_SECURE=true` and correct HTTPS `APP_ORIGIN` (or Render's `RENDER_EXTERNAL_URL`).
 
 ### Existing data / migrations
-Migrations 001–004 run during startup. Migration 004 is **non-destructive** and refuses conversion if **more than one organization** exists. In that case, back up and explicitly consolidate historical data before enabling single-store mode. Legacy organization columns remain as foreign keys internally, but there is **no multi-store UI or owner role**. Do not deploy into production without verifying backup, build, tests, and migration in a separate database first.
+Migrations 001–005 run during startup. Migration 004 is **non-destructive** and refuses conversion if **more than one organization** exists. In that case, back up and explicitly consolidate historical data before enabling single-store mode. Legacy organization columns remain as foreign keys internally, but there is **no multi-store UI or owner role**. Do not deploy into production without verifying backup, build, tests, and migration in a separate database first.
 
 ## Verification
 ```powershell

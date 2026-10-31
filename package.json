@@ -1,6 +1,6 @@
 {
   "name": "petcare-platform", "version": "2.0.0", "private": true,
-  "workspaces": ["apps/api", "apps/web"],
+  "workspaces": ["backend", "frontend"],
   "scripts": {
     "dev": "concurrently -k -n API,WEB -c blue,green \"npm run dev -w @petcare/api\" \"npm run dev -w @petcare/web\"",
     "build": "npm run build -w @petcare/api && npm run build -w @petcare/web",
