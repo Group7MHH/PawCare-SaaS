@@ -45,7 +45,7 @@ app.use('/api',management);
 app.use('/api',organizations);
 app.use('/api',(_req,_res,next)=>next(new HttpError(404,'Không tìm thấy API')));
 // One public URL: same-origin React SPA + Express API from the same Render Node service.
-const webDist=resolve(process.cwd(),'../web/dist');
+const webDist=resolve(process.cwd(),'../frontend/dist');
 if(existsSync(webDist)){
  app.use(express.static(webDist,{index:false}));
  app.get('*',(req,res,next)=>req.path.startsWith('/api/')?next(new HttpError(404,'Không tìm thấy API')):res.sendFile(resolve(webDist,'index.html')));

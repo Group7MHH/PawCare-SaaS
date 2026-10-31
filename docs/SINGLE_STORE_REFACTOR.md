@@ -29,4 +29,4 @@ PawCare runs as one cloud-hosted application for **one pet-care store**, with sh
 - `completed` and `cancelled` are terminal.
 
 ## Safety / deployment
-Run `npm run build`, `npm test` and `node --test tests/*.test.mjs` in CI. Back up Neon before migration. `infra/004_single_store.sql` refuses upgrades when more than one organization exists; consolidate legacy data explicitly rather than deleting it. Do not merge/deploy to production until the migration and role mapping are validated against a separate restored database.
+Run `npm run build`, `npm test` and `node --test tests/*.test.mjs` in CI. Back up Neon before migration. `database/004_single_store.sql` refuses upgrades when more than one organization exists; consolidate legacy data explicitly rather than deleting it. Do not merge/deploy to production until the migration and role mapping are validated against a separate restored database.

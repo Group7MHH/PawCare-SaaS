@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const api = readFileSync(new URL('../apps/api/src/routes/catalog.ts', import.meta.url), 'utf8');
-const ui = readFileSync(new URL('../apps/web/src/pages/Catalog.tsx', import.meta.url), 'utf8');
+const api = readFileSync(new URL('../backend/src/routes/catalog.ts', import.meta.url), 'utf8');
+const ui = readFileSync(new URL('../frontend/src/pages/Catalog.tsx', import.meta.url), 'utf8');
 
 test('service deletion supports non-destructive stop and separate permanent delete', () => {
  assert.match(api, /router\.delete\('\/services\/:id'/);

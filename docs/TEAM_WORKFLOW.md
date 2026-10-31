@@ -4,10 +4,10 @@
 
 | Thành viên | Files/chức năng chính | Kiểm tra |
 |---|---|---|
-| 1 — Giao diện và thú cưng | `apps/web/src/components/{Layout,UI}.tsx`, `pages/{Overview,Pets}.tsx`, `styles.css`, `apps/api/src/routes/pets.ts` | CRUD thú cưng, bảo vệ chủ sở hữu, responsive |
-| 2 — Backend và lịch hẹn | `infra/001_schema.sql`, `apps/api/src/{lib/db,lib/scheduling}.ts`, `routes/appointments.ts`, `apps/web/src/pages/{Booking,MyAppointments}.tsx` | Trùng lịch nhân viên, giờ làm việc, UTC |
-| 3 — Tài khoản và khách hàng | `apps/api/src/{lib/auth,routes/auth,routes/management}.ts`, `apps/web/src/{lib/auth,pages/AuthPage,pages/Profile,pages/Customers}.tsx` | Email trùng, password hash, session, RBAC |
-| 4 — Dịch vụ, nhân viên, thống kê | `apps/api/src/routes/catalog.ts`, `apps/web/src/pages/{Catalog,AdminAppointments,AdminDashboard}.tsx`, `docs/*` | CRUD, dashboard có dữ liệu thật, báo cáo |
+| 1 — Giao diện và thú cưng | `frontend/src/components/{Layout,UI}.tsx`, `pages/{Overview,Pets}.tsx`, `styles.css`, `backend/src/routes/pets.ts` | CRUD thú cưng, bảo vệ chủ sở hữu, responsive |
+| 2 — Backend và lịch hẹn | `database/001_schema.sql`, `backend/src/{lib/db,lib/scheduling}.ts`, `routes/appointments.ts`, `frontend/src/pages/{Booking,MyAppointments}.tsx` | Trùng lịch nhân viên, giờ làm việc, UTC |
+| 3 — Tài khoản và khách hàng | `backend/src/{lib/auth,routes/auth,routes/management}.ts`, `frontend/src/{lib/auth,pages/AuthPage,pages/Profile,pages/Customers}.tsx` | Email trùng, password hash, session, RBAC |
+| 4 — Dịch vụ, nhân viên, thống kê | `backend/src/routes/catalog.ts`, `frontend/src/pages/{Catalog,AdminAppointments,AdminDashboard}.tsx`, `docs/*` | CRUD, dashboard có dữ liệu thật, báo cáo |
 
 Workflow: tạo các branch `feature/member-1-ui-pets`, `feature/member-2-booking-db`, `feature/member-3-auth-customers`, `feature/member-4-admin-services`; pull request → review → test → merge vào `main`. Không hardcode password thật. Mỗi người chỉ cập nhật DB schema qua PR, thống nhất API contract trước khi code.
 

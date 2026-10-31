@@ -12,7 +12,7 @@ export async function migrate(){
     for(const file of ['001_postgres_schema.sql','002_default_services.sql','003_owner_multitenant.sql','004_single_store.sql','005_completed_revenue.sql']){
       const existing=await client.query('SELECT version FROM schema_migrations WHERE version=$1',[file]);
       if(existing.rowCount)continue;
-      await client.query(readFileSync(resolve(process.cwd(),'../../infra',file),'utf8'));
+      await client.query(readFileSync(resolve(process.cwd(),'../database',file),'utf8'));
       await client.query('INSERT INTO schema_migrations(version) VALUES($1)',[file]);
       console.log(`[postgres] migration applied: ${file}`);
     }

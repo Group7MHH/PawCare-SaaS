@@ -40,7 +40,7 @@ Truy cập https://dashboard.render.com → **New → Web Service** → kết n�
 
 Root repo có `.node-version` đặt Node.js `22.16.0` để tránh dùng bản Node mặc định thay đổi bất ngờ. Nếu cần đặt thủ công, dùng Environment `NODE_VERSION=22.16.0`.
 
-Đừng tạo Static Site (PawCare có backend). Đừng chọn riêng `apps/web` làm root: API và website chạy chung domain.
+Đừng tạo Static Site (PawCare có backend). Đừng chọn riêng `frontend` làm root: API và website chạy chung domain.
 
 ## 4. Environment Variables trong Render Web Service
 
@@ -91,7 +91,7 @@ Render Free có giới hạn và có thể ngủ khi không hoạt động; Neon
 - Build Failed: xem Render Build Logs, kiểm tra Node version, lệnh `npm install && npm run build` và repo root.
 - Start Failed: xem Runtime Logs; kiểm tra `DATABASE_URL`, SSL, migration, `RENDER_EXTERNAL_URL` / `APP_ORIGIN`.
 - `/api/health` trả 503: kiểm tra Neon DB và credentials.
-- Trang chính không có React UI: xác minh build đã tạo `apps/web/dist` và Start Command là `npm start` từ gốc repo.
+- Trang chính không có React UI: xác minh build đã tạo `frontend/dist` và Start Command là `npm start` từ gốc repo.
 
 **Trạng thái mã nguồn:** Có schema, nghiệp vụ và cấu hình native runtime. Các kiểm thử tích hợp với PostgreSQL thật vẫn cần chạy sau deploy.
 

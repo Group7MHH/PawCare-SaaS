@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const file = (name) => readFileSync(new URL(name,import.meta.url),'utf8');
-const ddl = file('../infra/001_postgres_schema.sql');
-const routes = ['auth','appointments','catalog','pets','management'].map(s=>file(`../apps/api/src/routes/${s}.ts`)).join('\n');
+const ddl = file('../database/001_postgres_schema.sql');
+const routes = ['auth','appointments','catalog','pets','management'].map(s=>file(`../backend/src/routes/${s}.ts`)).join('\n');
 
 test('PostgreSQL schema gồm các bảng, constraints, foreign keys và cập nhật timestamp',()=>{
  for(const table of ['users','staff_profiles','sessions','pets','care_records','services','appointments']){
@@ -18,13 +18,13 @@ test('PostgreSQL schema gồm các bảng, constraints, foreign keys và cập n
 test('Backend không dùng cú pháp SQLite hoặc MySQL cũ',()=>{
  assert.doesNotMatch(routes,/\bstrftime\s*\(|\bdatetime\s*\(\s*[\x27\x22]now|INSERT\s+OR\s+IGNORE|\bis_active\s*=\s*[01]\b/i);
  assert.match(routes,/pg_advisory|lockStaff/);
- const db=file('../apps/api/src/lib/db.ts');
+ const db=file('../backend/src/lib/db.ts');
  assert.match(db,/new pg\.Pool/);
  assert.match(db,/BEGIN/); assert.match(db,/ROLLBACK/);
  assert.doesNotMatch(db,/node:sqlite/);
 });
 test('Production không tự tạo tài khoản demo và phục vụ frontend + API chung domain',()=>{
- const entry=file('../apps/api/src/index.ts');
+ const entry=file('../backend/src/index.ts');
  assert.doesNotMatch(entry,/await seedData\s*\(/);
  assert.match(entry,/await migrate\(\)/);
  assert.match(entry,/express\.static\(webDist/);
