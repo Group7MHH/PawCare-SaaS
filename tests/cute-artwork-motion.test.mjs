@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,statSync} from 'node:fs';
 const read=(file)=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 test('approved art loads from public artwork with safe SVG fallback',()=>{
  const c=read('frontend/src/components/CuteIllustration.tsx');
- assert.match(c,/\/artwork\/\$\{file\}\.webp/);
+ assert.match(c,/stickers-atlas\.webp/);
+ assert.match(c,/viewBox=/);
+ assert.ok(statSync(new URL('../frontend/public/artwork/stickers-atlas.webp',import.meta.url)).size>4000,'Artwork sprite must be committed in the repo');
  assert.match(c,/onError=\{\(\)=>setFailed\(true\)\}/);
  assert.match(c,/PetArtwork/);
  assert.match(c,/cuteAssetForService/);

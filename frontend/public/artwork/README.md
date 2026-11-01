@@ -1,9 +1,7 @@
-# PawCare illustration pack
+# PawCare illustrated sticker sheet
 
-This frontend expects the approved cute illustration WebP assets in `frontend/public/artwork/`. They are deliberately separated from JSX, database records and server logic. If an image has not been uploaded yet, the `CuteIllustration` component shows the previous local SVG as a safe fallback.
+The compact **stickers-atlas.webp** is checked into this directory, so illustrations render after deploying the repository, without uploading separate images manually. It contains 10 service scenes, 3 banners, and 3 state illustrations from the approved PawCare cute art sheet. The `CuteIllustration` component crops the right region using SVG `viewBox` coordinates, and still falls back to the earlier local drawings if an asset fails.
 
-To install the approved artwork **without VS Code**, download `PawCare_Cute_Illustrations.zip` from the ChatGPT conversation, extract it, then in GitHub open `frontend/public/artwork` on the current branch and choose **Add file → Upload files**. Upload the 16 `.webp` files from the archive's `artwork` folder and commit. Verify Render has deployed that commit and refresh the browser.
+To improve image sharpness later, replace this file with a higher-quality atlas with the exact same layout and dimensions proportions (1000×440 virtual atlas; 5 service columns × 2 rows, then banners, then states). Replacing this file changes **no** booking, auth, revenue, API or database behavior.
 
-Service mapping: bath, groom, nails, ears, vet, spa, dental, walk, daycare; additional files: transport, banner-duo, banner-play, banner-family, empty, not-found and error. These files are decorative and not related to appointment, revenue or staff data.
-
-Animations use CSS transforms and opacity, including `prefers-reduced-motion` support; their absence never changes a click action, API payload or dashboard figure.
+The original independently optimized WebP files are also available in the earlier `PawCare_Cute_Illustrations.zip` for optional future use.
