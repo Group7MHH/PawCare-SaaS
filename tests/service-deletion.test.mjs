@@ -18,7 +18,8 @@ test('permanent service deletion confirms impact and preserves care history atom
  assert.match(api, /await transaction\(async db=>/);
  assert.match(api, /FOR UPDATE/);
  assert.match(api, /UPDATE care_records SET appointment_id=NULL/);
- assert.match(api, /DELETE FROM appointments WHERE service_id=/);
+ assert.match(api, /DELETE FROM appointments WHERE id IN/);
+ assert.match(api, /SELECT appointment_id FROM appointment_services WHERE service_id=/);
  assert.match(api, /DELETE FROM services WHERE id=/);
  assert.match(api, /service\.permanently_delete/);
 });
