@@ -86,7 +86,7 @@ export function Booking(){
      <Panel title="1. Chọn thú cưng" sub="Bạn muốn đặt lịch chăm sóc cho bé nào?">
       <div className="selection-grid">
        {pets.data?.items.map(p=><button key={p.id} className={`selection-card ${petId===String(p.id)?'selected':''}`} onClick={()=>setPetId(String(p.id))}>
-        <span className="selection-icon pc-mini-pet"><PetArtwork kind={p.species==='cat'?'groom':'pet'}/></span><div><strong>{p.name}</strong><small>{p.breed||'Thú cưng'}</small></div>
+        <span className="selection-icon pc-mini-pet"><PetArtwork kind={p.species==='cat'?'cat':'dog'} variant={p.id}/></span><div><strong>{p.name}</strong><small>{p.breed||'Thú cưng'}</small></div>
         {petId===String(p.id)&&<Check size={18} className="check-mark"/>}
        </button>)}
       </div>
@@ -150,7 +150,7 @@ export function Booking(){
    </div>
    <aside className="booking-aside">
     <Panel title="Tóm tắt đặt lịch">
-     <div className="summary-pet"><span className="summary-pet-icon pc-mini-pet"><PetArtwork kind={pet?.species==='cat'?'groom':'pet'}/></span><div><small>THÚ CƯNG</small><strong>{pet?.name||'Chưa chọn thú cưng'}</strong><span>{pet?.breed||'Người bạn nhỏ của bạn'}</span></div></div>
+     <div className="summary-pet"><span className="summary-pet-icon pc-mini-pet"><PetArtwork kind={pet?.species==='cat'?'cat':'dog'} variant={pet?.id||0}/></span><div><small>THÚ CƯNG</small><strong>{pet?.name||'Chưa chọn thú cưng'}</strong><span>{pet?.breed||'Người bạn nhỏ của bạn'}</span></div></div>
      <div className="cart-service-list">{selected.map(s=><div key={s.id}><span>{s.name}</span><strong>{money(s.price)}</strong></div>)}{!selected.length&&<p className="form-hint">Chưa có dịch vụ được chọn.</p>}</div>
      <div className="summary-list">
       <div><span>Ngày</span><strong>{day?day.split('-').reverse().join('/'):'—'}</strong></div>

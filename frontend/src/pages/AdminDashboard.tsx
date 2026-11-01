@@ -1,73 +1,15 @@
 import {useQuery} from '@tanstack/react-query';
 import {Link} from 'react-router-dom';
-import {ArrowRight,CalendarDays,CheckCircle2,Clock3,PawPrint,Users,Wallet} from 'lucide-react';
-import {api,dateTime,money,type Service,type Stats} from '../lib/api';
+import {Activity,ArrowUpRight,CalendarDays,ChevronRight,HeartHandshake,PawPrint,Users,Wallet} from 'lucide-react';
+import {api,dateTime,money,type Stats} from '../lib/api';
 import {useAuth} from '../lib/auth';
-import {PetArtwork,serviceArtworkKind} from '../components/PetArtwork';
-import {Panel,Loading,Badge,ErrorNotice} from '../components/UI';
-
-function RevenueBars({series}:{series:Stats['series']}){
- const formatter=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit'});
- const now=new Date();
- const parts=formatter.formatToParts(now);
- const year=Number(parts.find(p=>p.type==='year')?.value||now.getFullYear());
- const month=Number(parts.find(p=>p.type==='month')?.value||now.getMonth()+1);
- const keys=Array.from({length:6},(_,i)=>{const d=new Date(Date.UTC(year,month-1-5+i,1));return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;});
- const values=keys.map(key=>Number(series?.find(s=>s.month===key)?.revenue||0));
- const max=Math.max(...values,1);
- return <div className="pc-revenue-plot" role="img" aria-label="Biểu đồ doanh thu thực tế sáu tháng gần nhất">
-  <div className="pc-chart-y"><span>{money(max)}</span><span>{money(max/2)}</span><span>0 đ</span></div>
-  <div className="pc-bars">{values.map((value,i)=><div className="pc-bar-column" key={keys[i]} title={`${keys[i]}: ${money(value)}`}>
-   <div className="pc-bar-track"><div className={`pc-bar ${i===5?'is-current':''}`} style={{height:`${value?Math.max(6,value/max*100):2}%`}}/></div>
-   <small>Thg {keys[i].slice(-2)}</small></div>)}</div>
- </div>;
+import {PageTitle,Panel,Metric,Loading,Badge,TableWrap,Empty,ErrorNotice} from '../components/UI';
+import {PetArtwork} from '../components/PetArtwork';
+function RevenueGraph({series}:{series:Stats['series']}){const now=new Date();const last6=Array.from({length:6},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-5+i,1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;});const vals=last6.map(month=>series?.find(s=>s.month===month)?.revenue||0);const max=Math.max(...vals,1);const points=vals.map((v,i)=>`${42+i*105},${210-v/max*155}`).join(' ');const area=`M ${points.replace(/ /g,' L ')} L 567,220 L 42,220 Z`;
+ return <div className="chart-wrap"><div className="chart-head"><strong>{money(vals.reduce((a,b)=>a+b,0))}</strong><span>Doanh thu 6 tháng gần đây</span></div><svg viewBox="0 0 610 250" role="img" aria-label="Biểu đồ doanh thu 6 tháng" className="revenue-chart"><defs><linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#32a99e" stopOpacity=".22"/><stop offset="100%" stopColor="#32a99e" stopOpacity="0"/></linearGradient></defs>{[50,105,160,215].map(y=><line key={y} x1="30" x2="590" y1={y} y2={y} stroke="#e5efec" strokeDasharray="4 5"/>)}<path d={area} fill="url(#chartGradient)"/><polyline fill="none" stroke="#15998b" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" points={points}/>{vals.map((v,i)=><circle key={i} cx={42+i*105} cy={210-v/max*155} r="4.5" fill="white" stroke="#15998b" strokeWidth="2.5"/>)}</svg><div className="chart-months">{last6.map(m=><span key={m}>Tháng {m.slice(-2)}</span>)}</div></div>;
 }
-export function AdminDashboard(){
- const {user}=useAuth();
- const q=useQuery({queryKey:['dashboard'],queryFn:()=>api<Stats>('/dashboard')});
- const catalog=useQuery({queryKey:['services'],queryFn:()=>api<{items:Service[]}>('/services')});
- if(q.isLoading)return <Loading/>;
- if(!q.data)return <ErrorNotice message="Không thể tải thống kê từ hệ thống"/>;
- const {stats,recent,series,statuses}=q.data;
- const firstName=user?.full_name.trim().split(/\s+/).slice(-1)[0]||'bạn';
- const activeServices=catalog.data?.items.filter(s=>s.is_active).slice(0,4)||[];
- const pending=Number(statuses?.find(s=>s.status==='pending')?.value||0);
- const confirmed=Number(statuses?.find(s=>s.status==='confirmed')?.value||0);
- const inProgress=Number(statuses?.find(s=>s.status==='in_progress')?.value||0);
- return <div className="pc-dashboard">
-  <div className="pc-welcome">
-   <div className="pc-welcome-copy"><span className="pc-eyebrow">TỔNG QUAN CỬA HÀNG</span>
-    <h1>Chào mừng trở lại, {firstName}! <span aria-hidden="true">👋</span></h1>
-    <p>Cùng PawCare theo dõi lịch hẹn và chăm sóc các bé mỗi ngày.</p>
-   </div>
-   <div className="pc-welcome-pets" aria-hidden="true"><PetArtwork kind="pet"/><PetArtwork kind="groom"/></div>
-  </div>
-  <div className="pc-metrics">
-   <div className="pc-kpi pc-kpi-mint"><div className="pc-kpi-label"><CalendarDays size={19}/> Tổng lịch hẹn</div><strong>{stats.appointments||0}</strong><small>Các lịch trong hệ thống</small><PetArtwork kind="bath"/></div>
-   <div className="pc-kpi pc-kpi-cream"><div className="pc-kpi-label"><Users size={19}/> Khách hàng</div><strong>{stats.customers||0}</strong><small>Khách đã đặt lịch</small><PetArtwork kind="nails"/></div>
-   <div className="pc-kpi pc-kpi-blue"><div className="pc-kpi-label"><PawPrint size={19}/> Thú cưng</div><strong>{stats.pets||0}</strong><small>Hồ sơ đã ghi nhận</small><PetArtwork kind="groom"/></div>
-   <div className="pc-kpi pc-kpi-peach"><div className="pc-kpi-label"><Wallet size={19}/> Doanh thu hoàn thành</div><strong className="pc-money">{money(stats.revenue||0)}</strong><small>Từ các lịch đã hoàn tất</small><PetArtwork kind="spa"/></div>
-  </div>
-  <div className="pc-main-panels">
-   <Panel title="Doanh thu theo tháng" sub="Thống kê dựa trên lịch đã hoàn thành trong 6 tháng gần nhất"><RevenueBars series={series}/></Panel>
-   <Panel title="Lịch hẹn gần đây" action={<Link to="/admin/appointments" className="text-link">Xem tất cả <ArrowRight size={15}/></Link>}>
-    <div className="pc-table-wrap"><table className="pc-table"><thead><tr><th>Khách hàng</th><th>Thú cưng</th><th>Dịch vụ</th><th>Thời gian</th><th>Trạng thái</th></tr></thead><tbody>
-     {recent.slice(0,5).map(a=><tr key={a.id}><td><strong>{a.customer_name}</strong></td><td>{a.pet_name}</td><td className="pc-long-cell">{a.service_name}</td><td>{dateTime(a.starts_at)}</td><td><Badge status={a.status}/></td></tr>)}
-     {!recent.length&&<tr><td colSpan={5}>Chưa có lịch hẹn nào.</td></tr>}
-    </tbody></table></div>
-   </Panel>
-  </div>
-  <div className="pc-bottom-panels">
-   <Panel title="Dịch vụ đang cung cấp" action={<Link to="/admin/catalog" className="text-link">Quản lý dịch vụ <ArrowRight size={15}/></Link>}>
-    <div className="pc-services-preview">{activeServices.map(s=><div key={s.id} className="pc-service-tile">
-     <PetArtwork kind={serviceArtworkKind(s.name,s.category)}/><strong>{s.name}</strong><span>{money(s.price)}</span>
-    </div>)}{!activeServices.length&&<p>Chưa có dịch vụ đang cung cấp.</p>}</div>
-   </Panel>
-   <Panel title="Cần theo dõi hôm nay"><div className="pc-task-list">
-    <Link to="/admin/appointments?status=pending"><Clock3 size={20}/><span><strong>{pending} lịch chờ xác nhận</strong><small>Kiểm tra yêu cầu mới</small></span><ArrowRight size={16}/></Link>
-    <Link to="/admin/appointments"><CheckCircle2 size={20}/><span><strong>{confirmed} lịch đã xác nhận</strong><small>Sẵn sàng phục vụ</small></span><ArrowRight size={16}/></Link>
-    <Link to="/admin/appointments"><PawPrint size={20}/><span><strong>{inProgress} lịch đang chăm sóc</strong><small>Theo dõi tiến độ</small></span><ArrowRight size={16}/></Link>
-   </div><div className="pc-task-art"><PetArtwork kind="pet"/><PetArtwork kind="groom"/></div></Panel>
-  </div>
- </div>;
+export function AdminDashboard(){const {user}=useAuth();const q=useQuery({queryKey:['dashboard'],queryFn:()=>api<Stats>('/dashboard')});if(q.isLoading)return <Loading/>;if(!q.data)return <ErrorNotice message="Không thể tải thống kê từ hệ thống"/>;const {stats,recent,series,statuses}=q.data;const allStatuses=statuses?.reduce((a,x)=>a+x.value,0)||0;const confirmed=statuses?.filter(s=>['confirmed','completed','in_progress'].includes(s.status)).reduce((a,x)=>a+x.value,0)||0;const percent=allStatuses?Math.round(confirmed/allStatuses*100):0;
+ return <><PageTitle eyebrow="BẢNG ĐIỀU KHIỂN" title={user?.role==='staff'?'Tổng quan công việc':'Tổng quan vận hành'} description="Theo dõi tình hình chăm sóc thú cưng và hoạt động trung tâm." action={<Link to="/admin/appointments" className="button button-primary"><CalendarDays size={17}/> Quản lý lịch hẹn</Link>}/><div className="pc-figma-hero" aria-label="PawCare - chăm sóc thú cưng"><div><strong>Chăm sóc tận tâm, mỗi ngày cùng bé</strong><span>Đặt lịch dễ dàng, theo dõi tình trạng và quản lý dịch vụ trong một nơi.</span></div><div className="pc-figma-hero-art" aria-hidden="true"><PetArtwork kind="welcome"/></div></div><div className="metrics-grid four"><Metric icon={<Wallet/>} title="Doanh thu đã hoàn thành" value={money(stats.revenue||0)} foot="Từ những lịch đã hoàn tất"/><Metric icon={<CalendarDays/>} title="Tổng lịch hẹn" value={stats.appointments||0} foot={user?.role==='staff'?'Lịch được phân công':'Tất cả lịch trong hệ thống'} tone="blue"/><Metric icon={<Users/>} title="Khách hàng" value={stats.customers||0} foot="Thành viên đã đăng ký" tone="amber"/><Metric icon={<PawPrint/>} title="Thú cưng" value={stats.pets||0} foot="Hồ sơ được quản lý" tone="green"/></div>
+ <div className="content-grid dashboard-grid"><Panel title="Doanh thu theo tháng" sub="Thống kê từ lịch hẹn hoàn thành" action={<span className="panel-label"><Activity size={15}/> 6 tháng</span>}><RevenueGraph series={series}/></Panel><Panel title="Tình trạng đặt lịch" sub="Tỷ lệ lịch đã được tiếp nhận"><div className="donut-section"><div className="donut" style={{background:`conic-gradient(#128d82 ${percent*3.6}deg,#e5f0ed 0deg)`}}><div><strong>{percent}%</strong><span>Tiếp nhận</span></div></div><div className="donut-legend">{(statuses||[]).map(s=><div key={s.status}><Badge status={s.status}/><strong>{s.value}</strong></div>)}</div></div><div className="admin-hint"><HeartHandshake size={17}/> Mỗi lịch hẹn được theo dõi xuyên suốt quy trình chăm sóc.</div></Panel></div>
+ <div className="content-grid bottom-grid"><Panel title="Lịch hẹn gần đây" sub="Những cuộc hẹn mới nhất" action={<Link className="text-link" to="/admin/appointments">Xem tất cả <ChevronRight size={16}/></Link>}>{!recent.length?<Empty title="Chưa có lịch hẹn"/>:<TableWrap><thead><tr><th>KHÁCH HÀNG</th><th>DỊCH VỤ</th><th>THỜI GIAN</th><th>TRẠNG THÁI</th></tr></thead><tbody>{recent.map(a=><tr key={a.id}><td><strong>{a.customer_name}</strong><small className="sub-cell">{a.pet_name}</small></td><td>{a.service_name}</td><td>{dateTime(a.starts_at)}</td><td><Badge status={a.status}/></td></tr>)}</tbody></TableWrap>}</Panel><Panel title="Truy cập nhanh"><div className="quick-actions admin-actions"><Link to="/admin/appointments"><CalendarDays size={18}/> Quản lý lịch hẹn <ArrowUpRight size={16}/></Link><Link to="/admin/customers"><Users size={18}/> Khách hàng và thú cưng <ArrowUpRight size={16}/></Link><Link to="/admin/catalog"><PawPrint size={18}/> Dịch vụ và nhân viên <ArrowUpRight size={16}/></Link></div><div className="admin-note">Dữ liệu trên dashboard được tính trực tiếp từ PostgreSQL, không dùng chỉ số giả.</div></Panel></div></>;
 }
