@@ -5,7 +5,8 @@ import {ArrowLeft,ArrowRight,CalendarCheck,Check,Clock3,Plus,ShieldCheck,Shoppin
 import {toast} from 'react-hot-toast';
 import {api,errorMessage,json,money,type Pet,type Service,type Staff,type User} from '../lib/api';
 import {useAuth} from '../lib/auth';
-import {PetArtwork,serviceArtworkKind} from '../components/PetArtwork';
+import {CuteIllustration,cuteAssetForService} from '../components/CuteIllustration';
+import {serviceArtworkKind} from '../components/PetArtwork';
 import {PageTitle,Panel,Loading,Empty,ErrorNotice,Field} from '../components/UI';
 
 function dates(days=8){
@@ -86,7 +87,7 @@ export function Booking(){
      <Panel title="1. Chọn thú cưng" sub="Bạn muốn đặt lịch chăm sóc cho bé nào?">
       <div className="selection-grid">
        {pets.data?.items.map(p=><button key={p.id} className={`selection-card ${petId===String(p.id)?'selected':''}`} onClick={()=>setPetId(String(p.id))}>
-        <span className="selection-icon pc-mini-pet"><PetArtwork kind={p.species==='cat'?'cat':'dog'} variant={p.id}/></span><div><strong>{p.name}</strong><small>{p.breed||'Thú cưng'}</small></div>
+        <span className="selection-icon pc-mini-pet"><CuteIllustration kind={p.species==='cat'?'cat':'dog'} asset={p.species==='cat'?'ears':'banner-play'}/></span><div><strong>{p.name}</strong><small>{p.breed||'Thú cưng'}</small></div>
         {petId===String(p.id)&&<Check size={18} className="check-mark"/>}
        </button>)}
       </div>
@@ -99,7 +100,7 @@ export function Booking(){
         const exceeds=duration+s.duration_minutes>600&&!checked;
         return <button type="button" key={s.id} aria-pressed={checked} disabled={exceeds||(!checked&&serviceIds.length>=8)}
          onClick={()=>toggleService(s.id)} className={`multi-service-card ${checked?'selected':''}`}>
-         <PetArtwork className="multi-service-art" kind={serviceArtworkKind(s.name,s.category)}/>
+         <CuteIllustration className="multi-service-art" kind={serviceArtworkKind(s.name,s.category)} asset={cuteAssetForService(s.name,s.category)}/>
          <span className="multi-service-content"><strong>{s.name}</strong><small>{s.description||s.category}</small>
           <span className="service-meta"><Clock3 size={13}/>{s.duration_minutes} phút</span><b>{money(s.price)}</b></span>
          <span className="multi-service-check">{checked?<Check size={15}/>:null}</span>
@@ -150,7 +151,7 @@ export function Booking(){
    </div>
    <aside className="booking-aside">
     <Panel title="Tóm tắt đặt lịch">
-     <div className="summary-pet"><span className="summary-pet-icon pc-mini-pet"><PetArtwork kind={pet?.species==='cat'?'cat':'dog'} variant={pet?.id||0}/></span><div><small>THÚ CƯNG</small><strong>{pet?.name||'Chưa chọn thú cưng'}</strong><span>{pet?.breed||'Người bạn nhỏ của bạn'}</span></div></div>
+     <div className="summary-pet"><span className="summary-pet-icon pc-mini-pet"><CuteIllustration kind={pet?.species==='cat'?'cat':'dog'} asset={pet?.species==='cat'?'ears':'banner-play'}/></span><div><small>THÚ CƯNG</small><strong>{pet?.name||'Chưa chọn thú cưng'}</strong><span>{pet?.breed||'Người bạn nhỏ của bạn'}</span></div></div>
      <div className="cart-service-list">{selected.map(s=><div key={s.id}><span>{s.name}</span><strong>{money(s.price)}</strong></div>)}{!selected.length&&<p className="form-hint">Chưa có dịch vụ được chọn.</p>}</div>
      <div className="summary-list">
       <div><span>Ngày</span><strong>{day?day.split('-').reverse().join('/'):'—'}</strong></div>
