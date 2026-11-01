@@ -5,9 +5,36 @@ import {asyncRoute,HttpError,idParam,parse,pageParams} from '../lib/http.js';
 import {isPrivileged,orgId,requireAuth,requireOrganization} from '../lib/auth.js';
 import {canTransition,isoUTC,sqlUTC,validateBookingTime} from '../lib/scheduling.js';
 const router=Router();router.use(requireAuth,requireOrganization);
-const bookingSchema=z.object({pet_id:z.coerce.number().int().positive(),service_id:z.coerce.number().int().positive(),staff_id:z.coerce.number().int().positive().nullable().optional(),starts_at:z.string().datetime({offset:true}).or(z.string().datetime()),notes:z.string().max(1000).nullable().optional(),customer_id:z.coerce.number().int().positive().optional()});
-const appointmentSelect=`SELECT a.*,u.full_name AS customer_name,u.phone AS customer_phone,p.name AS pet_name,p.species AS pet_species,s.name AS service_name,a.duration_minutes_snapshot AS duration_minutes,st.full_name AS staff_name
-  FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id LEFT JOIN users st ON a.staff_id=st.id`;
+const bookingSchema=z.object({
+ pet_id:z.coerce.number().int().positive(),
+ service_id:z.coerce.number().int().positive().optional(), // legacy single-service client
+ service_ids:z.array(z.number().int().positive()).min(1).max(8).optional(),
+ staff_id:z.coerce.number().int().positive().nullable().optional(),
+ starts_at:z.string().datetime({offset:true}).or(z.string().datetime()),
+ notes:z.string().max(1000).nullable().optional(),
+ customer_id:z.coerce.number().int().positive().optional()
+}).refine(d=>!!(d.service_id||d.service_ids?.length),{message:'Vui lòng chọn ít nhất một dịch vụ'});
+type BookableService={id:number;name:string;price:number;duration_minutes:number};
+async function getSelectedServices(org:number,ids:number[],db:DB=pool):Promise<BookableService[]>{
+ if(!ids.length||ids.length>8||new Set(ids).size!==ids.length||ids.some(id=>!Number.isSafeInteger(id)||id<=0))
+   throw new HttpError(422,'Vui lòng chọn từ 1 đến 8 dịch vụ khác nhau');
+ const result=await rows<BookableService>('SELECT id,name,price,duration_minutes FROM services WHERE organization_id=? AND is_active=TRUE AND id=ANY(?::int[]) FOR SHARE',[org,ids],db);
+ if(result.length!==ids.length)throw new HttpError(422,'Có dịch vụ đã ngừng cung cấp hoặc không tồn tại');
+ const byId=new Map(result.map(item=>[item.id,item]));
+ const ordered=ids.map(id=>byId.get(id)!);
+ if(ordered.reduce((sum,item)=>sum+item.duration_minutes,0)>600)
+   throw new HttpError(422,'Tổng thời gian dịch vụ không được quá 10 giờ');
+ return ordered;
+}
+const appointmentSelect=`SELECT a.*,u.full_name AS customer_name,u.phone AS customer_phone,p.name AS pet_name,p.species AS pet_species,COALESCE(bundle.names,s.name) AS service_name,COALESCE(bundle.ids,ARRAY[a.service_id]) AS service_ids,
+  a.duration_minutes_snapshot AS duration_minutes,st.full_name AS staff_name
+  FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id LEFT JOIN users st ON a.staff_id=st.id
+  LEFT JOIN LATERAL (
+    SELECT string_agg(ms.name,' + ' ORDER BY aps.position) AS names,
+           array_agg(aps.service_id ORDER BY aps.position) AS ids
+    FROM appointment_services aps JOIN services ms ON ms.id=aps.service_id
+    WHERE aps.appointment_id=a.id
+  ) bundle ON TRUE`;
 function mapAppointment(a:any){return {...a,starts_at:isoUTC(a.starts_at),ends_at:isoUTC(a.ends_at)};}
 async function accessible(id:number,req:import('express').Request,db:DB=pool){
  const [a]=await rows<any>(`${appointmentSelect} WHERE a.id=? AND a.organization_id=?`,[id,orgId(req)],db);
@@ -29,32 +56,43 @@ router.get('/',asyncRoute(async(req,res)=>{
  res.json({items:items.map(mapAppointment),total,page,limit});
 }));
 router.get('/availability',asyncRoute(async(req,res)=>{
- const input=parse(z.object({date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),service_id:z.coerce.number().int().positive(),staff_id:z.coerce.number().int().positive().optional()}),req.query);
- const [service]=await rows<any>('SELECT id,duration_minutes FROM services WHERE id=? AND organization_id=? AND is_active=TRUE',[input.service_id,orgId(req)]);
- if(!service)throw new HttpError(404,'Không có dịch vụ');
- if(input.staff_id){const [member]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[input.staff_id,orgId(req)]);if(!member)throw new HttpError(422,'Nhân viên không khả dụng');}
+ const input=parse(z.object({
+  date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  service_id:z.coerce.number().int().positive().optional(),
+  service_ids:z.string().regex(/^\d+(,\d+){0,7}$/).optional(),
+  staff_id:z.coerce.number().int().positive().optional()
+ }),req.query);
+ const ids=input.service_ids?input.service_ids.split(',').map(Number):input.service_id?[input.service_id]:[];
+ const selected=await getSelectedServices(orgId(req),ids);
+ const duration=selected.reduce((total,service)=>total+service.duration_minutes,0);
+ if(input.staff_id){
+  const [member]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[input.staff_id,orgId(req)]);
+  if(!member)throw new HttpError(422,'Nhân viên không khả dụng');
+ }
  const slots:{time:string;available:boolean}[]=[];
  const [y,m,d]=input.date.split('-').map(Number);
- if(new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10)!==input.date)throw new HttpError(422,'Ngày không hợp lệ');
- for(let minute=8*60;minute+service.duration_minutes<=18*60;minute+=30){
-   const time=`${String(Math.floor(minute/60)).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
-   const start=new Date(`${input.date}T${time}:00+07:00`);
-   let available=true;
-   try{validateBookingTime(start,service.duration_minutes);}catch{available=false;}
-   if(available&&input.staff_id){
-     const conflict=await rows<any>("SELECT id FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[input.staff_id,sqlUTC(new Date(start.getTime()+service.duration_minutes*60000)),sqlUTC(start)]);
-     if(conflict.length)available=false;
-   }
-   if(available&&!input.staff_id){
-     const free=await rows<any>(`SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id
-       WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE
-       AND NOT EXISTS(SELECT 1 FROM appointments a WHERE a.staff_id=m.user_id AND a.status<>'cancelled' AND a.starts_at<? AND a.ends_at>?) LIMIT 1`,
-       [orgId(req),sqlUTC(new Date(start.getTime()+service.duration_minutes*60000)),sqlUTC(start)]);
-     available=free.length>0;
-   }
-   slots.push({time,available});
+ if(new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10)!==input.date)
+  throw new HttpError(422,'Ngày không hợp lệ');
+ for(let minute=8*60;minute+duration<=18*60;minute+=30){
+  const time=`${String(Math.floor(minute/60)).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
+  const start=new Date(`${input.date}T${time}:00+07:00`);
+  let available=true;
+  try{validateBookingTime(start,duration);}catch{available=false;}
+  const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+duration*60000));
+  if(available&&input.staff_id){
+    const conflict=await rows<any>("SELECT id FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[input.staff_id,en,st]);
+    if(conflict.length)available=false;
+  }
+  if(available&&!input.staff_id){
+    const free=await rows<any>(`SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id
+      WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE
+      AND NOT EXISTS(SELECT 1 FROM appointments a WHERE a.staff_id=m.user_id AND a.status<>'cancelled' AND a.starts_at<? AND a.ends_at>?) LIMIT 1`,
+      [orgId(req),en,st]);
+    available=free.length>0;
+  }
+  slots.push({time,available});
  }
- res.json({date:input.date,slots});
+ res.json({date:input.date,duration_minutes:duration,slots});
 }));
 router.get('/:id',asyncRoute(async(req,res)=>res.json({appointment:mapAppointment(await accessible(idParam(req.params.id),req))})));
 // PostgreSQL advisory transaction locks coordinate staff bookings across replicas.
@@ -70,26 +108,41 @@ router.post('/',asyncRoute(async(req,res)=>{
  const customerId=isPrivileged(req)?d.customer_id!:req.user!.id;
  const [pet]=await rows<any>('SELECT id,owner_id FROM pets WHERE id=?',[d.pet_id]);
  if(!pet||pet.owner_id!==customerId)throw new HttpError(422,'Thú cưng không thuộc khách hàng đã chọn');
- const [service]=await rows<any>('SELECT * FROM services WHERE id=? AND organization_id=? AND is_active=TRUE',[d.service_id,orgId(req)]);if(!service)throw new HttpError(422,'Dịch vụ không khả dụng');
- const start=new Date(d.starts_at);validateBookingTime(start,service.duration_minutes);
- if(d.staff_id){const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[d.staff_id,orgId(req)]);if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');}
- const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+service.duration_minutes*60000));const staffId=d.staff_id||null;
+ const ids=d.service_ids??(d.service_id?[d.service_id]:[]);
+ const start=new Date(d.starts_at);
+ if(d.staff_id){
+  const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[d.staff_id,orgId(req)]);
+  if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');
+ }
  const result=await transaction(async db=>{
-   // Serialize selection for requests without a preferred staff member.
-   if(!staffId)await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
-   let assigned=staffId;
-   if(!assigned){
-     const candidates=await rows<any>("SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE ORDER BY m.user_id",[orgId(req)],db);
-     for(const candidate of candidates){
-       const occupied=await rows<any>("SELECT 1 FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[candidate.user_id,en,st],db);
-       if(!occupied.length){assigned=candidate.user_id;break;}
-     }
-     if(!assigned)throw new HttpError(409,'Không còn nhân viên trống trong khung giờ đã chọn');
+  // Lock rows so a selected service cannot be permanently deleted mid-booking.
+  const services=await getSelectedServices(orgId(req),ids,db);
+  const totalDuration=services.reduce((sum,service)=>sum+service.duration_minutes,0);
+  const totalPrice=services.reduce((sum,service)=>sum+Number(service.price),0);
+  validateBookingTime(start,totalDuration);
+  const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+totalDuration*60000));
+  const preferredStaff=d.staff_id||null;
+  if(!preferredStaff)await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
+  let assigned=preferredStaff;
+  if(!assigned){
+   const candidates=await rows<any>("SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE ORDER BY m.user_id",[orgId(req)],db);
+   for(const candidate of candidates){
+    const occupied=await rows<any>("SELECT 1 FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[candidate.user_id,en,st],db);
+    if(!occupied.length){assigned=candidate.user_id;break;}
    }
-   await lockStaff(db,[assigned]);
-   await verifyAvailability(db,assigned,st,en);
-   return exec('INSERT INTO appointments(organization_id,customer_id,pet_id,service_id,staff_id,starts_at,ends_at,price_snapshot,notes,duration_minutes_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?)',[orgId(req),customerId,d.pet_id,d.service_id,assigned,st,en,service.price,d.notes||null,service.duration_minutes],db);
- });res.status(201).json({id:result.insertId,message:'Đặt lịch thành công'});
+   if(!assigned)throw new HttpError(409,'Không còn nhân viên trống cho toàn bộ thời gian dịch vụ đã chọn');
+  }
+  await lockStaff(db,[assigned]);
+  await verifyAvailability(db,assigned,st,en);
+  const created=await exec('INSERT INTO appointments(organization_id,customer_id,pet_id,service_id,staff_id,starts_at,ends_at,price_snapshot,notes,duration_minutes_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?)',
+    [orgId(req),customerId,d.pet_id,services[0].id,assigned,st,en,totalPrice,d.notes||null,totalDuration],db);
+  for(const [position,service] of services.entries()){
+    await exec('INSERT INTO appointment_services(appointment_id,service_id,position,price_snapshot,duration_minutes_snapshot) VALUES(?,?,?,?,?)',
+      [created.insertId,service.id,position,service.price,service.duration_minutes],db);
+  }
+  return created;
+ });
+ res.status(201).json({id:result.insertId,message:'Đặt lịch thành công'});
 }));
 router.patch('/:id',asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
