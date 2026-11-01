@@ -225,3 +225,11 @@ body{background:#fbfcfa}
 @media(prefers-reduced-motion:reduce){.pc-featured-tile{transition:none!important}}
 
 /* Additional motion and illustration styles are maintained in this stylesheet. */
+/* Approved compact sprite atlas lives in the repo: no missing external assets. */
+.pc-atlas-preload{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;left:0;top:0}
+.pc-cute-illustration>svg.pc-cute-asset{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:hidden}
+.pc-figma-hero{min-height:128px}
+.pc-figma-hero-art{width:235px;height:105px;right:18px;bottom:8px}
+.pc-sidebar-characters .pc-cute-illustration{min-height:85px}
+.pc-featured-tile .pc-cute-illustration{height:122px}
+@media(max-width:700px){.pc-figma-hero-art{width:125px;height:76px;right:0;bottom:4px}.pc-featured-tile .pc-cute-illustration{height:100px}}
