@@ -4,26 +4,13 @@ import {ArrowRight,CalendarCheck,Clock3,ShieldCheck} from 'lucide-react';
 import {api,type Service} from '../lib/api';
 import {ServiceCards} from '../components/ServiceCards';
 import {ErrorNotice,Loading} from '../components/UI';
+import {PageHero} from '../components/PageHero';
 
 /** Customer-facing catalogue. Uses the current active services API; no new backend workflow. */
 export function CustomerServices(){
  const services=useQuery({queryKey:['services'],queryFn:()=>api<{items:Service[]}>('/services')});
  return <div className="pc-services-landing">
-  <header className="pc-service-hero">
-   <div className="pc-service-hero-content">
-    <span className="pc-service-kicker"><span/> DỊCH VỤ PAWCARE</span>
-    <h1>Chăm sóc chu đáo.<br/><em>Trọn vẹn từng khoảnh khắc.</em></h1>
-    <p>Khám phá danh mục dịch vụ dành cho thú cưng. Chọn loại hình chăm sóc phù hợp và đặt lịch trực tiếp trên PawCare.</p>
-    <div className="pc-service-hero-actions"><a className="pc-service-primary" href="#danh-muc">Khám phá dịch vụ <ArrowRight size={17}/></a><Link className="pc-service-outline" to="/book">Đặt lịch chăm sóc</Link></div>
-   </div>
-   <div className="pc-service-hero-aside" aria-hidden="true">
-    <span className="pc-service-decor-circle"/>
-    <span className="pc-service-decor-ring"/>
-    <span className="pc-service-aside-top">PAWCARE / PET WELLNESS</span>
-    <span className="pc-service-aside-main">Chăm sóc<br/>tận tâm.</span>
-    <span className="pc-service-aside-bottom">01 — DỊCH VỤ</span>
-   </div>
-  </header>
+  <PageHero eyebrow="DỊCH VỤ PAWCARE" title="Chăm sóc chu đáo, trọn vẹn từng khoảnh khắc." description="Khám phá những dịch vụ phù hợp với bé cưng. Xem giá minh bạch và đặt lịch trực tiếp trên PawCare." tone="sage" visual="service" action={<><a className="pc-service-primary" href="#danh-muc">Khám phá dịch vụ <ArrowRight size={17}/></a><Link className="pc-service-outline" to="/book">Đặt lịch chăm sóc</Link></>}/>
   <div className="pc-service-process" aria-label="Các bước đặt lịch">
    <span><b>01</b> Chọn dịch vụ</span><span><b>02</b> Chọn ngày và giờ</span><span><b>03</b> Xác nhận lịch hẹn</span>
   </div>

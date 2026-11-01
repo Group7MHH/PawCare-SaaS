@@ -1,7 +1,17 @@
 import type {ReactNode} from 'react';
 import {X,Inbox,LoaderCircle,ArrowRight,Search} from 'lucide-react';
 import {statusClass,statusName} from '../lib/api';
-export function PageTitle({eyebrow,title,description,action}:{eyebrow?:string;title:string;description?:string;action?:ReactNode}){return <div className="page-heading"><div>{eyebrow&&<span className="eyebrow">{eyebrow}</span>}<h1>{title}</h1>{description&&<p>{description}</p>}</div><div className="heading-actions">{action}</div></div>;}
+import {PageHero,type HeroTone,type HeroVisual} from './PageHero';
+export function PageTitle({eyebrow,title,description,action}:{eyebrow?:string;title:string;description?:string;action?:ReactNode}){
+ const label=(eyebrow||'').toLocaleUpperCase('vi-VN');
+ let visual:HeroVisual='paw',tone:HeroTone='mint';
+ if(/LỊCH|ĐẶT LỊCH|CHĂM SÓC ĐƯỢC GIAO/.test(label+' '+title.toUpperCase())){visual='calendar';tone='sky';}
+ else if(/NHÂN VIÊN|NHÂN SỰ|KHÁCH HÀNG|THÀNH VIÊN/.test(label+' '+title.toUpperCase())){visual='people';tone='sand';}
+ else if(/DỊCH VỤ|TRUNG TÂM/.test(label+' '+title.toUpperCase())){visual='service';tone='sage';}
+ else if(/TÀI KHOẢN|THÔNG TIN CÁ NHÂN/.test(label+' '+title.toUpperCase())){visual='profile';tone='sky';}
+ else if(/TỔNG QUAN|BẢNG ĐIỀU KHIỂN/.test(label+' '+title.toUpperCase())){visual='analytics';tone='mint';}
+ return <PageHero eyebrow={eyebrow} title={title} description={description} action={action} tone={tone} visual={visual}/>;
+}
 export function Panel({title,sub,action,children,className=''}:{title?:string;sub?:string;action?:ReactNode;children:ReactNode;className?:string}){return <section className={`panel ${className}`}><div className="panel-head">{title&&<div><h3>{title}</h3>{sub&&<p>{sub}</p>}</div>}{action&&<div>{action}</div>}</div>{children}</section>;}
 export function Badge({status}:{status:string}){return <span className={`badge ${statusClass[status]||'gray'}`}><span className="badge-dot"/>{statusName[status]||status}</span>;}
 export function Metric({icon,title,value,foot,tone='teal'}:{icon:ReactNode;title:string;value:ReactNode;foot?:string;tone?:string}){return <div className="metric"><div className={`metric-icon ${tone}`}>{icon}</div><div className="metric-label">{title}</div><div className="metric-value">{value}</div>{foot&&<div className="metric-foot">{foot}</div>}</div>;}

@@ -12,7 +12,8 @@ test('customer overview uses actual pets and dashboard endpoints, not mock remin
  const page=read('frontend/src/pages/Overview.tsx');
  assert.match(page,/api<\{items:Pet\[\]\}>\('\/pets'\)/);
  assert.match(page,/api<Stats>\('\/dashboard'\)/);
- assert.match(page,/pc-editorial-banner/);
+ assert.match(page,/<PageTitle eyebrow="TỔNG QUAN CÁ NHÂN"/);
+ assert.doesNotMatch(page,/welcome-banner pc-editorial-banner/);
  assert.doesNotMatch(page,/mũi tiêm cần nhắc lại|ưu đãi thành viên 10%|ngày tiêm giả/);
 });
 test('customer appointment detail is populated by existing records',()=>{
