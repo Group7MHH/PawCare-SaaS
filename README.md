@@ -3,8 +3,8 @@
 PawCare is a cloud-hosted pet-care management application for **one store**, with three roles: **Admin, Staff, Customer**. Frontend React/Vite, backend Express/TypeScript, PostgreSQL on Neon, deployed as one Node Web Service on Render. No Docker required.
 
 ## Workflow
-1. Customer registers, manages pets, checks service/time availability and books.
-2. The server reserves an available staff member; appointment begins in `pending`.
+1. Customer registers, manages pets, selects **one or multiple services** (up to 8), checks the full combined time availability and books in a single appointment.
+2. The server reserves an available staff member for the **total combined duration**; appointment begins in `pending`. Selected services and price/duration snapshots are stored in `appointment_services`, while the parent appointment stores the combined price and duration.
 3. Admin confirms appointments and may reassign staff.
 4. Assigned Staff starts work (`in_progress`), records the result, then completes it.
 5. Customer sees appointment history and Admin sees store-wide metrics.
@@ -34,7 +34,7 @@ Optional local fixtures: configure `DEV_SEED_PASSWORD` (12+ characters) then run
 On Render, build `npm install && npm run build`, start `npm start`; use `DATABASE_URL` (Neon), `NODE_ENV=production`, `SESSION_COOKIE_SECURE=true` and correct HTTPS `APP_ORIGIN` (or Render's `RENDER_EXTERNAL_URL`).
 
 ### Existing data / migrations
-Migrations 001–005 run during startup. Migration 004 is **non-destructive** and refuses conversion if **more than one organization** exists. In that case, back up and explicitly consolidate historical data before enabling single-store mode. Legacy organization columns remain as foreign keys internally, but there is **no multi-store UI or owner role**. Do not deploy into production without verifying backup, build, tests, and migration in a separate database first.
+Migrations 001–006 run during startup. Migration 004 is **non-destructive** and refuses conversion if **more than one organization** exists. In that case, back up and explicitly consolidate historical data before enabling single-store mode. Legacy organization columns remain as foreign keys internally, but there is **no multi-store UI or owner role**. Do not deploy into production without verifying backup, build, tests, and migration in a separate database first.
 
 ## Verification
 ```powershell
@@ -44,3 +44,6 @@ node --test tests/*.test.mjs
 ```
 
 The original project was MVP; production billing, payment, messaging, password recovery and full end-to-end validation are still out of scope.
+
+## UI and booking improvements
+The interface uses original inline SVG cartoons in `frontend/src/components/PetArtwork.tsx`; service illustrations are selected by service name/category without relying on external image hosting. One appointment supports multiple services, totals are calculated from authoritative service prices/durations, and the server checks a contiguous slot for the full duration under a PostgreSQL transaction. Existing single-service appointments are backfilled by migration 006. Permanently deleting a service removes all bookings that include it, including multi-service bookings, following the store's existing deletion policy.

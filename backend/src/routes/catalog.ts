@@ -37,8 +37,9 @@ router.get('/services/:id/delete-preview',requireRole('admin'),asyncRoute(async(
          COUNT(*) FILTER (WHERE status IN ('pending','confirmed','in_progress'))::int AS active_appointments,
          COUNT(*) FILTER (WHERE status='completed')::int AS completed_appointments,
          (SELECT COUNT(*)::int FROM care_records cr JOIN appointments a ON cr.appointment_id=a.id
-          WHERE a.service_id=? AND a.organization_id=?) AS care_records
-  FROM appointments WHERE service_id=? AND organization_id=?`,[id,orgId(req),id,orgId(req)]);
+          JOIN appointment_services aps ON aps.appointment_id=a.id
+          WHERE aps.service_id=? AND a.organization_id=?) AS care_records
+  FROM appointments WHERE id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?) AND organization_id=?`,[id,orgId(req),id,orgId(req)]);
  res.json({service_id:id,service_name:service.name,...impact});
 }));
 router.post('/services/:id/permanent-delete',requireRole('admin'),asyncRoute(async(req,res)=>{
@@ -51,11 +52,11 @@ router.post('/services/:id/permanent-delete',requireRole('admin'),asyncRoute(asy
   const [service]=await rows<{id:number;name:string}>('SELECT id,name FROM services WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
   if(!service)throw new HttpError(404,'Dịch vụ đã bị xóa hoặc không tồn tại');
   if(payload.confirmation_name!==service.name)throw new HttpError(422,'Tên dịch vụ xác nhận không chính xác');
-  const [count]=await rows<{total:number}>('SELECT COUNT(*)::int AS total FROM appointments WHERE service_id=? AND organization_id=?',[id,orgId(req)],db);
+  const [count]=await rows<{total:number}>('SELECT COUNT(*)::int AS total FROM appointments WHERE id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?) AND organization_id=?',[id,orgId(req)],db);
   if(count.total!==payload.expected_appointments)throw new HttpError(409,'Số lịch hẹn đã thay đổi. Hãy tải lại thông tin và xác nhận lần nữa');
   // Keep pet care notes/results; they no longer point to deleted appointments.
-  await exec('UPDATE care_records SET appointment_id=NULL WHERE appointment_id IN (SELECT id FROM appointments WHERE service_id=? AND organization_id=?)',[id,orgId(req)],db);
-  const removed=await exec('DELETE FROM appointments WHERE service_id=? AND organization_id=?',[id,orgId(req)],db);
+  await exec('UPDATE care_records SET appointment_id=NULL WHERE appointment_id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?)',[id],db);
+  const removed=await exec('DELETE FROM appointments WHERE id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?) AND organization_id=?',[id,orgId(req)],db);
   if(removed.affectedRows!==count.total)throw new HttpError(409,'Lịch hẹn đã thay đổi, hãy thực hiện lại');
   await exec('DELETE FROM services WHERE id=? AND organization_id=?',[id,orgId(req)],db);
   await exec('INSERT INTO role_audit_logs(actor_id,organization_id,action,details) VALUES(?,?,?,?::jsonb)',[
