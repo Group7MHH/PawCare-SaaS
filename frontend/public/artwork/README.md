@@ -1,7 +1,13 @@
-# PawCare illustrated sticker sheet
+# PawCare – Cute illustrated artwork
 
-The compact **stickers-atlas.webp** is checked into this directory, so illustrations render after deploying the repository, without uploading separate images manually. It contains 10 service scenes, 3 banners, and 3 state illustrations from the approved PawCare cute art sheet. The `CuteIllustration` component crops the right region using SVG `viewBox` coordinates, and still falls back to the earlier local drawings if an asset fails.
+The 16 approved illustrations are stored as individual WebP assets in this directory, rather than a low-resolution cropped sprite. Vite copies the directory to the production build; React loads each image by its exact filename and uses the existing local SVG only if a file fails to load.
 
-To improve image sharpness later, replace this file with a higher-quality atlas with the exact same layout and dimensions proportions (1000×440 virtual atlas; 5 service columns × 2 rows, then banners, then states). Replacing this file changes **no** booking, auth, revenue, API or database behavior.
+| Category | Files | Native resolution |
+|---|---|---|
+| Services | `bath`, `groom`, `nails`, `ears`, `vet`, `spa`, `dental`, `walk`, `daycare`, `transport` | 480 × 310 |
+| Banners | `banner-duo`, `banner-play`, `banner-family` | 720 × 214 |
+| Empty/error states | `empty`, `not-found`, `error` | 300 × 165 |
 
-The original independently optimized WebP files are also available in the earlier `PawCare_Cute_Illustrations.zip` for optional future use.
+All files use the `.webp` extension. Adding or replacing an illustration does not require any changes to the booking API, customer/staff/admin roles, SQL tables or dashboard data. The compact `stickers-atlas.webp` approach was retired because each approximately 200-pixel crop became blurred when stretched across a service card.
+
+The artwork is decorative. CSS entrance/hover transitions respect `prefers-reduced-motion`. The existing Admin Dashboard Figma layout and multi-service booking workflow remain intact.
