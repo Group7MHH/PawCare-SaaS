@@ -113,3 +113,82 @@
 @media(max-width:720px){.pc-service-hero{display:block;min-height:0}.pc-service-hero-content{padding:33px 23px 26px}.pc-service-hero-aside{display:none}.pc-service-process{padding:13px 20px;gap:7px}.pc-service-process>span{font-size:9px}.pc-services-heading{display:block}.pc-services-heading>p{max-width:none;margin-top:9px}.pc-services-collection{padding:27px 17px 30px}.pc-booking-service-picker{padding:13px}.pc-booking-service-picker .pc-service-card-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.pc-service-card-grid{grid-template-columns:1fr}.pc-service-process{flex-direction:column;align-items:start}.pc-service-plan{min-height:235px}.pc-service-plan-bottom{align-items:center}.pc-service-footer{align-items:flex-start;flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.pc-service-plan,.pc-service-primary,.pc-service-outline,.pc-service-tabbar button,.pc-service-select{transition:none!important}.pc-service-plan:hover,.pc-service-primary:hover{transform:none}}
+
+
+/* Booking step 1: explicitly use the existing PawCare light UI.
+   This overrides any legacy dark service stylesheet that may be concatenated. */
+.pc-booking-service-picker{
+  color-scheme:light;
+  color:var(--text,#203c38);
+  background:#f7f9f8 !important;
+  border:1px solid var(--line,#e8efed) !important;
+  box-shadow:none;
+}
+.pc-booking-service-picker .pc-service-card-grid{background:transparent;}
+.pc-booking-service-picker .pc-service-tabbar{
+  background:transparent;
+  border-bottom:1px solid var(--line,#e8efed);
+}
+.pc-booking-service-picker .pc-service-tabbar button{
+  background:#ffffff !important;
+  border:1px solid #e0eae5 !important;
+  color:#43685e !important;
+}
+.pc-booking-service-picker .pc-service-tabbar button:hover{
+  background:#ecf7f2 !important;
+  border-color:#b4dbcc !important;
+}
+.pc-booking-service-picker .pc-service-tabbar button.active{
+  background:#e2f5ee !important;
+  color:var(--teal-dark,#08695f) !important;
+  border-color:#8dccb8 !important;
+}
+.pc-booking-service-picker .pc-service-plan{
+  background:#ffffff !important;
+  border:1px solid #e4ece8 !important;
+  color:var(--text,#203c38) !important;
+  box-shadow:0 4px 14px rgba(34,83,66,.035);
+}
+.pc-booking-service-picker .pc-service-plan.selected{
+  background:#f0faf6 !important;
+  border-color:var(--teal,#087f74) !important;
+  box-shadow:0 0 0 1px rgba(8,127,116,.08);
+}
+.pc-booking-service-picker .pc-service-plan h3,
+.pc-booking-service-picker .pc-service-plan-detail strong{
+  color:#203c38 !important;
+}
+.pc-booking-service-picker .pc-service-description{
+  color:#71867e !important;
+}
+.pc-booking-service-picker .pc-service-serial,
+.pc-booking-service-picker .pc-service-plan-icon,
+.pc-booking-service-picker .pc-service-plan-detail svg{
+  color:var(--teal,#087f74) !important;
+}
+.pc-booking-service-picker .pc-service-plan-detail{
+  color:#58786d !important;
+}
+.pc-booking-service-picker .pc-service-plan-bottom{
+  border-top-color:#e8efed !important;
+}
+.pc-booking-service-picker .pc-service-plan-bottom small{
+  color:#71887e !important;
+}
+.pc-booking-service-picker .pc-service-plan-bottom strong{
+  color:var(--teal-dark,#08695f) !important;
+}
+.pc-booking-service-picker .pc-service-select{
+  background:var(--teal,#087f74) !important;
+  border-color:var(--teal,#087f74) !important;
+  color:#ffffff !important;
+}
+.pc-booking-service-picker .pc-service-select.active{
+  background:#e1f4eb !important;
+  border-color:#8cc9b4 !important;
+  color:var(--teal-dark,#08695f) !important;
+}
+.pc-booking-service-picker .pc-service-select:focus-visible,
+.pc-booking-service-picker .pc-service-tabbar button:focus-visible{
+  outline:3px solid #82c8b4;outline-offset:2px;
+}
