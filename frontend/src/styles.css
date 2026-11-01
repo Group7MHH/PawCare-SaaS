@@ -447,3 +447,261 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  }
  .quick-actions>a:hover,.quick-actions>button:hover{transform:none}
 }
+
+
+/* =========================================================
+   Unified PawCare heroes: one open surface, no nested box.
+   Customer / Admin / Staff share proportions, spacing and
+   action placement. No business logic or backend changes.
+   ========================================================= */
+.pc-shared-hero{
+  --hero-ink:#1c5649;
+  --hero-tint:#e4f5ed;
+  --hero-ring:rgba(31,141,110,.17);
+  --hero-glow:rgba(134,203,170,.24);
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:184px;
+  margin:0 0 22px;
+  padding:29px clamp(24px,3.3vw,46px);
+  background:linear-gradient(112deg,#eff9f3 0%,#e8f5ed 58%,#f6f8ee 100%);
+  border:1px solid #dfece5;
+  border-radius:18px;
+  box-shadow:0 10px 27px rgba(39,97,72,.05);
+}
+.pc-shared-hero--sage{
+ --hero-ink:#1c594a;
+ --hero-tint:#dcefe4;
+ --hero-ring:rgba(38,137,105,.17);
+ --hero-glow:rgba(106,178,139,.22);
+ background:linear-gradient(115deg,#f2f9ef 0%,#e5f3e8 67%,#f5f7e9 100%);
+}
+.pc-shared-hero--sky{
+ --hero-ink:#265e66;
+ --hero-tint:#ddf1f2;
+ --hero-ring:rgba(38,133,148,.17);
+ --hero-glow:rgba(113,192,204,.23);
+ background:linear-gradient(110deg,#f3faf9 0%,#e7f4f4 66%,#eef8f0 100%);
+}
+.pc-shared-hero--sand{
+ --hero-ink:#5e5944;
+ --hero-tint:#f2ecdc;
+ --hero-ring:rgba(177,145,81,.17);
+ --hero-glow:rgba(224,190,119,.22);
+ background:linear-gradient(110deg,#faf9f1 0%,#f6f1e4 65%,#eef7ec 100%);
+}
+.pc-shared-hero::before{
+ content:"";
+ position:absolute;
+ width:330px;
+ height:330px;
+ left:-198px;
+ bottom:-245px;
+ border:1px solid var(--hero-ring);
+ border-radius:50%;
+ z-index:-1;
+ pointer-events:none;
+}
+.pc-shared-hero::after{
+ content:"";
+ position:absolute;
+ right:-80px;
+ bottom:-151px;
+ width:400px;
+ height:300px;
+ border-radius:50%;
+ background:radial-gradient(ellipse,var(--hero-glow),transparent 69%);
+ pointer-events:none;
+ z-index:-1;
+}
+.pc-shared-hero-copy{
+ position:relative;
+ z-index:2;
+ flex:1;
+ max-width:min(70%,790px);
+ min-width:0;
+}
+.pc-shared-hero-kicker{
+ display:flex;
+ align-items:center;
+ gap:9px;
+ width:fit-content;
+ color:#317d6b;
+ font-size:10px;
+ font-weight:850;
+ letter-spacing:1.45px;
+ line-height:1.4;
+ margin-bottom:12px;
+}
+.pc-shared-hero--sky .pc-shared-hero-kicker{color:#36818d}
+.pc-shared-hero--sand .pc-shared-hero-kicker{color:#957640}
+.pc-shared-hero-kicker-dot{
+ width:6px;
+ height:6px;
+ flex:none;
+ border-radius:50%;
+ background:currentColor;
+}
+.pc-shared-hero h1{
+ margin:0;
+ max-width:760px;
+ font-size:clamp(23px,2.65vw,37px);
+ font-weight:850;
+ letter-spacing:-.048em;
+ line-height:1.23;
+ color:var(--hero-ink);
+ text-wrap:balance;
+ overflow-wrap:anywhere;
+}
+.pc-shared-hero p{
+ margin:12px 0 0;
+ max-width:680px;
+ color:#667f74;
+ font-size:12px;
+ line-height:1.72;
+}
+.pc-shared-hero-actions{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:9px;
+ margin-top:19px;
+}
+.pc-shared-hero-actions:empty{display:none}
+.pc-shared-hero-actions .button{
+ min-height:38px;
+ background:#147d6b;
+ border-color:#147d6b;
+ border-radius:9px;
+ color:#fff;
+ box-shadow:0 5px 15px rgba(18,112,88,.11);
+}
+.pc-shared-hero-actions .button:hover{
+ background:#0f6557;
+ border-color:#0f6557;
+}
+.pc-shared-hero-actions .button-secondary{
+ background:#fff;
+ color:#186c5b;
+ border-color:#c7e3d8;
+ box-shadow:none;
+}
+.pc-shared-hero-visual{
+ width:clamp(128px,19%,215px);
+ height:152px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex:none;
+ position:relative;
+ pointer-events:none;
+ color:var(--hero-ink);
+ opacity:.86;
+}
+.pc-hero-orbit{
+ position:absolute;
+ display:block;
+ border-radius:50%;
+ pointer-events:none;
+}
+.pc-hero-orbit--outer{
+ width:153px;
+ height:153px;
+ border:1px solid var(--hero-ring);
+ background:radial-gradient(circle at 40% 35%,rgba(255,255,255,.7),transparent 69%);
+}
+.pc-hero-orbit--inner{
+ width:112px;
+ height:112px;
+ border:1px solid var(--hero-ring);
+ background:var(--hero-tint);
+ opacity:.6;
+}
+.pc-hero-main-icon{position:relative;z-index:1;opacity:.65}
+.pc-hero-spark{
+ position:absolute;
+ width:9px;
+ height:9px;
+ border-radius:50%;
+ background:var(--hero-ink);
+ opacity:.25;
+}
+.pc-hero-spark--one{top:22px;right:15px}
+.pc-hero-spark--two{bottom:14px;left:17px;width:6px;height:6px}
+/* Services uses the exact shared hero rather than its old framed aside. */
+.pc-services-landing>.pc-shared-hero{
+ min-height:210px;
+ margin:0 0 16px;
+}
+.pc-services-landing .pc-shared-hero h1{font-size:clamp(25px,2.8vw,39px)}
+.pc-services-landing .pc-shared-hero .pc-service-primary{
+ background:#147d6b;
+ border-color:#147d6b;
+ color:#fff;
+ padding:11px 16px;
+ border-radius:9px;
+}
+.pc-services-landing .pc-shared-hero .pc-service-primary:hover{
+ background:#0f6657;
+ color:#fff;
+}
+.pc-services-landing .pc-shared-hero .pc-service-outline{
+ background:#fff;
+ border:1px solid #c5ded3;
+ color:#176a59;
+ padding:10px 15px;
+ border-radius:9px;
+}
+.pc-services-landing .pc-shared-hero .pc-service-outline:hover{
+ border-color:#91c4ae;
+ color:#115747;
+}
+.pc-services-landing .pc-service-process{margin-top:0}
+/* Shared vertical rhythm keeps all screens equally intentional. */
+.pc-shared-hero+.metrics-grid{margin-top:0}
+.pc-shared-hero+.pc-appointments-layout,
+.pc-shared-hero+.profile-grid,
+.pc-shared-hero+.pet-detail-layout,
+.pc-shared-hero+.booking-grid{margin-top:0}
+.pc-shared-hero+.steps{margin-top:0}
+.pc-shared-hero+.panel{margin-top:0}
+@media(max-width:950px){
+ .pc-shared-hero{min-height:170px;padding:24px 26px}
+ .pc-shared-hero-copy{max-width:74%}
+ .pc-shared-hero-visual{width:145px;height:136px}
+ .pc-hero-orbit--outer{width:133px;height:133px}
+ .pc-hero-orbit--inner{width:100px;height:100px}
+ .pc-hero-main-icon{width:70px;height:70px}
+}
+@media(max-width:700px){
+ .pc-shared-hero,.pc-services-landing>.pc-shared-hero{
+  min-height:142px;
+  padding:19px 19px;
+  margin-bottom:17px;
+  border-radius:14px;
+ }
+ .pc-shared-hero-copy{max-width:100%;padding-right:55px}
+ .pc-shared-hero-visual{
+  position:absolute;
+  width:100px;
+  height:105px;
+  right:-17px;
+  bottom:-8px;
+  opacity:.22;
+ }
+ .pc-shared-hero h1,.pc-services-landing .pc-shared-hero h1{font-size:clamp(21px,5vw,27px)}
+ .pc-shared-hero p{font-size:11px;margin-top:9px}
+ .pc-shared-hero-kicker{font-size:9px;margin-bottom:9px}
+ .pc-shared-hero-actions{margin-top:13px}
+ .pc-hero-orbit--outer{width:110px;height:110px}
+ .pc-hero-orbit--inner{width:81px;height:81px}
+ .pc-hero-main-icon{width:60px;height:60px}
+}
+@media(prefers-reduced-motion:reduce){
+ .pc-shared-hero *, .pc-shared-hero{scroll-behavior:auto}
+}
