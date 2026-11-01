@@ -137,3 +137,15 @@ body{background:#fbfcfa}
 .pc-catalog-service>span{min-width:0;max-width:250px}
 .pc-catalog-service strong{display:block}
 @media(max-width:700px){.pc-banner-animal{display:none}.pc-catalog-service>svg{width:42px;height:42px}}
+
+
+/* Figma layout guardrails: retain the existing dashboard heading, four KPI
+   cards, revenue/donut panels, recent-appointments table and quick actions. */
+.pc-figma-hero{display:flex;justify-content:space-between;align-items:center;gap:18px;min-height:115px;position:relative;overflow:hidden;background:linear-gradient(105deg,#f1f8f3 0%,#fdf8ed 100%);border:1px solid #e5eee6;border-radius:16px;padding:18px 24px;margin-bottom:20px}
+.pc-figma-hero>div:first-child{display:flex;flex-direction:column;gap:7px;position:relative;z-index:1;max-width:72%}
+.pc-figma-hero strong{font-size:15px;color:#214b3c;line-height:1.5}
+.pc-figma-hero span{font-size:12px;color:#6b8477;line-height:1.6}
+.pc-figma-hero-art{position:absolute;right:22px;bottom:-27px;width:177px;height:148px;pointer-events:none}
+.pc-figma-hero-art svg{width:100%;height:100%;display:block}
+.pc-figma-hero-art svg rect:first-child{fill:transparent}
+@media(max-width:700px){.pc-figma-hero{min-height:112px;padding:14px 16px}.pc-figma-hero>div:first-child{max-width:79%}.pc-figma-hero strong{font-size:13px}.pc-figma-hero span{font-size:10px}.pc-figma-hero-art{right:-12px;width:110px;height:104px;bottom:-14px}}
