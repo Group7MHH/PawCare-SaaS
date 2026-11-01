@@ -1,11 +1,11 @@
 import type {ReactNode} from 'react';
 import {X,LoaderCircle,ArrowRight,Search} from 'lucide-react';
 import {statusClass,statusName} from '../lib/api';
-import {CuteIllustration} from './CuteIllustration';
+import {CuteIllustration,type CuteAsset} from './CuteIllustration';
 export function PageTitle({eyebrow,title,description,action}:{eyebrow?:string;title:string;description?:string;action?:ReactNode}){return <div className="page-heading"><div>{eyebrow&&<span className="eyebrow">{eyebrow}</span>}<h1>{title}</h1>{description&&<p>{description}</p>}</div><div className="heading-actions">{action}</div></div>;}
 export function Panel({title,sub,action,children,className=''}:{title?:string;sub?:string;action?:ReactNode;children:ReactNode;className?:string}){return <section className={`panel ${className}`}><div className="panel-head">{title&&<div><h3>{title}</h3>{sub&&<p>{sub}</p>}</div>}{action&&<div>{action}</div>}</div>{children}</section>;}
 export function Badge({status}:{status:string}){return <span className={`badge ${statusClass[status]||'gray'}`}><span className="badge-dot"/>{statusName[status]||status}</span>;}
-export function Metric({icon,title,value,foot,tone='teal'}:{icon:ReactNode;title:string;value:ReactNode;foot?:string;tone?:string}){return <div className="metric"><div className={`metric-icon ${tone}`}>{icon}</div><div className="metric-label">{title}</div><div className="metric-value">{value}</div>{foot&&<div className="metric-foot">{foot}</div>}</div>;}
+export function Metric({icon,title,value,foot,tone='teal',art}:{icon:ReactNode;title:string;value:ReactNode;foot?:string;tone?:string;art?:CuteAsset}){return <div className={`metric ${art?'pc-metric-illustrated':''}`}><div className={`metric-icon ${tone}`}>{icon}</div><div className="metric-label">{title}</div><div className="metric-value">{value}</div>{foot&&<div className="metric-foot">{foot}</div>}{art&&<div className="pc-metric-character" aria-hidden="true"><CuteIllustration asset={art} kind="pet"/></div>}</div>;}
 export function Empty({title='Chưa có dữ liệu',description='Dữ liệu sẽ hiển thị tại đây khi được thêm.',action}:{title?:string;description?:string;action?:ReactNode}){return <div className="empty"><div className="empty-illustration"><CuteIllustration asset="empty" kind="cat"/></div><strong>{title}</strong><p>{description}</p>{action}</div>;}
 export function Loading(){return <div className="loading"><LoaderCircle size={24} className="spin"/> Đang tải dữ liệu...</div>;}
 export function ErrorNotice({message}:{message:string}){return <div className="error-box"><CuteIllustration asset="error" kind="cat" className="pc-error-art"/><span>{message}</span></div>;}
