@@ -1,7 +1,8 @@
 import {Link} from 'react-router-dom';
 import {useQuery} from '@tanstack/react-query';
 import {api,dateTime,type Appointment} from '../lib/api';
-import {PageTitle,Panel,TableWrap,Badge,Loading,ErrorNotice,Empty} from '../components/UI';
+import {PageTitle,Panel,TableWrap,Badge,Loading,ErrorNotice,Empty,Metric} from '../components/UI';
+import {CalendarDays,Clock3,ClipboardCheck} from 'lucide-react';
 export function StaffDashboard(){
  const q=useQuery({queryKey:['staff-work'],queryFn:()=>api<{items:Appointment[];total:number}>('/appointments?limit=50')});
  if(q.isLoading)return <Loading/>;
@@ -12,9 +13,9 @@ export function StaffDashboard(){
  return <>
   <PageTitle eyebrow="CÔNG VIỆC CỦA TÔI" title="Lịch chăm sóc được giao" description="Xem lịch, bắt đầu công việc và cập nhật kết quả chăm sóc." action={<Link className="button button-primary" to="/staff/appointments">Xử lý lịch hẹn</Link>}/>
   <div className="metrics-grid three">
-   <Panel title="Lịch được giao"><strong>{q.data.total}</strong></Panel>
-   <Panel title="Chưa hoàn thành"><strong>{active.length}</strong></Panel>
-   <Panel title="Lịch sắp tới"><strong>{upcoming.length}</strong></Panel>
+   <Metric icon={<ClipboardCheck/>} title="Lịch được giao" value={q.data.total} foot="Theo danh sách đang tải"/>
+   <Metric icon={<Clock3/>} title="Chưa hoàn thành" value={active.length} foot="Đang chờ hoặc đang chăm sóc" tone="amber"/>
+   <Metric icon={<CalendarDays/>} title="Lịch sắp tới" value={upcoming.length} foot="Lịch được giao từ hiện tại" tone="blue"/>
   </div>
   <Panel title="Công việc sắp tới">
    {!upcoming.length?<Empty title="Chưa có công việc sắp tới"/>:<TableWrap>
