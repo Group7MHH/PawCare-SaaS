@@ -242,3 +242,77 @@ body{background:#fbfcfa}
  .pc-figma-hero-art{width:125px;height:76px;right:0;bottom:4px}
  .pc-featured-tile .pc-cute-illustration{height:132px}
 }
+
+
+/* PawCare playful layer – all Figma sections stay in original order. */
+.pc-figma-hero{min-height:161px;overflow:hidden;background:linear-gradient(110deg,#f1faf5,#fff9ed);border:1px solid #e0eee5;border-radius:20px;padding:26px 28px;margin-bottom:20px;box-shadow:0 8px 24px rgba(24,75,54,.055)}
+.pc-figma-hero-copy{display:flex;flex-direction:column;gap:9px;position:relative;z-index:3;max-width:66%}
+.pc-figma-hero .pc-figma-hero-copy>strong{font-size:clamp(19px,2vw,28px);font-weight:800;color:#14513b;line-height:1.25;letter-spacing:-.04em}
+.pc-figma-hero .pc-figma-hero-copy>span{font-size:13px;color:#58776a;line-height:1.6}
+.pc-figma-hero-art{position:absolute;right:0;bottom:0;width:35%;max-width:365px;height:150px;pointer-events:none;z-index:2}
+.pc-figma-hero-art .pc-cute-illustration{width:100%;height:100%;border-radius:14px 14px 0 0}
+.pc-figma-hero-art .pc-cute-asset{object-fit:cover;object-position:center bottom}
+.pc-doodles{position:absolute;pointer-events:none;overflow:visible;z-index:1}
+.pc-hero-trail{width:130px;height:73px;right:29%;bottom:15px;opacity:.72}
+.pc-hero-sparkles{width:92px;height:70px;right:10%;top:4px}
+.pc-figma-hero:after{content:"";position:absolute;right:-40px;bottom:-80px;width:47%;height:170px;border-radius:50%;background:radial-gradient(ellipse,#d7ebc9,transparent 70%);pointer-events:none}
+.pc-figma-hero+.metrics-grid.four{gap:15px}
+.pc-figma-hero+.metrics-grid.four>.metric{position:relative;min-height:154px;padding:18px;border:1px solid #e5ede6;border-radius:18px;overflow:hidden;isolation:isolate;box-shadow:0 6px 16px rgba(38,83,58,.05);transition:transform .22s ease,box-shadow .22s ease}
+.pc-figma-hero+.metrics-grid.four>.metric:nth-child(1){background:linear-gradient(135deg,#fff2ed,#ffe6e1)}
+.pc-figma-hero+.metrics-grid.four>.metric:nth-child(2){background:linear-gradient(135deg,#edfaf1,#dff3e8)}
+.pc-figma-hero+.metrics-grid.four>.metric:nth-child(3){background:linear-gradient(135deg,#fff9eb,#ffefdd)}
+.pc-figma-hero+.metrics-grid.four>.metric:nth-child(4){background:linear-gradient(135deg,#eaf8f9,#dcefeb)}
+.pc-figma-hero+.metrics-grid.four>.metric:hover{transform:translateY(-3px);box-shadow:0 13px 27px rgba(30,82,53,.09)}
+.pc-metric-illustrated .metric-icon,.pc-metric-illustrated .metric-label,.pc-metric-illustrated .metric-value,.pc-metric-illustrated .metric-foot{position:relative;z-index:2;max-width:71%}
+.pc-metric-illustrated .metric-icon{background:rgba(255,255,255,.72);border-radius:12px;margin-bottom:8px}
+.pc-metric-illustrated .metric-label{font-size:11px;color:#426555;font-weight:750}
+.pc-metric-illustrated .metric-value{font-size:clamp(18px,1.9vw,27px);color:#193d32}
+.pc-metric-illustrated .metric-foot{font-size:9px;color:#607d71;line-height:1.5}
+.pc-metric-character{position:absolute;right:-4px;bottom:-6px;width:38%;height:125px;max-width:150px;pointer-events:none;z-index:1}
+.pc-metric-character .pc-cute-illustration{width:100%;height:100%;border-radius:15px}
+.pc-metric-character .pc-cute-asset{object-fit:cover;object-position:center}
+.pc-metric-character:before{content:"✦";position:absolute;right:10px;top:2px;color:#eeaf3a;font-size:19px;z-index:2}
+.pc-figma-hero~.content-grid>.panel,.pc-figma-hero~.pc-featured-row>.panel{border-radius:17px;border:1px solid #e6eee9;box-shadow:0 6px 21px rgba(35,75,54,.045);overflow:hidden}
+.pc-dashboard-chart-panel,.pc-dashboard-status-panel,.pc-dashboard-recent-panel,.pc-dashboard-actions-panel,.pc-dashboard-services-panel{position:relative;isolation:isolate}
+.pc-dashboard-chart-panel:after{content:"✿";position:absolute;right:85px;top:12px;color:#d1e8bc;font-size:21px;pointer-events:none}
+.pc-dashboard-status-panel:after{content:"✦";position:absolute;right:16px;top:9px;color:#f5c56b;font-size:22px;pointer-events:none}
+.pc-dashboard-actions-decor{height:112px;margin-top:12px;position:relative;background:linear-gradient(105deg,#f0f9ef,#e7f4e5);border-radius:13px;overflow:hidden}
+.pc-dashboard-actions-decor>.pc-cute-illustration{position:absolute;right:0;bottom:0;width:67%;height:100%;border-radius:0;z-index:2}
+.pc-dashboard-actions-decor .pc-cute-asset{object-fit:cover;object-position:center}
+.pc-actions-leaves{width:120px;height:88px;left:-3px;bottom:-19px}
+.pc-dashboard-actions-decor:after{content:"♡";position:absolute;right:44%;top:9px;color:#ee9ea0;font-size:28px}
+.pc-featured-tile{border-radius:16px;background:#fffdfa}
+.pc-featured-tile .pc-cute-illustration{border-radius:12px}
+.pc-featured-tile .pc-cute-asset{transition:opacity .24s ease,transform .28s ease}
+.pc-featured-tile:hover .pc-cute-asset{transform:scale(1.035)}
+.pc-sidebar-help{position:relative;border-radius:14px;background:linear-gradient(160deg,#147756,#0b5945)}
+.pc-sidebar-help:after{content:"♡";position:absolute;right:11px;top:5px;color:#ffb2b3;font-size:23px;pointer-events:none}
+.pc-sidebar-help-title{max-width:91%}
+@keyframes paw-gentle-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes paw-gentle-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.pc-figma-hero{animation:paw-gentle-enter .4s ease both}
+.pc-figma-hero-art .pc-cute-illustration,.pc-hero-trail{animation:paw-gentle-float 6s ease-in-out infinite}
+.pc-figma-hero+.metrics-grid.four>.metric{animation:paw-gentle-enter .42s ease both}
+.pc-figma-hero+.metrics-grid.four>.metric:nth-child(2){animation-delay:60ms}
+.pc-figma-hero+.metrics-grid.four>.metric:nth-child(3){animation-delay:110ms}
+.pc-figma-hero+.metrics-grid.four>.metric:nth-child(4){animation-delay:160ms}
+@media(max-width:1050px){.pc-metric-character{width:35%;height:100px}.pc-figma-hero-art{height:128px}}
+@media(max-width:700px){
+.pc-figma-hero{min-height:132px;padding:16px;margin-bottom:16px}
+.pc-figma-hero-copy{max-width:69%}
+.pc-figma-hero .pc-figma-hero-copy>strong{font-size:18px}
+.pc-figma-hero .pc-figma-hero-copy>span{font-size:10px}
+.pc-figma-hero-art{width:34%;height:103px}
+.pc-hero-trail,.pc-hero-sparkles{display:none}
+.pc-figma-hero+.metrics-grid.four{gap:9px}
+.pc-figma-hero+.metrics-grid.four>.metric{min-height:122px;padding:12px 10px}
+.pc-metric-character{width:37%;min-width:56px;height:75px;right:-8px;bottom:-3px}
+.pc-metric-illustrated .metric-value{font-size:18px}
+.pc-metric-illustrated .metric-label,.pc-metric-illustrated .metric-foot{font-size:9px}
+.pc-featured-tile:hover .pc-cute-asset{transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+.pc-figma-hero,.pc-hero-trail,.pc-figma-hero-art .pc-cute-illustration,.pc-figma-hero+.metrics-grid.four>.metric{animation:none!important}
+.pc-figma-hero+.metrics-grid.four>.metric:hover{transform:none}
+.pc-featured-tile .pc-cute-asset{transition:none!important;transform:none!important}
+}
