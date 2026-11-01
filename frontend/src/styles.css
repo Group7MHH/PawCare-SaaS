@@ -149,3 +149,79 @@ body{background:#fbfcfa}
 .pc-figma-hero-art svg{width:100%;height:100%;display:block}
 .pc-figma-hero-art svg rect:first-child{fill:transparent}
 @media(max-width:700px){.pc-figma-hero{min-height:112px;padding:14px 16px}.pc-figma-hero>div:first-child{max-width:79%}.pc-figma-hero strong{font-size:13px}.pc-figma-hero span{font-size:10px}.pc-figma-hero-art{right:-12px;width:110px;height:104px;bottom:-14px}}
+
+
+/* PawCare chosen illustration artwork – cosmetic-only enhancements.
+   The existing layout grid, booking states, and data flows are untouched. */
+.pc-cute-illustration{position:relative;display:inline-block;vertical-align:middle;overflow:hidden;isolation:isolate;border-radius:inherit;flex-shrink:0;max-width:100%}
+.pc-cute-illustration>.pc-cute-asset,
+.pc-cute-illustration>.pc-cute-fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+.pc-cute-illustration>.pc-cute-asset{opacity:0;transition:opacity .24s ease-out}
+.pc-cute-illustration>.pc-cute-asset.is-loaded{opacity:1}
+.pc-cute-illustration>.pc-cute-fallback{opacity:1}
+.pc-cute-illustration:has(>.pc-cute-asset.is-loaded)>.pc-cute-fallback{opacity:0}
+.pc-figma-hero-art .pc-cute-illustration{width:100%;height:100%;border-radius:14px}
+.pc-sidebar-characters{min-height:96px;align-items:center}
+.pc-sidebar-characters .pc-cute-illustration{width:100%;height:102px;border-radius:14px}
+.pc-sidebar-characters .pc-cute-asset{object-fit:cover;object-position:center}
+.pc-banner-animal .pc-cute-illustration{width:220px;height:145px;border-radius:16px}
+.pc-mini-pet.pc-cute-illustration{width:56px;height:56px;border-radius:14px}
+.pc-mini-pet.pc-cute-illustration .pc-cute-asset{object-fit:cover}
+.multi-service-art.pc-cute-illustration{width:100px;height:105px;border-radius:12px}
+.pc-catalog-service .pc-cute-illustration{width:55px;height:55px;border-radius:11px}
+.pet-cover .pc-pet-portrait.pc-cute-illustration{display:block;width:100%;height:175px;border-radius:0}
+.pet-profile-cover .pc-pet-profile-art.pc-cute-illustration{display:block;width:190px;height:165px;border-radius:14px;margin:auto}
+/* Subtle motion improves feedback without altering interactions, tab order, or workflow. */
+@keyframes pc-soft-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pc-soft-glow{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.page-content>.pc-dashboard,
+.page-content>.page-heading,
+.pc-figma-hero,
+.welcome-banner{animation:pc-soft-enter .34s cubic-bezier(.2,.8,.2,1) both}
+.pc-figma-hero-art .pc-cute-illustration,
+.pc-banner-animal .pc-cute-illustration{animation:pc-soft-glow 5.5s ease-in-out infinite}
+.multi-service-card,
+.pet-gallery-card,
+.pc-service-tile,
+.selection-card,
+.date-choice,
+.time-choice,
+.button,
+.nav-link{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background-color .18s ease}
+.multi-service-card:not(:disabled):hover,
+.pet-gallery-card:hover,
+.pc-service-tile:hover{transform:translateY(-3px);box-shadow:0 12px 25px rgba(17,78,55,.10)}
+.multi-service-card:active,.button:active{transform:translateY(0) scale(.99)}
+@media(hover:none){.multi-service-card:hover,.pet-gallery-card:hover,.pc-service-tile:hover{transform:none}}
+@media(max-width:700px){
+ .pc-banner-animal .pc-cute-illustration{width:130px;height:100px}
+ .multi-service-art.pc-cute-illustration{width:86px;height:91px}
+ .pc-sidebar-characters .pc-cute-illustration{height:90px}
+}
+@media(prefers-reduced-motion:reduce){
+ .page-content>.pc-dashboard,
+ .page-content>.page-heading,
+ .pc-figma-hero,.welcome-banner,
+ .pc-figma-hero-art .pc-cute-illustration,
+ .pc-banner-animal .pc-cute-illustration{animation:none!important}
+ .pc-cute-illustration>.pc-cute-asset,
+ .multi-service-card,.pet-gallery-card,.pc-service-tile,
+ .selection-card,.date-choice,.time-choice,.button,.nav-link{transition:none!important}
+}
+
+/* Illustration-aware empty & error states, with the same semantics as before. */
+.empty .empty-illustration{width:130px;height:93px;margin:0 auto 12px}
+.empty .empty-illustration .pc-cute-illustration{width:100%;height:100%;border-radius:15px}
+.error-box{display:flex;align-items:center;gap:12px}
+.pc-error-art.pc-cute-illustration{height:55px;width:76px;border-radius:12px}
+.pc-featured-row{margin-top:20px}
+.pc-featured-row .pc-featured-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.pc-featured-tile{display:block;min-width:0;overflow:hidden;border:1px solid #e4ede7;border-radius:14px;padding:8px;background:white;transition:transform .18s ease,box-shadow .18s ease}
+.pc-featured-tile:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(24,78,57,.08)}
+.pc-featured-tile .pc-cute-illustration{width:100%;height:110px;border-radius:11px}
+.pc-featured-tile strong{display:block;padding:8px 2px 4px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-featured-tile small{padding:0 2px;color:#0b875f;font-size:12px;font-weight:800}
+@media(max-width:700px){.pc-featured-row .pc-featured-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pc-featured-tile .pc-cute-illustration{height:100px}}
+@media(prefers-reduced-motion:reduce){.pc-featured-tile{transition:none!important}}
+
+/* Additional motion and illustration styles are maintained in this stylesheet. */
