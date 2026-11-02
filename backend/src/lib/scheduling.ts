@@ -29,3 +29,23 @@ export function canTransition(oldStatus:string,newStatus:string,role:string){
  const allowed:Record<string,string[]>={pending:['confirmed','cancelled'],confirmed:['cancelled'],in_progress:['cancelled'],completed:[],cancelled:[]};
  return allowed[oldStatus]?.includes(newStatus)??false;
 }
+
+/** Check interval capacity without assuming every service has a 30-minute duration.
+ * Departures at the same instant as arrivals are processed first.
+ */
+export function hasStaffCapacity(bookings:Array<{starts_at:Date|string;ends_at:Date|string}>,staffCount:number,start:Date,end:Date){
+ if(staffCount<=0||!Number.isFinite(start.getTime())||!Number.isFinite(end.getTime())||end<=start)return false;
+ const events:{at:number;change:number}[]=[];
+ for(const booking of bookings){
+  const from=Math.max(start.getTime(),new Date(booking.starts_at).getTime());
+  const to=Math.min(end.getTime(),new Date(booking.ends_at).getTime());
+  if(from<to){events.push({at:from,change:1},{at:to,change:-1});}
+ }
+ events.sort((a,b)=>a.at-b.at||a.change-b.change);
+ let concurrent=0;
+ for(const event of events){
+  concurrent+=event.change;
+  if(concurrent>=staffCount)return false;
+ }
+ return true;
+}

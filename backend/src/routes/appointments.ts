@@ -3,7 +3,7 @@ import {z} from 'zod';
 import {pool,rows,exec,transaction,lockStaff,type DB} from '../lib/db.js';
 import {asyncRoute,HttpError,idParam,parse,pageParams} from '../lib/http.js';
 import {isPrivileged,orgId,requireAuth,requireOrganization} from '../lib/auth.js';
-import {canTransition,isoUTC,sqlUTC,validateBookingTime} from '../lib/scheduling.js';
+import {canTransition,hasStaffCapacity,isoUTC,sqlUTC,validateBookingTime} from '../lib/scheduling.js';
 const router=Router();router.use(requireAuth,requireOrganization);
 const bookingSchema=z.object({
  pet_id:z.coerce.number().int().positive(),
@@ -35,7 +35,7 @@ const appointmentSelect=`SELECT a.*,u.full_name AS customer_name,u.phone AS cust
     FROM appointment_services aps JOIN services ms ON ms.id=aps.service_id
     WHERE aps.appointment_id=a.id
   ) bundle ON TRUE`;
-function mapAppointment(a:any){return {...a,starts_at:isoUTC(a.starts_at),ends_at:isoUTC(a.ends_at)};}
+function mapAppointment(a:any){return {...a,starts_at:isoUTC(a.starts_at),ends_at:isoUTC(a.ends_at),needs_admin_attention:Boolean(a.needs_admin_attention)||(a.status==='pending'&&a.staff_id===null&&new Date(isoUTC(a.starts_at)).getTime()<=Date.now()+2*3600000)};}
 async function accessible(id:number,req:import('express').Request,db:DB=pool){
  const [a]=await rows<any>(`${appointmentSelect} WHERE a.id=? AND a.organization_id=?`,[id,orgId(req)],db);
  if(!a)throw new HttpError(404,'Không tìm thấy lịch hẹn');
@@ -47,9 +47,14 @@ router.get('/',asyncRoute(async(req,res)=>{
  const {page,limit}=pageParams(req),clauses:string[]=[];const params:unknown[]=[];
  clauses.push('a.organization_id=?');params.push(orgId(req));
  if(req.user!.role==='customer'){clauses.push('a.customer_id=?');params.push(req.user!.id);}
- if(req.user!.role==='staff'){clauses.push('a.staff_id=?');params.push(req.user!.id);}
+ if(req.user!.role==='staff'){
+  if(req.query.pool==='true'){
+   clauses.push("a.staff_id IS NULL", "a.status='pending'",'a.starts_at>now()');
+   clauses.push('NOT EXISTS(SELECT 1 FROM appointment_staff_declines d WHERE d.appointment_id=a.id AND d.staff_id=?)');params.push(req.user!.id);
+  }else{clauses.push('a.staff_id=?');params.push(req.user!.id);}
+ }
  if(req.query.status&&req.query.status!=='all'){clauses.push('a.status=?');params.push(String(req.query.status));}
- if(req.query.needs_attention==='true' && req.user!.role==='admin'){clauses.push('a.needs_admin_attention=TRUE');}
+ if(req.query.needs_attention==='true' && req.user!.role==='admin'){clauses.push("(a.needs_admin_attention=TRUE OR (a.status='pending' AND a.staff_id IS NULL AND a.starts_at <= now() + interval '2 hours'))");}
  if(req.query.search){clauses.push('(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?)');params.push(...Array(3).fill(`%${String(req.query.search).slice(0,80)}%`));}
  const where=clauses.length?' WHERE '+clauses.join(' AND '):'';
  const [{total}]=await rows<any>(`SELECT COUNT(*) AS total FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id ${where}`,params);
@@ -80,16 +85,12 @@ router.get('/availability',asyncRoute(async(req,res)=>{
   let available=true;
   try{validateBookingTime(start,duration);}catch{available=false;}
   const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+duration*60000));
-  if(available&&input.staff_id){
-    const conflict=await rows<any>("SELECT id FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[input.staff_id,en,st]);
+  if(available){
+   available=await hasBookingCapacity(pool,orgId(req),st,en);
+   if(available&&input.staff_id){
+    const conflict=await rows<any>("SELECT 1 FROM appointments WHERE organization_id=? AND staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[orgId(req),input.staff_id,en,st]);
     if(conflict.length)available=false;
-  }
-  if(available&&!input.staff_id){
-    const free=await rows<any>(`SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id
-      WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE
-      AND NOT EXISTS(SELECT 1 FROM appointments a WHERE a.staff_id=m.user_id AND a.status<>'cancelled' AND a.starts_at<? AND a.ends_at>?) LIMIT 1`,
-      [orgId(req),en,st]);
-    available=free.length>0;
+   }
   }
   slots.push({time,available});
  }
@@ -101,6 +102,20 @@ async function verifyAvailability(db:DB,staffId:number|null,start:string,end:str
  if(!staffId)throw new HttpError(422,'Cần phân công nhân viên trước khi xác nhận lịch');
  const conflicts=await rows<any>(`SELECT id FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? ${exceptId?'AND id<>?':''} LIMIT 1`,[staffId,end,start,...(exceptId?[exceptId]:[])],db);
  if(conflicts.length)throw new HttpError(409,'Nhân viên đã có lịch trong khung giờ này');
+}
+/** Limit new bookings to the number of active Staff throughout their full service window.
+ * Every booking (assigned or unassigned) reserves one capacity slot. The global
+ * booking advisory lock makes simultaneous reservations safe across API replicas.
+ */
+async function hasBookingCapacity(db:DB,org:number,start:string,end:string){
+ const [staff]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total
+  FROM organization_members m JOIN users u ON u.id=m.user_id
+  WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE
+    AND u.role='staff' AND u.is_active=TRUE`,[org],db);
+ const bookings=await rows<{starts_at:Date|string;ends_at:Date|string}>(`SELECT starts_at,ends_at
+  FROM appointments WHERE organization_id=? AND status<>'cancelled'
+  AND starts_at<? AND ends_at>?`,[org,end,start],db);
+ return hasStaffCapacity(bookings,staff?.total??0,new Date(start),new Date(end));
 }
 router.post('/',asyncRoute(async(req,res)=>{
  const d=parse(bookingSchema,req.body);
@@ -122,28 +137,23 @@ router.post('/',asyncRoute(async(req,res)=>{
   const totalPrice=services.reduce((sum,service)=>sum+Number(service.price),0);
   validateBookingTime(start,totalDuration);
   const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+totalDuration*60000));
-  const preferredStaff=d.staff_id||null;
-  if(!preferredStaff)await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
-  let assigned=preferredStaff;
-  if(!assigned){
-   const candidates=await rows<any>("SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE ORDER BY (SELECT COUNT(*) FROM appointments w WHERE w.staff_id=m.user_id AND w.status IN ('pending','confirmed','in_progress') AND w.starts_at >= date_trunc('day',?::timestamptz) AND w.starts_at < date_trunc('day',?::timestamptz)+interval '1 day') ASC,m.user_id",[orgId(req),st,st],db);
-   for(const candidate of candidates){
-    const occupied=await rows<any>("SELECT 1 FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[candidate.user_id,en,st],db);
-    if(!occupied.length){assigned=candidate.user_id;break;}
-   }
-   if(!assigned)throw new HttpError(409,'Không còn nhân viên trống cho toàn bộ thời gian dịch vụ đã chọn');
-  }
-  await lockStaff(db,[assigned]);
-  await verifyAvailability(db,assigned,st,en);
+  // All new bookings reserve capacity first; Staff voluntarily claim pool bookings.
+  // A preferred Staff member receives a targeted pending request instead.
+  await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
+  const preferredStaff=d.staff_id??null;
+  if(preferredStaff)await lockStaff(db,[preferredStaff]);
+  if(!await hasBookingCapacity(db,orgId(req),st,en))
+   throw new HttpError(409,'Khung giờ đã hết công suất. Vui lòng chọn giờ khác');
+  if(preferredStaff)await verifyAvailability(db,preferredStaff,st,en);
   const created=await exec('INSERT INTO appointments(organization_id,customer_id,pet_id,service_id,staff_id,starts_at,ends_at,price_snapshot,notes,duration_minutes_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?)',
-    [orgId(req),customerId,d.pet_id,services[0].id,assigned,st,en,totalPrice,d.notes||null,totalDuration],db);
+    [orgId(req),customerId,d.pet_id,services[0].id,preferredStaff,st,en,totalPrice,d.notes||null,totalDuration],db);
   for(const [position,service] of services.entries()){
     await exec('INSERT INTO appointment_services(appointment_id,service_id,position,price_snapshot,duration_minutes_snapshot) VALUES(?,?,?,?,?)',
       [created.insertId,service.id,position,service.price,service.duration_minutes],db);
   }
   return created;
  });
- res.status(201).json({id:result.insertId,message:'Đặt lịch thành công'});
+ res.status(201).json({id:result.insertId,message:'Đã đặt lịch, Staff sẽ chủ động tiếp nhận mà không cần Admin duyệt'});
 }));
 router.patch('/:id',asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
