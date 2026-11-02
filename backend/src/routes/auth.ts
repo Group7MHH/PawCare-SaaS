@@ -1,9 +1,9 @@
 import {Router} from 'express';
 import {z} from 'zod';
 import bcrypt from 'bcryptjs';
-import {exec,rows,transaction} from '../lib/db.js';
+import {exec,rows} from '../lib/db.js';
 import {asyncRoute,HttpError,parse} from '../lib/http.js';
-import {createSession,clearSession,revokeSession,requireAuth,updateSessionOrganization,hashToken} from '../lib/auth.js';
+import {createSession,clearSession,revokeSession,requireAuth} from '../lib/auth.js';
 const router=Router();
 const credentials=z.object({email:z.string().email().max(190).transform(v=>v.toLowerCase().trim()),password:z.string().min(8).max(100)});
 const registration=credentials.extend({full_name:z.string().trim().min(2).max(120),phone:z.string().max(25).optional()});
@@ -37,28 +37,6 @@ router.post('/login',asyncRoute(async(req,res)=>{
 router.post('/logout',asyncRoute(async(req,res)=>{await revokeSession(req);clearSession(res);res.json({message:'Đã đăng xuất'});}));
 router.get('/me',requireAuth,(req,res)=>res.json({user:req.user}));
 router.post('/select-organization',requireAuth,asyncRoute(async(_req,_res)=>{throw new HttpError(410,'Ứng dụng chỉ phục vụ một cửa hàng');}));
-router.post('/accept-invitation',requireAuth,asyncRoute(async(req,res)=>{
- const d=parse(z.object({token:z.string().regex(/^[a-f0-9]{64}$/)}),req.body);
- let targetOrg:number=0;
- await transaction(async db=>{
-  const [invite]=await rows<any>(`SELECT i.* FROM invitations i JOIN organizations o ON o.id=i.organization_id
-   WHERE i.token_hash=? AND i.accepted_at IS NULL AND i.expires_at>now() AND o.is_active=TRUE FOR UPDATE OF i`,[hashToken(d.token)],db);
-  if(!invite)throw new HttpError(404,'Lời mời đã hết hạn hoặc đã sử dụng');
-  if(invite.role!=='staff')throw new HttpError(403,'Chỉ chấp nhận lời mời Staff');
-  if(req.user!.role==='admin')throw new HttpError(403,'Không thể hạ quyền Admin');
-  if(invite.email!==req.user!.email)throw new HttpError(403,'Lời mời thuộc email khác');
-  const [existing]=await rows<any>('SELECT role FROM organization_members WHERE organization_id=? AND user_id=?',[invite.organization_id,req.user!.id],db);
-  if(existing&&existing.role!==invite.role)throw new HttpError(409,'Bạn đã có vai trò khác tại cửa hàng; liên hệ Admin');
-  await exec(`INSERT INTO organization_members(organization_id,user_id,role,is_active) VALUES(?,?,?,TRUE)
-    ON CONFLICT (organization_id,user_id) DO UPDATE SET is_active=TRUE`,[invite.organization_id,req.user!.id,invite.role],db);
-  await exec('UPDATE users SET role=? WHERE id=?',[invite.role,req.user!.id],db);
-  await exec('UPDATE invitations SET accepted_at=now() WHERE id=?',[invite.id],db);
-  await exec('INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details) VALUES(?,?,?,?,?::jsonb)',[req.user!.id,invite.organization_id,req.user!.id,'invitation.accept',JSON.stringify({role:invite.role})],db);
-  targetOrg=invite.organization_id;
- });
- await updateSessionOrganization(req,targetOrg);
- res.json({message:'Đã tham gia cửa hàng',user:await currentUser(req.user!.id,targetOrg)});
-}));
 router.patch('/profile',requireAuth,asyncRoute(async(req,res)=>{
  const d=parse(z.object({full_name:z.string().trim().min(2).max(120),phone:z.string().max(25).nullable().optional(),address:z.string().max(255).nullable().optional()}),req.body);
  await exec('UPDATE users SET full_name=?,phone=?,address=? WHERE id=?',[d.full_name,d.phone??null,d.address??null,req.user!.id]);

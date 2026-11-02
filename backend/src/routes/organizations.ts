@@ -1,12 +1,10 @@
 import {Router} from 'express';
-import {randomBytes} from 'node:crypto';
 import {z} from 'zod';
 import {rows,exec,transaction} from '../lib/db.js';
 import {asyncRoute,HttpError,idParam,parse} from '../lib/http.js';
-import {hashToken,orgId,requireAuth,requireRole} from '../lib/auth.js';
+import {orgId,requireAuth,requireRole} from '../lib/auth.js';
 const router=Router();
 router.use(requireAuth);
-const email=z.string().email().max(190).transform(v=>v.trim().toLowerCase());
 const checkStore=(req:import('express').Request,id:number)=>{if(id!==orgId(req))throw new HttpError(404,'Không tìm thấy cửa hàng');};
 router.get('/organizations',asyncRoute(async(req,res)=>{
  const items=await rows('SELECT id,name,slug,is_active FROM organizations WHERE id=?',[orgId(req)]);
@@ -32,18 +30,5 @@ router.patch('/organizations/:id/members/:userId',requireRole('admin'),asyncRout
   await exec('INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details) VALUES(?,?,?,?,?::jsonb)',[req.user!.id,orgId(req),target,'staff.status',JSON.stringify(changes)],db);
  });
  res.json({message:'Đã cập nhật nhân viên'});
-}));
-router.post('/organizations/:id/invitations',requireRole('admin'),asyncRoute(async(req,res)=>{
- checkStore(req,idParam(req.params.id));
- const d=parse(z.object({email,role:z.literal('staff')}),req.body);
- const token=randomBytes(32).toString('hex');
- await exec("INSERT INTO invitations(organization_id,email,role,token_hash,created_by,expires_at) VALUES(?,?,?,?,?,now()+interval '7 days')",[orgId(req),d.email,'staff',hashToken(token),req.user!.id]);
- const origin=process.env.APP_ORIGIN||process.env.RENDER_EXTERNAL_URL||'http://localhost:5173';
- res.status(201).json({invite_url:`${origin}/invite/${token}`,expires_in_days:7});
-}));
-router.get('/organizations/:id/invitations',requireRole('admin'),asyncRoute(async(req,res)=>{
- checkStore(req,idParam(req.params.id));
- const items=await rows("SELECT id,email,role,created_at,expires_at,accepted_at FROM invitations WHERE organization_id=? ORDER BY id DESC LIMIT 100",[orgId(req)]);
- res.json({items});
 }));
 export default router;
