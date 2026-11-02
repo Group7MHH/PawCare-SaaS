@@ -4,7 +4,7 @@ import {api,dateTime,type Appointment} from '../lib/api';
 import {PageTitle,Panel,TableWrap,Badge,Loading,ErrorNotice,Empty,Metric} from '../components/UI';
 import {CalendarDays,Clock3,ClipboardCheck} from 'lucide-react';
 export function StaffDashboard(){
- const q=useQuery({queryKey:['staff-work'],queryFn:()=>api<{items:Appointment[];total:number}>('/appointments?limit=50')});
+ const q=useQuery({queryKey:['staff-work'],queryFn:()=>api<{items:Appointment[];total:number}>('/appointments?limit=50'),refetchInterval:30000});
  if(q.isLoading)return <Loading/>;
  if(q.error||!q.data)return <ErrorNotice message="Không thể tải lịch được phân công"/>;
  const items=q.data.items;

@@ -96,7 +96,7 @@ export function Accounts(){
      <tbody>{list.data.items.map(account=><tr key={account.id}>
       <td><strong>{account.full_name}</strong></td><td>{account.email}</td>
       <td>{roles[account.role]}</td><td>{account.is_active?'Hoạt động':'Bị khóa'}</td>
-      <td><span className="pc-account-secured"><KeyRound size={13}/> Đã băm</span></td>
+      <td><span className="pc-account-secured" title="Mật khẩu được bảo vệ bằng hash bcrypt; không có nghĩa tài khoản bị khóa"><KeyRound size={13}/> Đã khóa</span></td>
       <td>{account.id===user?.id||account.role==='admin'?<span className="muted-text">Tự quản lý</span>:
        <button type="button" className="table-action" onClick={()=>open(account)}>Quản lý <Pencil size={13}/></button>}</td>
      </tr>)}</tbody></TableWrap>}

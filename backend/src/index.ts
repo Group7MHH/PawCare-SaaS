@@ -7,6 +7,7 @@ import 'dotenv/config';
 import auth from './routes/auth.js';
 import pets from './routes/pets.js';
 import appointments from './routes/appointments.js';
+import assignment from './routes/assignment.js';
 import catalog from './routes/catalog.js';
 import management from './routes/management.js';
 import organizations from './routes/organizations.js';
@@ -40,6 +41,7 @@ app.get('/api/health',async(_req,res)=>{try{await rows('SELECT 1');res.json({sta
 app.use('/api/auth',rateLimit({windowMs:15*60*1000,limit:100,standardHeaders:'draft-7',legacyHeaders:false}),optionalAuth,auth);
 app.use('/api',optionalAuth);
 app.use('/api/pets',pets);
+app.use('/api/appointments',assignment);
 app.use('/api/appointments',appointments);
 app.use('/api',catalog);
 app.use('/api',management);
