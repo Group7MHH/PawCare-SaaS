@@ -88,7 +88,7 @@ export function Accounts(){
  const isBusy=edit.isPending||reset.isPending||roleChange.isPending;
  return <>
   <PageTitle eyebrow="QUẢN TRỊ TÀI KHOẢN" title="Quản lý tài khoản" description="Xem Admin, Staff và Customer; cập nhật thông tin, cấp quyền Staff trực tiếp hoặc cấp lại mật khẩu cho tài khoản cần hỗ trợ."/>
-  <Panel title="Danh sách tài khoản" sub="Mật khẩu được bảo vệ an toàn; Admin có thể cấp lại mật khẩu mới khi cần.">
+  <Panel title="Danh sách tài khoản" sub="Mật khẩu cũ không thể xem lại vì chỉ lưu hash bcrypt. Admin có thể cấp lại mật khẩu mới khi cần.">
    <div className="table-toolbar"><SearchBox value={search} onChange={value=>{setSearch(value);setPage(1);}} placeholder="Tìm theo họ tên hoặc email"/><span className="muted-text">{list.data?.total||0} tài khoản</span></div>
    {list.isLoading?<Loading/>:list.error?<ErrorNotice message={errorMessage(list.error)}/>:
     !list.data?.items.length?<Empty title="Không tìm thấy tài khoản"/>:
