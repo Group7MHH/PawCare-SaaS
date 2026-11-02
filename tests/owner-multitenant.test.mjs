@@ -20,9 +20,13 @@ test('session roles come from users, and Owner route is removed',()=>{
  assert.doesNotMatch(ui,/path="\/owner"/);
  assert.doesNotMatch(ui,/OwnerConsole/);
 });
-test('staff invitations are admin only',()=>{
- assert.match(org,/requireRole\('admin'\)/);
- assert.match(org,/z.literal\('staff'\)/);
+test('staff permissions are managed through Admin accounts, not invitation links',()=>{
+ const accounts=file('backend/src/routes/accounts.ts');
+ const entry=file('frontend/src/main.tsx');
+ assert.match(accounts,/router\.patch\('\/accounts\/:id\/role',sensitiveLimit/);
+ assert.match(accounts,/requireRole\('admin'\)/);
+ assert.doesNotMatch(org,/\/invitations/);
+ assert.doesNotMatch(entry,/path="\/invite\/:token"/);
  assert.doesNotMatch(org,/\/owner\/organizations/);
 });
 test('booking reserves assigned staff and stores duration snapshot',()=>{

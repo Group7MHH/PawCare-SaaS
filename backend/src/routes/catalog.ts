@@ -72,10 +72,10 @@ router.get('/staff',asyncRoute(async(req,res)=>{
  const items=await rows<any>(`SELECT u.id,u.full_name,${internal?'u.email,u.phone,':''} m.is_active,p.specialty,p.bio,
   ${internal?"(SELECT COUNT(*) FROM appointments a WHERE a.staff_id=u.id AND a.organization_id=m.organization_id AND a.status NOT IN('cancelled','completed'))":'0'} AS active_appointments
   FROM organization_members m JOIN users u ON u.id=m.user_id LEFT JOIN organization_staff_profiles p ON p.user_id=u.id AND p.organization_id=m.organization_id
-  WHERE m.organization_id=? AND m.role='staff' AND u.is_active=TRUE ${internal?'':'AND m.is_active=TRUE'} ORDER BY m.is_active DESC,u.full_name`,[orgId(req)]);
+  WHERE m.organization_id=? AND m.role='staff' AND u.role='staff' AND u.is_active=TRUE ${internal?'':'AND m.is_active=TRUE'} ORDER BY m.is_active DESC,u.full_name`,[orgId(req)]);
  res.json({items});
 }));
-router.post('/staff',requireRole('admin'),asyncRoute(async(_req,_res)=>{throw new HttpError(410,'Hãy mời Staff qua trang Thành viên cửa hàng');}));
+router.post('/staff',requireRole('admin'),asyncRoute(async(_req,_res)=>{throw new HttpError(410,'Hãy cấp quyền Staff trong Quản lý tài khoản');}));
 router.patch('/staff/:id',requireRole('admin'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id),d=parse(z.object({specialty:z.string().max(160).nullable().optional(),bio:z.string().max(500).nullable().optional(),is_active:z.boolean().optional()}),req.body);
  if(!Object.keys(d).length)throw new HttpError(422,'Thiếu dữ liệu');

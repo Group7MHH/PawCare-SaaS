@@ -1,7 +1,7 @@
 import {useEffect,useState,type FormEvent} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {toast} from 'react-hot-toast';
-import {Check,ChevronLeft,ChevronRight,ClipboardCopy,KeyRound,Pencil,ShieldAlert} from 'lucide-react';
+import {Check,ChevronLeft,ChevronRight,ClipboardCopy,KeyRound,Pencil,ShieldAlert,UserCheck} from 'lucide-react';
 import {api,errorMessage,json} from '../lib/api';
 import {useAuth} from '../lib/auth';
 import {Empty,ErrorNotice,Field,Loading,Modal,PageTitle,Panel,SearchBox,TableWrap} from '../components/UI';
@@ -25,6 +25,7 @@ export function Accounts(){
  const [adminPassword,setAdminPassword]=useState('');
  const [temporaryPassword,setTemporaryPassword]=useState('');
  const [confirmReset,setConfirmReset]=useState(false);
+ const [confirmRole,setConfirmRole]=useState(false);
  const [showTemporary,setShowTemporary]=useState(false);
  const [copied,setCopied]=useState(false);
  const list=useQuery({
@@ -33,11 +34,11 @@ export function Accounts(){
  });
  const open=(a:Account)=>{
   setSelected(a);setForm(initial(a));setAdminPassword('');
-  setTemporaryPassword('');setShowTemporary(false);setConfirmReset(false);setCopied(false);
+  setTemporaryPassword('');setShowTemporary(false);setConfirmReset(false);setConfirmRole(false);setCopied(false);
  };
  const close=()=>{
   setSelected(null);setAdminPassword('');setTemporaryPassword('');
-  setShowTemporary(false);setConfirmReset(false);setCopied(false);
+  setShowTemporary(false);setConfirmReset(false);setConfirmRole(false);setCopied(false);
  };
  useEffect(()=>()=>{setTemporaryPassword('');setAdminPassword('');},[]);
  const edit=useMutation({
@@ -64,14 +65,29 @@ export function Accounts(){
   },
   onError:e=>{toast.error(errorMessage(e));setAdminPassword('');setConfirmReset(false);}
  });
+ const roleChange=useMutation({
+  mutationFn:()=>api<{message:string}>('/accounts/'+selected!.id+'/role',json('PATCH',{
+   role:selected!.role==='customer'?'staff':'customer',admin_password:adminPassword
+  })),
+  onSuccess:data=>{
+   toast.success(data.message);
+   qc.invalidateQueries({queryKey:['admin-accounts']});
+   qc.invalidateQueries({queryKey:['members']});
+   qc.invalidateQueries({queryKey:['staff']});
+   qc.invalidateQueries({queryKey:['dashboard']});
+   setAdminPassword('');
+   close();
+  },
+  onError:e=>{toast.error(errorMessage(e));setAdminPassword('');setConfirmRole(false);}
+ });
  const copyPassword=async()=>{
   try{await navigator.clipboard.writeText(temporaryPassword);setCopied(true);toast.success('Đã sao chép mật khẩu mới');}
   catch{toast.error('Không thể sao chép. Bạn có thể hiển thị mật khẩu để chép thủ công.');}
  };
  const canManage=selected&&selected.id!==user?.id&&selected.role!=='admin';
- const isBusy=edit.isPending||reset.isPending;
+ const isBusy=edit.isPending||reset.isPending||roleChange.isPending;
  return <>
-  <PageTitle eyebrow="QUẢN TRỊ TÀI KHOẢN" title="Quản lý tài khoản" description="Xem Admin, Staff và Customer; cập nhật thông tin hoặc cấp lại mật khẩu cho tài khoản cần hỗ trợ."/>
+  <PageTitle eyebrow="QUẢN TRỊ TÀI KHOẢN" title="Quản lý tài khoản" description="Xem Admin, Staff và Customer; cập nhật thông tin, cấp quyền Staff trực tiếp hoặc cấp lại mật khẩu cho tài khoản cần hỗ trợ."/>
   <Panel title="Danh sách tài khoản" sub="Mật khẩu cũ không thể xem lại vì chỉ có hash bcrypt được lưu trong database.">
    <div className="table-toolbar"><SearchBox value={search} onChange={value=>{setSearch(value);setPage(1);}} placeholder="Tìm theo họ tên hoặc email"/><span className="muted-text">{list.data?.total||0} tài khoản</span></div>
    {list.isLoading?<Loading/>:list.error?<ErrorNotice message={errorMessage(list.error)}/>:
@@ -109,9 +125,30 @@ export function Accounts(){
       <Field label="Mật khẩu hiện tại của Admin (xác minh quyền)"><input type="password" autoComplete="off" required maxLength={100} value={adminPassword} onChange={e=>setAdminPassword(e.target.value)}/></Field>
       <div className="pc-account-actions"><button type="submit" className="button button-primary" disabled={!canManage||isBusy}><Pencil size={15}/> Lưu thay đổi</button></div>
      </form>
+     <div className="pc-account-reset pc-account-role">
+      <div className="pc-account-reset-title"><UserCheck size={20}/><div>
+       <strong>Phân quyền nhân viên</strong>
+       <p>{selected.role==='customer'
+        ?'Cấp quyền Staff trực tiếp cho Customer đang hoạt động. Không cần link mời.'
+        :'Thu hồi quyền Staff, đưa tài khoản về Customer. Không thể thu hồi nếu còn lịch chưa hoàn thành.'}</p>
+      </div></div>
+      {!confirmRole?
+       <button type="button" className="button button-secondary" disabled={!canManage||isBusy||!selected.is_active}
+        onClick={()=>{setConfirmRole(true);setConfirmReset(false);}}>
+        {selected.role==='customer'?'Cấp quyền Staff':'Thu hồi quyền Staff'}
+       </button>:
+       <div className="pc-account-confirm">
+        <p>Xác nhận <strong>{selected.role==='customer'?'cấp quyền Staff':'thu hồi quyền Staff'}</strong> cho <strong>{selected.full_name}</strong>. Hệ thống sẽ yêu cầu người dùng đăng nhập lại.</p>
+        <div className="pc-account-actions">
+         <button type="button" className="button button-secondary" onClick={()=>setConfirmRole(false)}>Hủy</button>
+         <button type="button" className="button button-primary" disabled={!adminPassword||isBusy}
+          onClick={()=>roleChange.mutate()}>Xác nhận đổi quyền</button>
+        </div>
+       </div>}
+     </div>
      <div className="pc-account-reset">
       <div className="pc-account-reset-title"><ShieldAlert size={20}/><div><strong>Đặt lại mật khẩu</strong><p>Cấp mật khẩu ngẫu nhiên mới cho người dùng. Các phiên đăng nhập hiện tại sẽ bị thu hồi.</p></div></div>
-      {!confirmReset?<button type="button" className="button button-secondary" disabled={!canManage||isBusy} onClick={()=>setConfirmReset(true)}>Bắt đầu đặt lại mật khẩu</button>:
+      {!confirmReset?<button type="button" className="button button-secondary" disabled={!canManage||isBusy} onClick={()=>{setConfirmReset(true);setConfirmRole(false);}}>Bắt đầu đặt lại mật khẩu</button>:
        <div className="pc-account-confirm"><p>Bạn chắc chắn muốn đặt lại mật khẩu của <strong>{selected.full_name}</strong>?</p><div className="pc-account-actions">
         <button className="button button-secondary" type="button" onClick={()=>setConfirmReset(false)}>Hủy</button>
         <button className="button button-primary" type="button" disabled={!adminPassword||isBusy} onClick={()=>reset.mutate()}>Xác nhận cấp mật khẩu mới</button>
