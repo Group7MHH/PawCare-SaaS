@@ -49,6 +49,7 @@ router.get('/',asyncRoute(async(req,res)=>{
  if(req.user!.role==='customer'){clauses.push('a.customer_id=?');params.push(req.user!.id);}
  if(req.user!.role==='staff'){clauses.push('a.staff_id=?');params.push(req.user!.id);}
  if(req.query.status&&req.query.status!=='all'){clauses.push('a.status=?');params.push(String(req.query.status));}
+ if(req.query.needs_attention==='true' && req.user!.role==='admin'){clauses.push('a.needs_admin_attention=TRUE');}
  if(req.query.search){clauses.push('(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?)');params.push(...Array(3).fill(`%${String(req.query.search).slice(0,80)}%`));}
  const where=clauses.length?' WHERE '+clauses.join(' AND '):'';
  const [{total}]=await rows<any>(`SELECT COUNT(*) AS total FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id ${where}`,params);
@@ -66,7 +67,7 @@ router.get('/availability',asyncRoute(async(req,res)=>{
  const selected=await getSelectedServices(orgId(req),ids);
  const duration=selected.reduce((total,service)=>total+service.duration_minutes,0);
  if(input.staff_id){
-  const [member]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[input.staff_id,orgId(req)]);
+  const [member]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE",[input.staff_id,orgId(req)]);
   if(!member)throw new HttpError(422,'Nhân viên không khả dụng');
  }
  const slots:{time:string;available:boolean}[]=[];
@@ -85,7 +86,7 @@ router.get('/availability',asyncRoute(async(req,res)=>{
   }
   if(available&&!input.staff_id){
     const free=await rows<any>(`SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id
-      WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE
+      WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE
       AND NOT EXISTS(SELECT 1 FROM appointments a WHERE a.staff_id=m.user_id AND a.status<>'cancelled' AND a.starts_at<? AND a.ends_at>?) LIMIT 1`,
       [orgId(req),en,st]);
     available=free.length>0;
@@ -111,7 +112,7 @@ router.post('/',asyncRoute(async(req,res)=>{
  const ids=d.service_ids??(d.service_id?[d.service_id]:[]);
  const start=new Date(d.starts_at);
  if(d.staff_id){
-  const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[d.staff_id,orgId(req)]);
+  const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE",[d.staff_id,orgId(req)]);
   if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');
  }
  const result=await transaction(async db=>{
@@ -125,7 +126,7 @@ router.post('/',asyncRoute(async(req,res)=>{
   if(!preferredStaff)await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
   let assigned=preferredStaff;
   if(!assigned){
-   const candidates=await rows<any>("SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE ORDER BY m.user_id",[orgId(req)],db);
+   const candidates=await rows<any>("SELECT m.user_id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE ORDER BY (SELECT COUNT(*) FROM appointments w WHERE w.staff_id=m.user_id AND w.status IN ('pending','confirmed','in_progress') AND w.starts_at >= date_trunc('day',?::timestamptz) AND w.starts_at < date_trunc('day',?::timestamptz)+interval '1 day') ASC,m.user_id",[orgId(req),st,st],db);
    for(const candidate of candidates){
     const occupied=await rows<any>("SELECT 1 FROM appointments WHERE staff_id=? AND status<>'cancelled' AND starts_at<? AND ends_at>? LIMIT 1",[candidate.user_id,en,st],db);
     if(!occupied.length){assigned=candidate.user_id;break;}
@@ -158,7 +159,7 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
    if(!['pending','confirmed'].includes(current.status))throw new HttpError(409,'Không thể thay đổi lịch này');
  }
  if(['completed','cancelled'].includes(current.status))throw new HttpError(409,'Lịch đã kết thúc hoặc hủy');
- if(d.staff_id){const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.is_active=TRUE",[d.staff_id,orgId(req)]);if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');}
+ if(d.staff_id){const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE",[d.staff_id,orgId(req)]);if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');}
  if(d.care_result!==undefined && req.user!.role!=='staff')throw new HttpError(403,'Chỉ Staff được ghi kết quả chăm sóc');
  if(d.status==='completed'&&req.user!.role==='staff'&&!d.care_result&&!current.care_result)throw new HttpError(422,'Vui lòng ghi kết quả chăm sóc trước khi hoàn thành');
  const start=d.starts_at?new Date(d.starts_at):new Date(isoUTC(current.starts_at));
@@ -172,7 +173,14 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
    const [fresh]=await rows<any>('SELECT status,staff_id,starts_at,ends_at FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
    if(!fresh || fresh.status!==current.status || isoUTC(fresh.starts_at)!==isoUTC(current.starts_at) || fresh.staff_id!==current.staff_id)throw new HttpError(409,'Lịch đã thay đổi, hãy tải lại trang');
    if(d.starts_at!==undefined||d.staff_id!==undefined)await verifyAvailability(db,staffId,st,en,id);
-   await exec("UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=?,completed_at=CASE WHEN ?='completed' AND status<>'completed' THEN now() ELSE completed_at END WHERE id=? AND organization_id=?",[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result??current.care_result??null,d.status||current.status,id,orgId(req)],db);
+   if(req.user!.role==='admin' && d.staff_id && current.status==='pending'){
+    const declined=await rows<any>('SELECT 1 FROM appointment_staff_declines WHERE appointment_id=? AND staff_id=?',[id,d.staff_id],db);
+    if(declined.length)throw new HttpError(409,'Nhân viên đã từ chối lịch này; hãy chọn người khác');
+   }
+   const attention=(d.status==='confirmed'||d.staff_id!==undefined && staffId!==null)?false:
+     d.staff_id===null && current.status==='pending'?true:current.needs_admin_attention;
+   const assignmentNote=attention?'Chưa phân công nhân viên; Admin cần điều phối':null;
+   await exec("UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=?,needs_admin_attention=?,assignment_note=?,completed_at=CASE WHEN ?='completed' AND status<>'completed' THEN now() ELSE completed_at END WHERE id=? AND organization_id=?",[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result??current.care_result??null,attention,assignmentNote,d.status||current.status,id,orgId(req)],db);
    if(d.status==='completed' && current.status!=='completed'){
      await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id)
        VALUES(?,?,?,'Kết quả chăm sóc','grooming',(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?)`,

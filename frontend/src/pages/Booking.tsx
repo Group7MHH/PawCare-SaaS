@@ -18,7 +18,7 @@ export function Booking(){const {user}=useAuth();const nav=useNavigate(),qc=useQ
      throw new Error('Phiên đăng nhập đã thay đổi. Hãy tải lại trang và đăng nhập lại đúng tài khoản Khách hàng.');
    }
    return api('/appointments',json('POST',{pet_id:Number(petId),service_ids:serviceIds,staff_id:staffId?Number(staffId):null,starts_at:new Date(`${day}T${time}:00+07:00`).toISOString(),notes}));
- },onSuccess:()=>{qc.invalidateQueries({queryKey:['appointments']});qc.invalidateQueries({queryKey:['dashboard']});toast.success('Đặt lịch thành công!');nav('/my-appointments');},onError:e=>toast.error(errorMessage(e))});
+ },onSuccess:()=>{qc.invalidateQueries({queryKey:['appointments']});qc.invalidateQueries({queryKey:['dashboard']});toast.success('Đã gửi yêu cầu! Nhân viên sẽ tiếp nhận và xác nhận lịch.');nav('/my-appointments');},onError:e=>toast.error(errorMessage(e))});
  if(pets.isLoading||services.isLoading||staff.isLoading)return <Loading/>;
  if(pets.error||services.error||staff.error)return <ErrorNotice message="Không thể lấy dữ liệu đặt lịch. Vui lòng thử lại."/>;
  const remaining=duration,timeSlots=allTimes.filter(t=>{const [h,m]=t.split(':').map(Number);const minutes=h*60+m;if(minutes+remaining>1080)return false;const dt=new Date(`${day||todayDate}T${t}:00+07:00`);return dt.getTime()>Date.now()+30*60000;});

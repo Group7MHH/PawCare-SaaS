@@ -824,3 +824,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(prefers-reduced-motion:reduce){
   .side-user{transition:none}
 }
+
+/* Staff confirmation workflow and exception handoff */
+.pc-staff-decision{padding:15px 16px;background:#f0f9f5;border:1px solid #b8dfcf;border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}
+.pc-staff-decision p{flex-basis:100%;margin:0;color:#477060;font-size:12px;line-height:1.65}
+.pc-staff-decision .button{min-height:38px}
+.pc-attention-note{padding:12px 14px;margin-bottom:12px;border:1px solid #ecd4a5;border-radius:10px;background:#fff9ec;color:#956926;font-size:12px;line-height:1.6}
+@media(max-width:600px){.pc-staff-decision .button{width:100%;justify-content:center}}
+
+.pc-attention-notice{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff8ec;border:1px solid #efd7af;padding:15px 18px;margin-bottom:17px;border-radius:12px}
+.pc-attention-notice>div{display:flex;flex-direction:column;gap:5px}
+.pc-attention-notice strong{color:#815b22;font-size:13px}
+.pc-attention-notice span{color:#897553;font-size:11px;line-height:1.5}
+.pc-attention-notice .button{white-space:nowrap}
+@media(max-width:640px){.pc-attention-notice{flex-direction:column;align-items:stretch}.pc-attention-notice .button{justify-content:center}}
