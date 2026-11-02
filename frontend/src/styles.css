@@ -729,3 +729,98 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .pc-generated-password code{padding:13px;border:1px solid #c7e4d4;border-radius:9px;background:white;color:#285543;letter-spacing:1px;overflow-wrap:anywhere;flex:1;min-width:160px;font-size:12px;user-select:all}
 .pc-generated-password .button{white-space:nowrap}
 @media(max-width:700px){.pc-account-actions{justify-content:stretch}.pc-account-actions .button{flex:1}}
+
+
+/* Responsive sidebar logout: keep account control on-screen even when
+   browser zoom reduces the effective viewport height. The navigation is
+   the only scrolling region, while the logout control stays visible. */
+.sidebar{
+  height:100vh;
+  height:100dvh;
+  max-height:100dvh;
+  min-height:0;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  overscroll-behavior:contain;
+}
+.sidebar>.brand,
+.sidebar>.workspace-name{
+  flex-shrink:0;
+}
+.sidebar nav{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#c3dcd2 transparent;
+  padding-bottom:12px;
+}
+.sidebar-bottom{
+  flex:0 0 auto;
+  min-height:0;
+  margin-top:0;
+  border-top:1px solid var(--line);
+  background:#fff;
+}
+.sidebar-help{margin-top:12px;margin-bottom:10px;}
+.side-user{
+  width:100%;
+  min-height:56px;
+  padding:10px 3px;
+  flex-shrink:0;
+  gap:8px;
+  border-top:0;
+  border-radius:9px;
+  color:var(--text);
+  transition:background-color .18s,color .18s;
+}
+.side-user:hover{background:#edf8f2;color:var(--teal-dark)}
+.side-user:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.side-user .logout-action{
+  display:flex;
+  gap:5px;
+  align-items:center;
+  justify-content:flex-end;
+  flex:0 0 auto;
+  color:var(--teal-dark);
+  font-size:10px;
+  font-weight:800;
+}
+.side-user .logout-action svg{flex:none}
+.sidebar .side-user>span:nth-child(2){min-width:0;flex:1 1 auto}
+.sidebar .side-user strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-height:800px){
+  .sidebar{padding-top:14px;padding-bottom:9px}
+  .sidebar .brand{padding-bottom:13px}
+  .sidebar .workspace-name{margin-bottom:12px}
+  .sidebar .sidebar-help{display:none}
+  .sidebar .sidebar-bottom{padding-top:5px}
+}
+@media(max-height:490px){
+  .sidebar .workspace-name{display:none}
+  .sidebar .brand{padding-bottom:8px}
+  .sidebar nav{padding-bottom:4px}
+  .sidebar .side-user{min-height:46px;padding:5px 2px}
+}
+@media(max-width:760px){
+  .sidebar{
+    position:fixed;
+    inset:0 auto 0 0;
+    bottom:0;
+    width:min(245px,calc(100vw - 40px));
+    height:100vh;
+    height:100dvh;
+    max-height:100dvh;
+    overflow:hidden;
+  }
+  .sidebar-open{transform:translateX(0)}
+}
+@media(max-width:380px){
+  .side-user .logout-action span{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .side-user{transition:none}
+}
