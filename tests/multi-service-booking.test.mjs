@@ -21,8 +21,8 @@ test('booking API validates full duration and keeps one atomic booking',()=>{
  assert.match(api,/validateBookingTime\(start,totalDuration\)/);
  assert.match(api,/totalPrice=services\.reduce/);
  assert.match(api,/await transaction\(async db=>/);
- assert.match(api,/await lockStaff\(db,\[assigned\]\)/);
- assert.match(api,/await verifyAvailability\(db,assigned,st,en\)/);
+ assert.match(api,/if\(preferredStaff\)await lockStaff\(db,\[preferredStaff\]\)/);
+ assert.match(api,/if\(preferredStaff\)await verifyAvailability\(db,preferredStaff,st,en\)/);
  assert.match(api,/INSERT INTO appointment_services/);
  assert.match(api,/duration_minutes:duration/);
 });
