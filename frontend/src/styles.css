@@ -705,3 +705,27 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(prefers-reduced-motion:reduce){
  .pc-shared-hero *, .pc-shared-hero{scroll-behavior:auto}
 }
+
+
+/* Admin account management – keeps the original PawCare light design. */
+.pc-account-secured{display:inline-flex;align-items:center;gap:5px;color:#688879;font-size:11px;background:#eaf6f0;border-radius:7px;padding:5px 9px;font-weight:700}
+.pc-account-detail{display:flex;flex-direction:column;gap:18px;min-width:0}
+.pc-account-summary{padding:15px;background:#f0f8f3;border:1px solid #e0ede5;border-radius:12px;display:flex;flex-direction:column;gap:5px}
+.pc-account-summary strong{font-size:15px;color:#244c3f}
+.pc-account-summary span{font-size:11px;color:#688678;overflow-wrap:anywhere}
+.pc-account-section{font-size:14px;color:#315b48;margin:3px 0 8px}
+.pc-account-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px}
+.pc-account-reset{border-top:1px solid #e4ece8;padding-top:17px;display:flex;flex-direction:column;gap:13px}
+.pc-account-reset-title{display:flex;align-items:start;gap:12px;color:#9d7147}
+.pc-account-reset-title>div{display:flex;flex-direction:column;gap:5px}
+.pc-account-reset-title strong{color:#6f5437;font-size:13px}
+.pc-account-reset-title p{color:#7c867c;font-size:11px;line-height:1.6;margin:0}
+.pc-account-reset>button{align-self:flex-start}
+.pc-account-confirm{padding:14px 16px;background:#fbf6ea;border:1px solid #f1e6ca;border-radius:10px}
+.pc-account-confirm>p{font-size:11px;color:#6b614c;margin:0 0 13px;line-height:1.6}
+.pc-password-result{border-radius:11px;border:1px solid #b2daca;background:#f2fbf6;padding:16px;display:flex;flex-direction:column;gap:15px}
+.pc-password-result>p{font-size:11px;line-height:1.7;color:#385e4d;margin:0}
+.pc-generated-password{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pc-generated-password code{padding:13px;border:1px solid #c7e4d4;border-radius:9px;background:white;color:#285543;letter-spacing:1px;overflow-wrap:anywhere;flex:1;min-width:160px;font-size:12px;user-select:all}
+.pc-generated-password .button{white-space:nowrap}
+@media(max-width:700px){.pc-account-actions{justify-content:stretch}.pc-account-actions .button{flex:1}}
