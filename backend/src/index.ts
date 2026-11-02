@@ -10,6 +10,7 @@ import appointments from './routes/appointments.js';
 import catalog from './routes/catalog.js';
 import management from './routes/management.js';
 import organizations from './routes/organizations.js';
+import accounts from './routes/accounts.js';
 import {optionalAuth} from './lib/auth.js';
 import {handleError,HttpError} from './lib/http.js';
 import {rows} from './lib/db.js';
@@ -43,6 +44,7 @@ app.use('/api/appointments',appointments);
 app.use('/api',catalog);
 app.use('/api',management);
 app.use('/api',organizations);
+app.use('/api',accounts);
 app.use('/api',(_req,_res,next)=>next(new HttpError(404,'Không tìm thấy API')));
 // One public URL: same-origin React SPA + Express API from the same Render Node service.
 const webDist=resolve(process.cwd(),'../frontend/dist');
