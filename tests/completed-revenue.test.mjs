@@ -18,7 +18,7 @@ test('completing an appointment records the completion time',()=>{
  assert.match(booking,/THEN now\(\) ELSE completed_at END/);
 });
 test('dashboard monthly revenue uses completion time and Vietnam calendar months',()=>{
- assert.match(dashboard,/to_char\(completed_at AT TIME ZONE 'Asia\/Ho_Chi_Minh', 'YYYY-MM'\)/);
+ assert.match(dashboard,/to_char\(COALESCE\(completed_at,updated_at\) AT TIME ZONE 'Asia\/Ho_Chi_Minh', 'YYYY-MM'\)/);
  assert.match(dashboard,/status='completed'/);
  assert.match(dashboard,/interval '5 months'/);
  assert.doesNotMatch(dashboard,/to_char\(starts_at AT TIME ZONE 'UTC', 'YYYY-MM'\)/);

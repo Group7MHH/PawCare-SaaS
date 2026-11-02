@@ -4,7 +4,7 @@ import {ArrowRight,CalendarDays,CalendarPlus,ChevronRight,HeartPulse,PawPrint,Pl
 import {api,dateTime,petIcon,type Pet,type Stats} from '../lib/api';
 import {useAuth} from '../lib/auth';
 import {PageTitle,Panel,Metric,Loading,Empty,Badge,ErrorNotice} from '../components/UI';
-export function Overview(){const {user}=useAuth(),nav=useNavigate();const pets=useQuery({queryKey:['pets'],queryFn:()=>api<{items:Pet[]}>('/pets')});const stats=useQuery({queryKey:['dashboard'],queryFn:()=>api<Stats>('/dashboard')});
+export function Overview(){const {user}=useAuth(),nav=useNavigate();const pets=useQuery({queryKey:['pets'],queryFn:()=>api<{items:Pet[]}>('/pets')});const stats=useQuery({queryKey:['dashboard'],queryFn:()=>api<Stats>('/dashboard'),refetchInterval:15000,refetchOnWindowFocus:'always',staleTime:0});
  if(pets.isLoading||stats.isLoading)return <Loading/>;
  if(pets.error||stats.error)return <ErrorNotice message="Không thể tải trang tổng quan. Vui lòng kiểm tra kết nối."/>;
  const list=pets.data?.items||[];const dashboard=stats.data;

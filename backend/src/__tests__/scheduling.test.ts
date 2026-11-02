@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {canTransition,validateBookingTime,sqlUTC,isoUTC} from '../lib/scheduling.js';
+import {canTransition,hasStaffCapacity,validateBookingTime,sqlUTC,isoUTC} from '../lib/scheduling.js';
 describe('Appointment domain rules',()=>{
  it('khách được hủy lịch chờ nhưng không tự hoàn thành',()=>{expect(canTransition('pending','cancelled','customer')).toBe(true);expect(canTransition('pending','completed','customer')).toBe(false);});
  it('Staff không thể xác nhận, hủy hay bỏ qua bước đang thực hiện',()=>{
@@ -10,6 +10,7 @@ describe('Appointment domain rules',()=>{
   expect(canTransition('in_progress','completed','staff')).toBe(true);
  });
  it('Admin không thể bỏ qua bước thực hiện',()=>expect(canTransition('confirmed','completed','admin')).toBe(false));
+ it('không thể đặt quá số Staff cùng lúc',()=>{const d=(time:string)=>new Date('2026-11-03T'+time+':00Z');const bookings=[{starts_at:d('02:00'),ends_at:d('03:00')}];expect(hasStaffCapacity(bookings,1,d('02:30'),d('03:30'))).toBe(false);expect(hasStaffCapacity(bookings,2,d('02:30'),d('03:30'))).toBe(true);expect(hasStaffCapacity(bookings,1,d('03:00'),d('04:00'))).toBe(true);});
  it('không thể mở lại lịch đã hủy',()=>expect(canTransition('cancelled','confirmed','admin')).toBe(false));
  it('từ chối đặt lịch trong quá khứ',()=>expect(()=>validateBookingTime(new Date('2020-01-01T02:00:00Z'),60,new Date('2026-01-01T00:00:00Z'))).toThrow());
  it('chấp nhận ca hợp lệ 09:00 thứ Hai ở Việt Nam',()=>expect(()=>validateBookingTime(new Date('2026-11-02T02:00:00Z'),60,new Date('2026-11-01T00:00:00Z'))).not.toThrow());

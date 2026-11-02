@@ -88,7 +88,7 @@ export function Accounts(){
  const isBusy=edit.isPending||reset.isPending||roleChange.isPending;
  return <>
   <PageTitle eyebrow="QUẢN TRỊ TÀI KHOẢN" title="Quản lý tài khoản" description="Xem Admin, Staff và Customer; cập nhật thông tin, cấp quyền Staff trực tiếp hoặc cấp lại mật khẩu cho tài khoản cần hỗ trợ."/>
-  <Panel title="Danh sách tài khoản" sub="Mật khẩu cũ không thể xem lại vì chỉ có hash bcrypt được lưu trong database.">
+  <Panel title="Danh sách tài khoản" sub="Mật khẩu cũ không thể xem lại vì chỉ lưu hash bcrypt. Admin có thể cấp lại mật khẩu mới khi cần.">
    <div className="table-toolbar"><SearchBox value={search} onChange={value=>{setSearch(value);setPage(1);}} placeholder="Tìm theo họ tên hoặc email"/><span className="muted-text">{list.data?.total||0} tài khoản</span></div>
    {list.isLoading?<Loading/>:list.error?<ErrorNotice message={errorMessage(list.error)}/>:
     !list.data?.items.length?<Empty title="Không tìm thấy tài khoản"/>:
@@ -96,7 +96,7 @@ export function Accounts(){
      <tbody>{list.data.items.map(account=><tr key={account.id}>
       <td><strong>{account.full_name}</strong></td><td>{account.email}</td>
       <td>{roles[account.role]}</td><td>{account.is_active?'Hoạt động':'Bị khóa'}</td>
-      <td><span className="pc-account-secured" title="Mật khẩu được bảo vệ bằng hash bcrypt; không có nghĩa tài khoản bị khóa"><KeyRound size={13}/> Đã khóa</span></td>
+      <td><span className="pc-account-secured" title="Mật khẩu đã được bảo vệ bằng mã băm. Đây không phải trạng thái khóa tài khoản."><KeyRound size={13}/> Đã khóa</span></td>
       <td>{account.id===user?.id||account.role==='admin'?<span className="muted-text">Tự quản lý</span>:
        <button type="button" className="table-action" onClick={()=>open(account)}>Quản lý <Pencil size={13}/></button>}</td>
      </tr>)}</tbody></TableWrap>}

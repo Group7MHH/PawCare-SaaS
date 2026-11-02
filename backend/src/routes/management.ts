@@ -25,6 +25,7 @@ router.get('/customers/:id',requireRole('admin','staff'),asyncRoute(async(req,re
  const pets=await rows(`SELECT p.* FROM pets p WHERE p.owner_id=? ${req.user!.role==='staff'?"AND EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=? AND a.staff_id=?)":""}`,[id,...(req.user!.role==='staff'?[org,req.user!.id]:[])]);res.json({customer,pets});
 }));
 router.get('/dashboard',asyncRoute(async(req,res)=>{
+ res.setHeader('Cache-Control','no-store');
  const id=req.user!.id,role=req.user!.role;
  if(role==='customer'){
   const [[pets],[upcoming],[total]]=await Promise.all([
@@ -32,28 +33,36 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
    rows<any>("SELECT COUNT(*) AS value FROM appointments WHERE customer_id=? AND organization_id=? AND status IN('pending','confirmed','in_progress') AND starts_at>=now()",[id,req.user!.organization_id??0]),
    rows<any>('SELECT COUNT(*) AS value FROM appointments WHERE customer_id=? AND organization_id=?',[id,req.user!.organization_id??0])
   ]);
-  const recent=await rows<any>(`SELECT a.id,a.status,a.starts_at,p.name AS pet_name,s.name AS service_name FROM appointments a JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id WHERE a.customer_id=? AND a.organization_id=? ORDER BY a.starts_at DESC LIMIT 5`,[id,req.user!.organization_id??0]);
+  const recent=await rows<any>(`SELECT a.id,a.status,a.starts_at,p.name AS pet_name,s.name AS service_name FROM appointments a JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id WHERE a.customer_id=? AND a.organization_id=? ORDER BY a.updated_at DESC,a.id DESC LIMIT 5`,[id,req.user!.organization_id??0]);
   res.json({stats:{pets:pets.value,upcoming:upcoming.value,appointments:total.value},recent:recent.map(a=>({...a,starts_at:isoUTC(a.starts_at)}))});return;
  }
  const org=orgId(req),staff=role==='staff';
  const params=staff?[org,id]:[org];
  const where=staff?'organization_id=? AND staff_id=?':'organization_id=?';
- const [[customers],[pets],[appointments],[revenue]]=await Promise.all([
+ const [[customers],[pets],[totals]]=await Promise.all([
   rows<any>('SELECT COUNT(DISTINCT customer_id) AS value FROM appointments WHERE organization_id=?',[org]),
   rows<any>('SELECT COUNT(DISTINCT pet_id) AS value FROM appointments WHERE organization_id=?',[org]),
-  rows<any>(`SELECT COUNT(*) AS value FROM appointments WHERE ${where}`,params),
-  rows<any>(`SELECT COALESCE(SUM(price_snapshot),0) AS value FROM appointments WHERE ${where} AND status='completed'`,params)
+  rows<any>(`SELECT COUNT(*)::int AS appointments,COUNT(*) FILTER (WHERE status='completed')::int AS completed,
+   COALESCE(SUM(price_snapshot) FILTER (WHERE status='completed'),0) AS revenue
+   FROM appointments WHERE ${where}`,params)
  ]);
- const recent=await rows<any>(`SELECT a.id,a.status,a.starts_at,u.full_name AS customer_name,p.name AS pet_name,s.name AS service_name,a.price_snapshot
+ const recent=await rows<any>(`SELECT a.id,a.status,a.starts_at,u.full_name AS customer_name,p.name AS pet_name,COALESCE(bundle.names,s.name) AS service_name,a.price_snapshot
   FROM appointments a JOIN users u ON u.id=a.customer_id JOIN pets p ON p.id=a.pet_id JOIN services s ON s.id=a.service_id
-  WHERE a.organization_id=? ${staff?'AND a.staff_id=?':''} ORDER BY a.starts_at DESC LIMIT 7`,params);
- const series=await rows<any>(`SELECT to_char(completed_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month,
+  LEFT JOIN LATERAL (SELECT string_agg(svc.name,' + ' ORDER BY aps.position) AS names FROM appointment_services aps JOIN services svc ON svc.id=aps.service_id WHERE aps.appointment_id=a.id) bundle ON TRUE
+  WHERE a.organization_id=? ${staff?'AND a.staff_id=?':''} ORDER BY a.updated_at DESC,a.id DESC LIMIT 7`,params);
+ const series=await rows<any>(`SELECT to_char(COALESCE(completed_at,updated_at) AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month,
   COALESCE(SUM(price_snapshot),0) AS revenue,COUNT(*) AS appointments
   FROM appointments WHERE ${where} AND status='completed'
-  AND completed_at >= (date_trunc('month', now() AT TIME ZONE 'Asia/Ho_Chi_Minh') - interval '5 months') AT TIME ZONE 'Asia/Ho_Chi_Minh'
-  AND completed_at < (date_trunc('month', now() AT TIME ZONE 'Asia/Ho_Chi_Minh') + interval '1 month') AT TIME ZONE 'Asia/Ho_Chi_Minh'
-  GROUP BY to_char(completed_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') ORDER BY month ASC`,params);
+  AND COALESCE(completed_at,updated_at) >= (date_trunc('month', now() AT TIME ZONE 'Asia/Ho_Chi_Minh') - interval '5 months') AT TIME ZONE 'Asia/Ho_Chi_Minh'
+  AND COALESCE(completed_at,updated_at) < (date_trunc('month', now() AT TIME ZONE 'Asia/Ho_Chi_Minh') + interval '1 month') AT TIME ZONE 'Asia/Ho_Chi_Minh'
+  GROUP BY to_char(COALESCE(completed_at,updated_at) AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') ORDER BY month ASC`,params);
+ const recentCompleted=await rows<any>(`SELECT a.id,a.starts_at,COALESCE(a.completed_at,a.updated_at) AS completed_at,
+  a.price_snapshot,u.full_name AS customer_name,p.name AS pet_name,COALESCE(bundle.names,s.name) AS service_name
+  FROM appointments a JOIN users u ON u.id=a.customer_id JOIN pets p ON p.id=a.pet_id JOIN services s ON s.id=a.service_id
+  LEFT JOIN LATERAL (SELECT string_agg(svc.name,' + ' ORDER BY aps.position) AS names FROM appointment_services aps JOIN services svc ON svc.id=aps.service_id WHERE aps.appointment_id=a.id) bundle ON TRUE
+  WHERE a.organization_id=? ${staff?'AND a.staff_id=?':''} AND a.status='completed'
+  ORDER BY COALESCE(a.completed_at,a.updated_at) DESC,a.id DESC LIMIT 5`,params);
  const statuses=await rows<any>(`SELECT status,COUNT(*) AS value FROM appointments WHERE ${where} GROUP BY status`,params);
- res.json({stats:{customers:customers.value,pets:pets.value,appointments:appointments.value,revenue:revenue.value},recent:recent.map(a=>({...a,starts_at:isoUTC(a.starts_at)})),series,statuses});
+ res.json({stats:{customers:customers.value,pets:pets.value,appointments:totals.appointments,completed:totals.completed,revenue:totals.revenue},recent:recent.map(a=>({...a,starts_at:isoUTC(a.starts_at)})),recent_completed:recentCompleted.map(a=>({...a,starts_at:isoUTC(a.starts_at),completed_at:isoUTC(a.completed_at)})),series,statuses});
 }));
 export default router;
