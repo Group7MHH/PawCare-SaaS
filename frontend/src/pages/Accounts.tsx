@@ -12,6 +12,11 @@ type Account={
 };
 type AccountForm={full_name:string;email:string;phone:string;address:string};
 const roles={admin:'Admin',staff:'Staff',customer:'Customer'};
+type AccountDeletionImpact={
+ id:number;full_name:string;email:string;role:string;pets:number;
+ appointments:number;active_appointments:number;completed_appointments:number;
+ completed_revenue:number;care_records:number
+};
 const initial=(a:Account):AccountForm=>({
  full_name:a.full_name,email:a.email,phone:a.phone||'',address:a.address||''
 });
@@ -26,6 +31,8 @@ export function Accounts(){
  const [temporaryPassword,setTemporaryPassword]=useState('');
  const [confirmReset,setConfirmReset]=useState(false);
  const [confirmRole,setConfirmRole]=useState(false);
+ const [confirmDelete,setConfirmDelete]=useState(false);
+ const [confirmationEmail,setConfirmationEmail]=useState('');
  const [showTemporary,setShowTemporary]=useState(false);
  const [copied,setCopied]=useState(false);
  const list=useQuery({
@@ -34,11 +41,11 @@ export function Accounts(){
  });
  const open=(a:Account)=>{
   setSelected(a);setForm(initial(a));setAdminPassword('');
-  setTemporaryPassword('');setShowTemporary(false);setConfirmReset(false);setConfirmRole(false);setCopied(false);
+  setTemporaryPassword('');setShowTemporary(false);setConfirmReset(false);setConfirmRole(false);setConfirmDelete(false);setConfirmationEmail('');setCopied(false);
  };
  const close=()=>{
   setSelected(null);setAdminPassword('');setTemporaryPassword('');
-  setShowTemporary(false);setConfirmReset(false);setConfirmRole(false);setCopied(false);
+  setShowTemporary(false);setConfirmReset(false);setConfirmRole(false);setConfirmDelete(false);setConfirmationEmail('');setCopied(false);
  };
  useEffect(()=>()=>{setTemporaryPassword('');setAdminPassword('');},[]);
  const edit=useMutation({
@@ -80,12 +87,40 @@ export function Accounts(){
   },
   onError:e=>{toast.error(errorMessage(e));setAdminPassword('');setConfirmRole(false);}
  });
+
+ const deletePreview=useQuery({
+  queryKey:['account-delete-preview',selected?.id],
+  queryFn:()=>api<AccountDeletionImpact>('/accounts/'+selected!.id+'/delete-preview'),
+  enabled:!!selected&&confirmDelete,
+  staleTime:0,
+  refetchOnWindowFocus:false
+ });
+ const deleteAccount=useMutation({
+  mutationFn:()=>api<{message:string}>('/accounts/'+selected!.id,json('DELETE',{
+   admin_password:adminPassword,
+   confirmation_email:confirmationEmail,
+   expected_pets:deletePreview.data!.pets,
+   expected_appointments:deletePreview.data!.appointments,
+   expected_care_records:deletePreview.data!.care_records
+  })),
+  onSuccess:data=>{
+   toast.success(data.message);
+   qc.invalidateQueries({queryKey:['admin-accounts']});
+   qc.invalidateQueries({queryKey:['members']});
+   qc.invalidateQueries({queryKey:['staff']});
+   qc.invalidateQueries({queryKey:['dashboard']});
+   qc.invalidateQueries({queryKey:['appointments']});
+   setPage(1);
+   close();
+  },
+  onError:e=>{toast.error(errorMessage(e));setAdminPassword('');deletePreview.refetch();}
+ });
  const copyPassword=async()=>{
   try{await navigator.clipboard.writeText(temporaryPassword);setCopied(true);toast.success('Đã sao chép mật khẩu mới');}
   catch{toast.error('Không thể sao chép. Bạn có thể hiển thị mật khẩu để chép thủ công.');}
  };
  const canManage=selected&&selected.id!==user?.id&&selected.role!=='admin';
- const isBusy=edit.isPending||reset.isPending||roleChange.isPending;
+ const isBusy=edit.isPending||reset.isPending||roleChange.isPending||deleteAccount.isPending;
  return <>
   <PageTitle eyebrow="QUẢN TRỊ TÀI KHOẢN" title="Quản lý tài khoản" description="Xem Admin, Staff và Customer; cập nhật thông tin, cấp quyền Staff trực tiếp hoặc cấp lại mật khẩu cho tài khoản cần hỗ trợ."/>
   <Panel title="Danh sách tài khoản" sub="Mật khẩu cũ không thể xem lại vì chỉ lưu hash bcrypt. Admin có thể cấp lại mật khẩu mới khi cần.">
@@ -143,6 +178,45 @@ export function Accounts(){
          <button type="button" className="button button-secondary" onClick={()=>setConfirmRole(false)}>Hủy</button>
          <button type="button" className="button button-primary" disabled={!adminPassword||isBusy}
           onClick={()=>roleChange.mutate()}>Xác nhận đổi quyền</button>
+        </div>
+       </div>}
+     </div>
+
+     <div className="pc-account-reset pc-account-delete">
+      <div className="pc-account-reset-title"><ShieldAlert size={20}/><div>
+       <strong>Xóa tài khoản vĩnh viễn</strong>
+       <p>Xóa toàn bộ dữ liệu liên quan trong PostgreSQL, bao gồm hồ sơ thú cưng, lịch hẹn, hồ sơ chăm sóc và phiên đăng nhập. Không thể hoàn tác.</p>
+      </div></div>
+      {!confirmDelete?
+       <button type="button" className="button button-outline-danger" disabled={!canManage||isBusy}
+        onClick={()=>{setConfirmDelete(true);setConfirmRole(false);setConfirmReset(false);setConfirmationEmail('');}}>
+        Xem dữ liệu và xóa tài khoản
+       </button>:
+       <div className="pc-account-confirm">
+        {deletePreview.isLoading?<Loading/>:deletePreview.error?<ErrorNotice message={errorMessage(deletePreview.error)}/>:
+         deletePreview.data&&<>
+          <p><strong>Dữ liệu sẽ bị xóa vĩnh viễn:</strong></p>
+          <ul>
+           <li>{deletePreview.data.pets} hồ sơ thú cưng</li>
+           <li>{deletePreview.data.appointments} lịch hẹn ({deletePreview.data.active_appointments} lịch chưa hoàn tất, {deletePreview.data.completed_appointments} lịch hoàn thành)</li>
+           <li>{deletePreview.data.care_records} hồ sơ chăm sóc</li>
+           <li>Doanh thu lịch hoàn thành bị xóa: {Number(deletePreview.data.completed_revenue).toLocaleString('vi-VN')} ₫</li>
+          </ul>
+          <p><strong>Cảnh báo:</strong> Nếu xóa Staff, lịch hẹn của những Customer được Staff đó phục vụ cũng bị xóa. Tài khoản và dữ liệu đã xóa sẽ không thể khôi phục từ giao diện.</p>
+          <Field label={`Nhập chính xác email ${selected.email} để xác nhận`}>
+           <input type="text" autoComplete="off" spellCheck={false} value={confirmationEmail}
+            onChange={e=>setConfirmationEmail(e.target.value)} placeholder={selected.email}/>
+          </Field>
+          <Field label="Mật khẩu hiện tại của Admin">
+           <input type="password" autoComplete="off" value={adminPassword}
+            onChange={e=>setAdminPassword(e.target.value)} placeholder="Xác minh quyền xóa"/>
+          </Field>
+         </>}
+        <div className="pc-account-actions">
+         <button type="button" className="button button-secondary" onClick={()=>{setConfirmDelete(false);setConfirmationEmail('');}}>Hủy</button>
+         <button type="button" className="button button-outline-danger"
+          disabled={!deletePreview.data||confirmationEmail.trim().toLowerCase()!==selected.email||!adminPassword||isBusy}
+          onClick={()=>deleteAccount.mutate()}>Xác nhận xóa vĩnh viễn</button>
         </div>
        </div>}
      </div>
