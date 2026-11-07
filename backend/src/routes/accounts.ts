@@ -3,7 +3,7 @@ import {randomBytes} from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import {z} from 'zod';
-import {rows,exec,transaction} from '../lib/db.js';
+import {rows,exec,transaction,type DB} from '../lib/db.js';
 import {asyncRoute,HttpError,idParam,pageParams,parse} from '../lib/http.js';
 import {requireAuth,requireRole,orgId} from '../lib/auth.js';
 
@@ -46,6 +46,101 @@ router.get('/accounts',asyncRoute(async(req,res)=>{
  const items=await rows<AccountRow>(`SELECT id,full_name,email,phone,address,role,is_active,created_at FROM users ${filter} ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`,[q,q,limit,(page-1)*limit]);
  res.setHeader('Cache-Control','no-store');
  res.json({items,total:Number(count.total),page,limit});
+}));
+
+
+/** Preview all database rows affected by permanently deleting one account. */
+type DeletionImpact={
+ pets:number;appointments:number;active_appointments:number;
+ completed_appointments:number;completed_revenue:number;care_records:number
+};
+async function deletionImpact(target:number,db?:DB):Promise<DeletionImpact>{
+ const [petRows,appointmentRows,recordRows]=await Promise.all([
+  rows<{count:number}>('SELECT COUNT(*)::int AS count FROM pets WHERE owner_id=?',[target],db),
+  rows<{appointments:number;active_appointments:number;completed_appointments:number;completed_revenue:number}>(`
+   SELECT COUNT(*)::int AS appointments,
+   COUNT(*) FILTER (WHERE status IN ('pending','confirmed','in_progress'))::int AS active_appointments,
+   COUNT(*) FILTER (WHERE status='completed')::int AS completed_appointments,
+   COALESCE(SUM(price_snapshot) FILTER (WHERE status='completed'),0) AS completed_revenue
+   FROM appointments WHERE customer_id=? OR staff_id=?
+   OR pet_id IN (SELECT id FROM pets WHERE owner_id=?)`,[target,target,target],db),
+  rows<{count:number}>(`
+   SELECT COUNT(*)::int AS count FROM care_records
+   WHERE created_by_user_id=? OR pet_id IN (SELECT id FROM pets WHERE owner_id=?)
+   OR appointment_id IN (SELECT id FROM appointments
+    WHERE customer_id=? OR staff_id=? OR pet_id IN (SELECT id FROM pets WHERE owner_id=?))`,
+   [target,target,target,target,target],db)
+ ]);
+ return {pets:petRows[0].count,...appointmentRows[0],care_records:recordRows[0].count};
+}
+const deleteConfirmation=adminProof.extend({
+ confirmation_email:z.string().trim().email().max(190).transform(value=>value.toLowerCase()),
+ expected_pets:z.number().int().nonnegative(),
+ expected_appointments:z.number().int().nonnegative(),
+ expected_care_records:z.number().int().nonnegative()
+}).strict();
+
+router.get('/accounts/:id/delete-preview',sensitiveLimit,asyncRoute(async(req,res)=>{
+ const target=idParam(req.params.id);
+ if(target===req.user!.id)throw new HttpError(403,'Không thể xóa tài khoản Admin đang đăng nhập');
+ const [account]=await rows<{id:number;full_name:string;email:string;role:string}>(
+  'SELECT id,full_name,email,role FROM users WHERE id=?',[target]);
+ if(!account)throw new HttpError(404,'Không tìm thấy tài khoản');
+ if(account.role==='admin')throw new HttpError(403,'Không được xóa tài khoản Admin khác');
+ const impact=await deletionImpact(target);
+ res.setHeader('Cache-Control','no-store');
+ res.json({...account,...impact});
+}));
+
+/** Hard delete all records attached to Customer/Staff in one PostgreSQL transaction.
+ * This also permanently removes appointments assigned to the deleted Staff,
+ * even when the customers of those appointments still exist.
+ */
+router.delete('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
+ const target=idParam(req.params.id),data=parse(deleteConfirmation,req.body);
+ if(target===req.user!.id)throw new HttpError(403,'Không thể tự xóa tài khoản Admin');
+ await confirmAdmin(req.user!.id,data.admin_password);
+ await transaction(async db=>{
+  // Serialize with booking operations to prevent new related appointments
+  // during the preview verification and cascade.
+  await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
+  const [account]=await rows<{id:number;email:string;role:string}>(
+   'SELECT id,email,role FROM users WHERE id=? FOR UPDATE',[target],db);
+  if(!account)throw new HttpError(404,'Không tìm thấy tài khoản');
+  if(account.role==='admin')throw new HttpError(403,'Không được xóa tài khoản Admin');
+  if(data.confirmation_email!==account.email)throw new HttpError(400,'Email xác nhận không khớp với tài khoản');
+  const impact=await deletionImpact(target,db);
+  if(data.expected_pets!==impact.pets ||
+     data.expected_appointments!==impact.appointments ||
+     data.expected_care_records!==impact.care_records){
+   throw new HttpError(409,'Dữ liệu tài khoản đã thay đổi. Hãy xem lại danh sách dữ liệu sẽ bị xóa');
+  }
+  // care_records reference both pets and appointments without ON DELETE CASCADE.
+  // Remove those plus records authored by the deleted user before appointments.
+  await exec(`DELETE FROM care_records
+   WHERE created_by_user_id=? OR pet_id IN (SELECT id FROM pets WHERE owner_id=?)
+   OR appointment_id IN (SELECT id FROM appointments WHERE customer_id=? OR staff_id=?
+    OR pet_id IN (SELECT id FROM pets WHERE owner_id=?))`,
+   [target,target,target,target,target],db);
+  // appointment_services and appointment_staff_declines cascade from appointments.
+  await exec(`DELETE FROM appointments WHERE customer_id=? OR staff_id=?
+   OR pet_id IN (SELECT id FROM pets WHERE owner_id=?)`,[target,target,target],db);
+  await exec('DELETE FROM pets WHERE owner_id=?',[target],db);
+  // Legacy invitations and audit entries hold restrictive user foreign keys.
+  await exec('DELETE FROM invitations WHERE created_by=?',[target],db);
+  await exec('DELETE FROM role_audit_logs WHERE actor_id=? OR target_user_id=?',[target,target],db);
+  const removed=await exec('DELETE FROM users WHERE id=?',[target],db);
+  if(removed.affectedRows!==1)throw new HttpError(409,'Không thể xóa tài khoản');
+  // Sessions, staff profiles, memberships and standalone staff declines cascade.
+  // Log the action without retaining a foreign key or PII for the erased account.
+  await exec('INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details) VALUES(?,?,NULL,?,?::jsonb)',[
+   req.user!.id,orgId(req),'account.permanently_deleted',
+   JSON.stringify({role:account.role,pets_removed:impact.pets,appointments_removed:impact.appointments,
+    care_records_removed:impact.care_records,completed_revenue_removed:impact.completed_revenue})
+  ],db);
+ });
+ res.setHeader('Cache-Control','no-store');
+ res.json({message:'Đã xóa vĩnh viễn tài khoản và toàn bộ dữ liệu liên quan'});
 }));
 
 router.patch('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
