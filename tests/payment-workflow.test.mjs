@@ -40,19 +40,19 @@ test('payment is available in booking, customer appointments and Admin dialog',(
  assert.ok(read('backend/src/index.ts').includes("app.use('/api/payments',payments)"));
 });
 
-test('payment list and totals respect each role without exposing other customers to Staff',()=>{
+test('Customer/Admin ledgers are scoped and Staff has no payment ledger access',()=>{
  const source=read('backend/src/routes/payments.ts');
  const list=source.slice(source.indexOf("router.get('/',"),source.indexOf("router.get('/:id',"));
+ assert.ok(list.includes("router.get('/',requireRole('customer','admin')"));
  assert.ok(list.includes("if(req.user!.role==='customer')"));
  assert.ok(list.includes("scope+=' AND p.customer_id=?'"));
- assert.ok(list.includes("else if(req.user!.role==='staff')"));
- assert.ok(list.includes("a.staff_id=? AND a.status IN ('confirmed','in_progress','completed')"));
  assert.ok(list.includes("scopeParams.push(req.user!.id)"));
  assert.ok(list.includes('FROM payments p JOIN appointments a ON a.id=p.appointment_id WHERE ${scope}'));
  assert.ok(list.includes("req.user!.role==='customer'"));
  assert.ok(list.includes('admin_note:null,bank_transaction_reference:undefined'));
  const detail=source.slice(source.indexOf("router.get('/:id',"),source.indexOf("router.patch('/:id/method'"));
  assert.ok(detail.includes('allowed(p,req.user!)'));
+ assert.ok(detail.includes("req.user!.role==='admin'?p:{...p,admin_note:null"));
 });
 test('cancelled transfer is never marked paid and requires Admin handling',()=>{
  const source=read('backend/src/routes/payments.ts');
@@ -83,5 +83,5 @@ test('payment changes are only executed by Admin and Staff has read-only access'
  assert.ok(!ui.includes("pc-staff-reconcile"));
  assert.ok(ui.includes("{admin&&<div className=\"pc-payment-reconcile\">"));
  assert.ok(appointment.includes('appointmentId={selected.id} staff'));
- assert.ok(appointment.includes('Chỉ Admin được xác nhận và hoàn tiền'));
+ assert.ok(appointment.includes('chỉ Admin được xác nhận và hoàn tiền'));
 });
