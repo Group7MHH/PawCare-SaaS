@@ -24,8 +24,8 @@ test('customer never self-confirms and demo screen is one clear button',()=>{
  const notice=route.slice(route.indexOf("router.post('/:id/transfer-notice'"),route.indexOf("router.post('/:id/reconcile'"));
  assert.ok(notice.includes("status='pending_review'"));
  assert.ok(!notice.includes("status='paid'"));
- assert.ok(ui.includes('Xác nhận đã chuyển khoản'));
- assert.ok(ui.includes('Mô phỏng xác nhận thanh toán'));
+ assert.ok(ui.includes('Xác nhận chuyển khoản (Demo)'));
+ assert.ok(ui.includes('Chuyển khoản chỉ mô phỏng trong bản demo.'));
  assert.ok(ui.includes('không có kết nối hoặc xác minh giao dịch ngân hàng'));
  assert.ok(!ui.includes('verificationReference'));
  assert.ok(!ui.includes('Mã giao dịch ngân hàng đã đối chiếu'));

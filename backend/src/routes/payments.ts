@@ -186,8 +186,10 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
    // Delegated cashier capability is restricted to assigned, accepted bookings.
    if(p.staff_id!==req.user!.id)throw new HttpError(403,'Chỉ Staff phụ trách lịch mới có thể đối soát');
    if(action!=='confirm_paid')throw new HttpError(403,'Staff không thể từ chối giao dịch hoặc xác nhận hoàn tiền');
-   if(p.method!=='bank_transfer'||p.status!=='pending_review')
-    throw new HttpError(409,'Staff chỉ có thể xác nhận chuyển khoản đang chờ đối soát');
+   const cashAwaitingCollection=p.method==='cash'&&p.status==='unpaid';
+   const bankAwaitingReview=p.method==='bank_transfer'&&p.status==='pending_review';
+   if(!cashAwaitingCollection&&!bankAwaitingReview)
+    throw new HttpError(409,'Staff chỉ được xác nhận tiền mặt chưa thu hoặc chuyển khoản đang chờ xác nhận');
    if(!['confirmed','in_progress','completed'].includes(p.appointment_status))
     throw new HttpError(409,'Lịch chưa được nhận hoặc đã hủy, vui lòng chuyển Admin xử lý');
   }
@@ -210,7 +212,7 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
   const demoBankConfirmation=action==='confirm_paid'&&p.method==='bank_transfer';
   const reviewerNote=demoBankConfirmation
    ?'Xác nhận mô phỏng trong bản demo; PawCare không xác minh giao dịch ngân hàng.'
-   :note||null;
+   :action==='confirm_paid'&&p.method==='cash'?'Đã nhận tiền mặt tại quầy.':note||null;
   await exec("UPDATE payments SET status=?,admin_note=?,reviewed_by=?,reviewed_at=now(),paid_at=CASE WHEN ?='paid' THEN now() ELSE paid_at END WHERE id=?",[
    status,reviewerNote,req.user!.id,status,p.id
   ],db);

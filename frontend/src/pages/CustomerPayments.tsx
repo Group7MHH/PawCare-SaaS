@@ -112,7 +112,7 @@ export function CustomerPayments(){
     </div>}
    <div className="pc-wallet-list-foot"><span>Trang {page}/{pages} · {query.data?.total??0} giao dịch</span><div className="pc-wallet-pager"><button type="button" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} aria-label="Trang thanh toán trước"><ChevronLeft size={18}/></button><button type="button" onClick={()=>setPage(p=>Math.min(pages,p+1))} disabled={page>=pages} aria-label="Trang thanh toán sau"><ChevronRight size={18}/></button></div></div>
   </section>
-  <footer className="pc-wallet-bottom"><ShieldCheck size={19}/><span>Chỉ Admin xác nhận giao dịch đã nhận tiền. Nếu bạn đã chuyển khoản nhưng trạng thái chưa cập nhật, hãy mở giao dịch và gửi thông báo chuyển khoản.</span></footer>
+  <footer className="pc-wallet-bottom"><ShieldCheck size={19}/><span>Staff phụ trách hoặc Admin ghi nhận tiền mặt đã thu và xác nhận chuyển khoản trong bản demo. Nếu đã chuyển khoản, hãy mở giao dịch và gửi thông báo.</span></footer>
   {active&&<section ref={detailRef} className="pc-wallet-inline-detail" aria-label="Chi tiết thanh toán đã chọn">
    <header className="pc-wallet-inline-head">
     <div><span className="pc-wallet-overline">CHI TIẾT GIAO DỊCH</span><h2>Thanh toán lịch #{String(selectedId).padStart(4,'0')}</h2><p>{selected?.payment_reference??'Xem hướng dẫn chuyển khoản và tình trạng đối soát tại đây.'}</p></div>
