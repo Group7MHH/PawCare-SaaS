@@ -1,6 +1,7 @@
 import {Router} from 'express';
 import {z} from 'zod';
 import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
 import {pool,rows,exec,transaction,type DB} from '../lib/db.js';
 import {asyncRoute,HttpError,idParam,pageParams,parse} from '../lib/http.js';
 import {orgId,requireAuth,requireOrganization,requireRole} from '../lib/auth.js';
@@ -17,6 +18,8 @@ type PaymentRow={
 };
 const router=Router();
 router.use(requireAuth,requireOrganization);
+const bankChangeLimit=rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:'draft-7',legacyHeaders:false,
+ message:{message:'Quá nhiều lần thay đổi thông tin ngân hàng. Vui lòng thử lại sau.'}});
 const select=`SELECT p.*,a.status AS appointment_status,a.staff_id AS staff_id,COALESCE(bundle.names,s.name) AS service_name,
  pet.name AS pet_name,u.full_name AS customer_name
  FROM payments p
@@ -50,7 +53,7 @@ router.get('/admin-bank',requireRole('admin'),asyncRoute(async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  res.json({settings});
 }));
-router.put('/admin-bank',requireRole('admin'),asyncRoute(async(req,res)=>{
+router.put('/admin-bank',requireRole('admin'),bankChangeLimit,asyncRoute(async(req,res)=>{
  const data=parse(z.object({
   name:z.string().trim().min(2).max(80),
   account:z.string().trim().regex(/^[0-9]{6,32}$/,'Số tài khoản phải gồm 6 đến 32 chữ số'),
@@ -207,9 +210,8 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
   if(!verification_reference||verification_reference.length<6)throw new HttpError(422,'Admin cần nhập mã giao dịch đã kiểm tra trên sao kê (từ 6 ký tự)');
   if(!note||note.length<10)throw new HttpError(422,'Admin cần ghi chú xác minh tiền thực nhận (ít nhất 10 ký tự)');
  }
- const reviewerNote=staffReviewer
-   ?`Staff đã đối chiếu sao kê. Mã giao dịch: ${verification_reference}. Ghi chú: ${note}`
-   :note||null;
+ // The reviewer and reference are stored separately; keep notes within VARCHAR(500).
+ const reviewerNote=note||null;
   await exec("UPDATE payments SET status=?,admin_note=?,reviewed_by=?,reviewed_at=now(),paid_at=CASE WHEN ?='paid' THEN now() ELSE paid_at END,bank_transaction_reference=CASE WHEN ? IS NOT NULL THEN ? ELSE bank_transaction_reference END WHERE id=?",[
    status,reviewerNote,req.user!.id,status,
     action==='confirm_paid'&&p.method==='bank_transfer'?verification_reference:null,
