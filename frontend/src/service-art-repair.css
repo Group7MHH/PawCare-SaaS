@@ -1,0 +1,79 @@
+/* PawCare service artwork visibility repair.
+   Every service SVG has a numeric 420×320 viewBox; never crop the scene. */
+.nb-app .pc-service-plan-top{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-start;
+ gap:12px;
+ min-height:112px;
+}
+.nb-app .pc-service-serial{
+ flex:1 1 auto;
+ min-width:0;
+ max-width:none;
+ font-size:10px;
+ line-height:1.6;
+ letter-spacing:.09em;
+}
+.nb-app .pc-service-plan-artwork{
+ position:relative;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex:0 0 124px;
+ width:124px;
+ height:96px;
+ padding:4px;
+ overflow:hidden;
+ border:1px solid #dac8b0;
+ border-radius:13px;
+ background:#f1ebe1!important;
+ box-shadow:0 4px 13px rgba(43,66,65,.085);
+ transform:none;
+ transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s ease,border-color .3s ease;
+}
+.nb-app .pc-service-plan-artwork .pc-service-svg{
+ display:block;
+ flex:0 0 100%;
+ width:100%!important;
+ height:100%!important;
+ max-width:100%;
+ max-height:100%;
+ min-width:0;
+ min-height:0;
+ object-fit:contain!important;
+ object-position:center!important;
+ border:0;
+ border-radius:9px;
+ padding:0;
+ margin:0;
+ background:transparent!important;
+ filter:contrast(1.1) saturate(1.04);
+ transform:none!important;
+ transition:filter .25s ease;
+}
+.nb-app .pc-service-plan:hover .pc-service-plan-artwork,
+.nb-app .pc-service-plan:focus-within .pc-service-plan-artwork{
+ transform:translateY(-3px);
+ border-color:#bba17d;
+ box-shadow:0 9px 19px rgba(43,66,65,.12);
+}
+.nb-app .pc-service-plan:hover .pc-service-svg{filter:contrast(1.14) saturate(1.08)}
+.nb-app .pc-service-plan:focus-within .pc-service-plan-artwork{
+ outline:2px solid #94b2a4;
+ outline-offset:2px;
+}
+@media(max-width:760px){
+ .nb-app .pc-service-plan-top{min-height:100px}
+ .nb-app .pc-service-plan-artwork{flex-basis:112px;width:112px;height:88px}
+}
+@media(max-width:520px){
+ .nb-app .pc-service-plan-top{min-height:96px}
+ .nb-app .pc-service-plan-artwork{flex-basis:106px;width:106px;height:82px}
+}
+@media(prefers-reduced-motion:reduce){
+ .nb-app .pc-service-plan-artwork,
+ .nb-app .pc-service-plan-artwork .pc-service-svg{
+  transform:none!important;transition:none!important;animation:none!important;
+ }
+}
