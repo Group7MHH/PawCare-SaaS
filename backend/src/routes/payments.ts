@@ -173,6 +173,10 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
   verification_reference:z.string().trim().max(80).optional()
  }).strict(),req.body);
  await transaction(async db=>{
+  // Acquire booking row first, consistently with cancellation and rescheduling.
+  // This avoids lock-order inversions while payment and booking are updated together.
+  const [bookingLock]=await rows<{id:number}>('SELECT id FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
+  if(!bookingLock)throw new HttpError(404,'Không tìm thấy lịch hẹn');
   const [p]=await rows<PaymentRow>(`SELECT p.*,a.status AS appointment_status,a.staff_id
    FROM payments p JOIN appointments a ON a.id=p.appointment_id
    WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p,a`,[id,orgId(req)],db);
