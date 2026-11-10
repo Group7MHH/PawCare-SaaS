@@ -6,11 +6,11 @@ const base=new URL('../frontend/public/illustrations/',import.meta.url);
 const source=readFileSync(new URL('../frontend/src/components/BrandArtwork.tsx',import.meta.url),'utf8');
 const webpFiles=[
  'companion-hero','staff-care-photo','admin-office-photo',
- 'avatar-dog','avatar-cat','service-checkup','service-bath','service-groom',
+ 'avatar-dog','avatar-cat','sidebar-story','service-checkup','service-bath','service-groom',
  'service-vaccine','service-dental','service-general'
 ];
 
-test('pet artwork images are optimized local WebP rather than distorted SVG silhouettes',()=>{
+test('hand-drawn pet scenes are complete, optimized local WebP assets',()=>{
  for(const name of webpFiles){
   const buf=readFileSync(new URL(`${name}.webp`,base));
   assert.ok(buf.length>3000,`${name} image is unexpectedly small`);
@@ -27,6 +27,7 @@ test('functional navigation and branding remain vector, pet scenes use local ill
  assert.match(source,/file="companion-hero" format="webp"/);
  assert.match(source,/file="staff-care-photo" format="webp"/);
  assert.match(source,/file="admin-office-photo" format="webp"/);
+ assert.match(source,/file="sidebar-story" format="webp"/);
  assert.match(source,/format="webp" className="pc-service-svg"/);
  assert.match(source,/species==='dog'\|\|species==='cat'/);
  assert.ok(!source.includes('https://'));

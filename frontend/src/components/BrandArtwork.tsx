@@ -1,7 +1,7 @@
 /**
  * PawCare artwork system.
- * Detailed pet scenes are optimized local WebP illustrations; UI ornaments remain editable SVG.
- * The large scenes deliberately avoid hand-built facial SVG paths, which were distorting pets.
+ * Detailed pet scenes are local ink-and-wash editorial WebP assets; functional UI ornaments remain SVG.
+ * No large-scale artificial SVG pet faces; illustrations must be recognizable at card size.
  */
 const base='/illustrations/';
 type Format='svg'|'webp';
@@ -35,7 +35,7 @@ export function AdminLedger(){
  return <Artwork file="admin-office-photo" format="webp" className="pc-ledger-svg"/>;
 }
 export function NotebookStory(){
- return <Artwork file="sidebar-story" className="pc-notebook-story"/>;
+ return <Artwork file="sidebar-story" format="webp" className="pc-notebook-story"/>;
 }
 const serviceArtwork=(text:string)=>{
  const label=text.toLocaleLowerCase('vi-VN');
