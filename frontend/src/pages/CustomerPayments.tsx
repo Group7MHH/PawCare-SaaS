@@ -7,13 +7,14 @@ import {type Payment,PaymentPanel, type PaymentStatus} from '../components/Payme
 import {PageTitle,Loading,ErrorNotice,Empty} from '../components/UI';
 
 type PaymentSummary={
- total:number;unpaid:number;pending_review:number;paid:number;
+ total:number;unpaid:number;awaiting_payment:number;pending_review:number;paid:number;
  refund_required:number;refunded:number;paid_amount:string;
 };
 type PaymentList={items:Payment[];total:number;page:number;limit:number;summary:PaymentSummary};
 type StatusFilter='all'|PaymentStatus;
 const statuses:Record<PaymentStatus,{label:string;description:string}>={
- unpaid:{label:'Chưa thanh toán',description:'Chưa ghi nhận tiền'},
+ unpaid:{label:'Chưa thanh toán',description:'Chưa thu tiền mặt'},
+ awaiting_payment:{label:'Chờ thanh toán',description:'Khách chưa thực hiện chuyển khoản'},
  pending_review:{label:'Chờ đối soát',description:'Đang kiểm tra chuyển khoản'},
  paid:{label:'Đã thanh toán',description:'Đã xác nhận nhận tiền'},
  refund_required:{label:'Cần hoàn tiền',description:'Chờ cửa hàng hoàn tiền'},
@@ -23,6 +24,7 @@ const statuses:Record<PaymentStatus,{label:string;description:string}>={
 const filters:{key:StatusFilter;label:string}[]=[
  {key:'all',label:'Tất cả'},
  {key:'unpaid',label:'Chưa thanh toán'},
+ {key:'awaiting_payment',label:'Chờ thanh toán'},
  {key:'pending_review',label:'Chờ đối soát'},
  {key:'paid',label:'Đã thanh toán'},
  {key:'refund_required',label:'Cần hoàn tiền'},
@@ -84,8 +86,8 @@ export function CustomerPayments(){
   </section>
   <section className="pc-wallet-stats" aria-label="Thống kê giao dịch">
    <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">01 / GIAO DỊCH</span><strong>{summary?.total??'—'}</strong><small>Tổng số giao dịch</small><ReceiptText size={22} aria-hidden="true"/></div>
-   <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">02 / CHỜ THANH TOÁN</span><strong>{summary?.unpaid??'—'}</strong><small>Cần hoàn tất</small><WalletCards size={22} aria-hidden="true"/></div>
-   <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">03 / ĐANG ĐỐI SOÁT</span><strong>{summary?.pending_review??'—'}</strong><small>Admin đang kiểm tra</small><Clock3 size={22} aria-hidden="true"/></div>
+   <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">02 / CHỜ THANH TOÁN</span><strong>{summary?(summary.unpaid+summary.awaiting_payment):'—'}</strong><small>Tiền mặt chưa thu và chuyển khoản chưa thực hiện</small><WalletCards size={22} aria-hidden="true"/></div>
+   <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">03 / ĐANG ĐỐI SOÁT</span><strong>{summary?.pending_review??'—'}</strong><small>Admin hoặc Staff đang kiểm tra</small><Clock3 size={22} aria-hidden="true"/></div>
    <div className="pc-wallet-stat pc-wallet-stat--paid"><span className="pc-wallet-stat-index">04 / ĐÃ XÁC NHẬN</span><strong>{summary?money(Number(summary.paid_amount)):'—'}</strong><small>{summary?.paid??0} giao dịch đã thanh toán</small><CheckCircle2 size={22} aria-hidden="true"/></div>
   </section>
   <section className="pc-wallet-section" aria-label="Danh sách thanh toán">

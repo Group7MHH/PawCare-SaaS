@@ -54,9 +54,10 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
    COALESCE(SUM(price_snapshot) FILTER (WHERE status='completed'),0) AS revenue
    FROM appointments WHERE ${where}`,params)
  ]);
- const [finance]=await rows<{collected:number;unpaid:number;pending_review:number;refund_required:number;refunded:number}>(`
+ const [finance]=await rows<{collected:number;unpaid:number;awaiting_payment:number;pending_review:number;refund_required:number;refunded:number}>(`
    SELECT COALESCE(SUM(p.amount) FILTER(WHERE p.status='paid'),0) AS collected,
     COALESCE(SUM(p.amount) FILTER(WHERE p.status='unpaid'),0) AS unpaid,
+    COALESCE(SUM(p.amount) FILTER(WHERE p.status='awaiting_payment'),0) AS awaiting_payment,
     COALESCE(SUM(p.amount) FILTER(WHERE p.status='pending_review'),0) AS pending_review,
     COALESCE(SUM(p.amount) FILTER(WHERE p.status='refund_required'),0) AS refund_required,
     COALESCE(SUM(p.amount) FILTER(WHERE p.status='refunded'),0) AS refunded
@@ -79,6 +80,6 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
   WHERE a.organization_id=? ${staff?'AND a.staff_id=?':''} AND a.status='completed'
   ORDER BY COALESCE(a.completed_at,a.updated_at) DESC,a.id DESC LIMIT 5`,params);
  const statuses=await rows<any>(`SELECT status,COUNT(*) AS value FROM appointments WHERE ${where} GROUP BY status`,params);
- res.json({stats:{customers:customers.value,pets:pets.value,appointments:totals.appointments,completed:totals.completed,revenue:totals.revenue,collected:finance.collected,unpaid:finance.unpaid,pending_review:finance.pending_review,refund_required:finance.refund_required,refunded:finance.refunded},recent:recent.map(a=>({...a,starts_at:isoUTC(a.starts_at)})),recent_completed:recentCompleted.map(a=>({...a,starts_at:isoUTC(a.starts_at),completed_at:isoUTC(a.completed_at)})),series,statuses});
+ res.json({stats:{customers:customers.value,pets:pets.value,appointments:totals.appointments,completed:totals.completed,revenue:totals.revenue,collected:finance.collected,unpaid:finance.unpaid,awaiting_payment:finance.awaiting_payment,pending_review:finance.pending_review,refund_required:finance.refund_required,refunded:finance.refunded},recent:recent.map(a=>({...a,starts_at:isoUTC(a.starts_at)})),recent_completed:recentCompleted.map(a=>({...a,starts_at:isoUTC(a.starts_at),completed_at:isoUTC(a.completed_at)})),series,statuses});
 }));
 export default router;
