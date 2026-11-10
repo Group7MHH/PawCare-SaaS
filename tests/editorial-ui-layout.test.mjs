@@ -11,7 +11,8 @@ test('all PawCare routes and role boundaries remain available',()=>{
 test('customer overview uses actual pets and dashboard endpoints',()=>{
  const page=read('frontend/src/pages/Overview.tsx');
  assert.match(page,/api<\{items:Pet\[\]\}>\('\/pets'\)/);assert.match(page,/api<Stats>\('\/dashboard'\)/);
- assert.match(page,/<PageTitle eyebrow="TỔNG QUAN CÁ NHÂN"/);
+ assert.match(page,/className="nb-customer-cover/);
+ assert.match(page,/nb-pet-album/);
  assert.doesNotMatch(page,/mũi tiêm cần nhắc lại|ưu đãi thành viên 10%|ngày tiêm giả/);
 });
 test('appointment detail reads actual appointment records',()=>{

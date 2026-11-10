@@ -57,7 +57,8 @@ test('Customer dashboard and pets show live information, not fabricated medical 
  const overview=read('frontend/src/pages/Overview.tsx'),pets=read('frontend/src/pages/Pets.tsx');
  assert.match(overview,/api<\{items:Pet\[\]\}>\('\/pets'\)/);
  assert.match(overview,/api<Stats>\('\/dashboard'\)/);
- assert.match(overview,/<PageTitle eyebrow="TỔNG QUAN CÁ NHÂN"/);
+ assert.match(overview,/className="nb-customer-cover/);
+ assert.match(overview,/nb-ticket/);
  assert.doesNotMatch(overview,/mũi tiêm cần nhắc lại|ngày tiêm giả/);
  assert.match(pets,/filteredRecords=records\.filter/);
 });
