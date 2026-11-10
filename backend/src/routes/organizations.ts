@@ -6,10 +6,6 @@ import {orgId,requireAuth,requireRole} from '../lib/auth.js';
 const router=Router();
 router.use(requireAuth);
 const checkStore=(req:import('express').Request,id:number)=>{if(id!==orgId(req))throw new HttpError(404,'Không tìm thấy cửa hàng');};
-router.get('/organizations',asyncRoute(async(req,res)=>{
- const items=await rows('SELECT id,name,slug,is_active FROM organizations WHERE id=?',[orgId(req)]);
- res.json({items});
-}));
 router.get('/organizations/:id/members',requireRole('admin'),asyncRoute(async(req,res)=>{
  checkStore(req,idParam(req.params.id));
  const items=await rows("SELECT u.id AS user_id,u.full_name,u.email,u.phone,u.role,u.is_active FROM users u WHERE u.role IN ('staff','admin') ORDER BY u.role,u.full_name");

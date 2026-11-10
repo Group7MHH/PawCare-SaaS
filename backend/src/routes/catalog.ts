@@ -80,7 +80,6 @@ router.get('/staff',asyncRoute(async(req,res)=>{
   WHERE m.organization_id=? AND m.role='staff' AND u.role='staff' AND u.is_active=TRUE ${internal?'':'AND m.is_active=TRUE'} ORDER BY m.is_active DESC,u.full_name`,[orgId(req)]);
  res.json({items});
 }));
-router.post('/staff',requireRole('admin'),asyncRoute(async(_req,_res)=>{throw new HttpError(410,'Hãy cấp quyền Staff trong Quản lý tài khoản');}));
 router.patch('/staff/:id',requireRole('admin'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id),d=parse(z.object({specialty:z.string().max(160).nullable().optional(),bio:z.string().max(500).nullable().optional(),is_active:z.boolean().optional()}),req.body);
  if(!Object.keys(d).length)throw new HttpError(422,'Thiếu dữ liệu');

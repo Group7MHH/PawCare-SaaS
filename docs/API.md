@@ -1,70 +1,86 @@
-# API HTTP — `/api`
+# PawCare API — single-store demo
 
-Các route (trừ `/health`, đăng nhập, đăng ký) yêu cầu cookie `pawcare_session`. Phản hồi lỗi chung `{ "message": "..." }`, HTTP 401 không đăng nhập, 403 không đủ quyền, 409 xung đột, 422 dữ liệu không hợp lệ. Request thay đổi dữ liệu phải gửi `Origin` chính xác theo `APP_ORIGIN` khi production.
+Base path: `/api`. Authentication uses the HTTP-only `pawcare_session` cookie. There are exactly three roles: **Customer**, **Staff**, **Admin**. Requests that change data require the correct origin in production.
 
-| Method | Đường dẫn | Quyền | Mô tả |
-|---|---|---|---|
-| GET | /health | Công khai | Kiểm tra API + database |
-| POST | /auth/register | Công khai | Tạo khách hàng |
-| POST | /auth/login | Công khai | Đăng nhập; set cookie httpOnly |
-| POST | /auth/logout | Công khai | Hủy phiên |
-| GET | /auth/me | Đăng nhập | Người dùng hiện tại |
-| PATCH | /auth/profile | Đăng nhập | Chỉnh sửa tên, điện thoại, địa chỉ |
-| PATCH | /auth/password | Đăng nhập | Đổi mật khẩu, xóa toàn bộ phiên |
-| GET/POST | /pets | Đăng nhập | Danh sách và thêm thú cưng |
-| GET/PATCH/DELETE | /pets/:id | Chủ sở hữu / nhân sự | Chi tiết, sửa, xóa |
-| POST/DELETE | /pets/:id/records[/:recordId] | Chủ sở hữu / nhân sự | Quản lý hồ sơ chăm sóc |
-| GET/POST | /appointments | Đăng nhập | Lấy danh sách / đặt lịch |
-| GET/PATCH/DELETE | /appointments/:id | Theo quyền | Chi tiết / cập nhật / hủy lịch |
-| GET/POST | /services | Đọc: tất cả; ghi: admin | Danh mục dịch vụ |
-| PATCH/DELETE | /services/:id | Admin | Sửa / vô hiệu hóa dịch vụ |
-| GET/POST | /staff | Đọc: tất cả; ghi: admin | Danh sách / thêm nhân viên |
-| PATCH/DELETE | /staff/:id | Admin | Sửa / vô hiệu hóa nhân viên |
-| GET | /customers | Nhân viên, admin | Danh sách khách hàng, tìm kiếm |
-| GET | /customers/:id | Nhân viên, admin | Khách hàng và thú cưng |
-| GET | /dashboard | Đăng nhập | Thống kê theo vai trò |
+## Authentication & profile
 
-### Mẫu đặt lịch
+| Method | Endpoint | Who |
+|---|---|---|
+| GET | `/health` | Public |
+| POST | `/auth/register`, `/auth/login`, `/auth/logout` | Public/session |
+| GET | `/auth/me` | Signed in |
+| PATCH | `/auth/profile`, `/auth/password` | Signed in |
+
+Register creates a Customer. Admin promotes or demotes Staff through account management, not invitation links. Passwords are hashed, never returned by the API.
+
+## Booking and care
+
+| Method | Endpoint | Who / purpose |
+|---|---|---|
+| GET, POST | `/pets` | Customer owns their pets; Admin can create for a customer |
+| GET, PATCH, DELETE | `/pets/:id` | Owner; authorized Staff may view assigned pets |
+| POST, DELETE | `/pets/:id/records[/:recordId]` | Authorized care records; completed appointment records cannot be deleted |
+| GET | `/services`, `/staff` | Signed in; Customer sees active service/staff options |
+| POST | `/services` | Admin creates a service |
+| PATCH, DELETE | `/services/:id` | Admin updates / stops providing |
+| GET | `/services/:id/delete-preview` | Admin previews permanent deletion impact |
+| POST | `/services/:id/permanent-delete` | Admin permanently deletes if financial retention checks permit |
+| GET | `/appointments/availability` | Check combined service/staff capacity |
+| GET, POST | `/appointments` | List scoped to role; Customer books |
+| GET, PATCH, DELETE | `/appointments/:id` | View, update or cancel subject to permissions |
+| POST | `/appointments/:id/accept`, `/appointments/:id/decline` | Staff accepts or returns a pending/confirmed assignment |
+| GET | `/customers`, `/customers/:id` | Admin or Staff scoped to assigned customers |
+| GET | `/dashboard` | Stats for own role |
+
+A booking can select 1–8 distinct services. The backend verifies duration, prices, active Staff capacity and overlapping schedules in a transaction. New bookings begin in `pending`; Staff accepts (→ `confirmed`), begins work (→ `in_progress`), records care result and completes (→ `completed`). Customer may cancel only before work starts. Admin handles reassignment/cancellation exceptions.
+
+Example booking:
 
 ```json
 {
- "pet_id": 1,
- "service_id": 2,
- "staff_id": 2,
- "starts_at": "2026-11-02T02:00:00.000Z",
- "notes": "Vui lòng chăm sóc nhẹ nhàng"
+  "pet_id": 1,
+  "service_ids": [2, 3],
+  "staff_id": null,
+  "starts_at": "2026-11-12T02:00:00.000Z",
+  "payment_method": "cash",
+  "notes": "Chăm sóc nhẹ nhàng"
 }
 ```
 
-Khách hàng chỉ gửi pet thuộc chính tài khoản. Nhân viên có thể nhận lịch được chỉ định. Slot cách nhau 30 phút trong giờ làm việc; nhân viên không được có hai lịch chồng nhau (PostgreSQL advisory transaction lock + kiểm tra overlap). Lịch hẹn có `pending -> confirmed -> in_progress -> completed`, có thể hủy ở các giai đoạn cho phép.
+## Payments (manual demo)
 
-### Danh sách với tìm kiếm và phân trang
+| Method | Endpoint | Role / action |
+|---|---|---|
+| GET | `/payments/config` | Signed in; available methods and bank recipient |
+| GET | `/payments`, `/payments/:id` | Role-scoped payment history/details |
+| PATCH | `/payments/:id/method` | Customer changes an unprocessed method |
+| POST | `/payments/:id/transfer-notice` | Customer announces sending a bank transfer |
+| POST | `/payments/:id/reconcile` | Assigned Staff or Admin confirms; only Admin rejects/refunds |
+| GET, PUT | `/payments/admin-bank` | Admin configures recipient, requires password when changing |
 
-`GET /appointments?page=1&limit=15&status=confirmed&search=Milo`
+Cash: `unpaid` → assigned Staff/Admin confirms actual cash received → `paid`. Bank: `awaiting_payment` → Customer notice → `pending_review` → Staff/Admin demo confirmation → `paid`. There is **no actual bank verification**. Paid cancelled bookings become `refund_required` and only Admin records `refunded`; other unpaid cancellations become `void`, while pending review remains for resolution. Duplicate confirmations are rejected. The actor and status change are logged.
 
-`GET /customers?page=1&limit=15&search=Nguyễn`
+## Administration
 
-`GET /pets?search=Milo` hoặc nhân sự `GET /pets?owner_id=3`
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET, PATCH | `/organizations/:id/members[/:userId]` | View / toggle Staff activity (Admin) |
+| GET | `/accounts` | List accounts (Admin) |
+| PATCH | `/accounts/:id`, `/accounts/:id/role` | Update / grant or revoke Staff (Admin) |
+| GET | `/accounts/:id/delete-preview` | Preview account deletion impact |
+| DELETE | `/accounts/:id` | Admin deletion with financial retention checks |
+| POST | `/accounts/:id/reset-password` | Admin password reset for eligible accounts |
+| PATCH, DELETE | `/staff/:id` | Admin updates/deactivates staff |
 
-### Kiểm tra giờ trống theo nhân viên
+The historical multi-store Owner API and invitation links are not part of this demo. The database retains historical migration files but the UI operates as a single store.
 
-`GET /appointments/availability?date=2026-11-02&service_id=1&staff_id=2` trả `{ "date": "2026-11-02", "slots": [{"time":"08:00","available":true},...] }`. Không chọn nhân viên thì giao diện liệt kê khung giờ làm việc, server vẫn kiểm tra tại thời điểm đặt thực tế.
+## Verification
 
-## Bổ sung bản SaaS Owner (03 — hiện hành)
+```bash
+npm install
+npm run build
+npm run test
+node --test tests/*.test.mjs
+```
 
-> Các endpoint `/services`, `/staff`, `/appointments`, `/customers` và dashboard nay được giới hạn bởi `organization_id` lấy từ session server; Owner xem dữ liệu vận hành của cửa hàng đang chọn. Danh sách cửa hàng truy cập thông qua `GET /organizations`.
-
-| Method | Path | Quyền | Ý nghĩa |
-|---|---|---|---|
-| GET | `/organizations` | Đã đăng nhập | Danh sách cửa hàng được phép chọn (Customer có thể chọn cửa hàng hoạt động) |
-| POST | `/auth/select-organization` | Đã đăng nhập | `{ "organization_id": 1 }`; phiên chuyển sang một cửa hàng hợp lệ |
-| POST | `/auth/accept-invitation` | Đúng email được mời | `{ "token": "..." }`, dùng một lần trong 7 ngày |
-| POST | `/owner/organizations` | Owner | Tạo cửa hàng và dịch vụ mặc định riêng |
-| PATCH | `/owner/organizations/:id` | Owner | Đổi tên / tạm khóa / kích hoạt cửa hàng |
-| POST | `/owner/owners` | Owner, xác minh lại password | Nâng tài khoản đã tồn tại thành Owner nền tảng |
-| GET | `/organizations/:id/members` | Owner hoặc Admin thuộc cửa hàng | Liệt kê nhân sự thuộc cửa hàng |
-| PATCH | `/organizations/:id/members/:userId` | Owner hoặc Admin thuộc cửa hàng | Đổi role/trạng thái; Admin chỉ được chỉnh Staff |
-| POST | `/organizations/:id/invitations` | Owner, Admin cửa hàng | Owner mời Admin/Staff; Admin chỉ mời Staff; trả về link thủ công |
-| GET | `/organizations/:id/invitations` | Owner hoặc Admin cửa hàng | Danh sách thư mời, không trả lại token |
-
-Owner không có mật khẩu demo trong production. `BOOTSTRAP_OWNER=true` + biến môi trường chỉ dùng một lần rồi xóa.
+Production: Render Node service serves the React build and Express API, using Neon PostgreSQL. See `README.md`.

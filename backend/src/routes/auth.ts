@@ -36,7 +36,6 @@ router.post('/login',asyncRoute(async(req,res)=>{
 }));
 router.post('/logout',asyncRoute(async(req,res)=>{await revokeSession(req);clearSession(res);res.json({message:'Đã đăng xuất'});}));
 router.get('/me',requireAuth,(req,res)=>res.json({user:req.user}));
-router.post('/select-organization',requireAuth,asyncRoute(async(_req,_res)=>{throw new HttpError(410,'Ứng dụng chỉ phục vụ một cửa hàng');}));
 router.patch('/profile',requireAuth,asyncRoute(async(req,res)=>{
  const d=parse(z.object({full_name:z.string().trim().min(2).max(120),phone:z.string().max(25).nullable().optional(),address:z.string().max(255).nullable().optional()}),req.body);
  await exec('UPDATE users SET full_name=?,phone=?,address=? WHERE id=?',[d.full_name,d.phone??null,d.address??null,req.user!.id]);
