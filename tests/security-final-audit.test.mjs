@@ -11,7 +11,7 @@ test('payment updates acquire booking lock before payment lock to serialize canc
   const first=action.indexOf("SELECT id FROM appointments WHERE id=? AND organization_id=? FOR UPDATE");
   const second=action.indexOf('FOR UPDATE OF p,a');
   assert.ok(first>=0 && second>first, 'booking is locked before payment');
-  assert.ok(action.includes("p.appointment_status==='cancelled'"), 'cancelled bookings must be rejected');
+  assert.match(action,/(?:locked|p)\.appointment_status==='cancelled'/, 'cancelled bookings must be rejected');
   assert.ok(action.includes("locked.customer_id!==req.user!.id") || action.includes("p.customer_id!==req.user!.id"), 'Customer ownership is enforced');
  }
  assert.ok(source.includes("router.post('/:id/reconcile',requireRole('admin')"), 'only Admin can reconcile');
