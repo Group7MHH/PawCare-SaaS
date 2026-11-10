@@ -3,39 +3,27 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 
-test('customer service catalogue uses real active API and preserves booking route',()=>{
- const ui=read('frontend/src/pages/CustomerServices.tsx');
- const cards=read('frontend/src/components/ServiceCards.tsx');
- const routes=read('frontend/src/main.tsx');
+test('customer catalogue uses live services and booking route',()=>{
+ const ui=read('frontend/src/pages/CustomerServices.tsx'),cards=read('frontend/src/components/ServiceCards.tsx'),routes=read('frontend/src/main.tsx');
  assert.ok(ui.includes("api<{items:Service[]}>('/services')"));
  assert.ok(ui.includes('<ServiceCards services={services.data?.items||[]}/>'));
- assert.ok(routes.includes('path="/services"'));
- assert.ok(routes.includes('path="/book"'));
- assert.ok(cards.includes('/book?service_ids='));
- assert.ok(cards.includes('money(service.price)'));
- assert.ok(cards.includes('service.duration_minutes'));
+ for(const route of ['/services','/book'])assert.ok(routes.includes('path="'+route+'"'));
+ for(const value of ['/book?service_ids=','money(service.price)','service.duration_minutes'])assert.ok(cards.includes(value));
 });
-test('multi-service booking uses new selectable cards with unchanged API payload',()=>{
+test('multi-service booking uses selectable cards and unchanged API contract',()=>{
  const booking=read('frontend/src/pages/Booking.tsx');
- assert.ok(booking.includes('service_ids:serviceIds'));
- assert.ok(booking.includes('totalPrice=selected.reduce'));
- assert.ok(booking.includes('duration=selected.reduce'));
- assert.ok(booking.includes('<ServiceCards'));
- assert.ok(booking.includes('useSearchParams'));
- assert.ok(booking.includes('/appointments/availability'));
- assert.ok(booking.includes("session.user.role!=='customer'"));
+ for(const value of ['service_ids:serviceIds','totalPrice=selected.reduce','duration=selected.reduce','<ServiceCards','useSearchParams','/appointments/availability',"session.user.role!=='customer'"])assert.ok(booking.includes(value));
 });
-test('admin service management remains separate from customer showcase',()=>{
- const admin=read('frontend/src/pages/Catalog.tsx');
- const routes=read('frontend/src/main.tsx');
+test('Admin service management still uses protected route and confirmation dialogs',()=>{
+ const admin=read('frontend/src/pages/Catalog.tsx'),routes=read('frontend/src/main.tsx');
  assert.ok(admin.includes('ServiceDeleteDialog'));
  assert.ok(admin.includes('ServiceEditor'));
  assert.ok(routes.includes('path="/admin/catalog"'));
  assert.ok(routes.includes('<AdminOnly><Catalog/></AdminOnly>'));
 });
-test('service styles responsive and accessible',()=>{
- const css=read('frontend/src/styles.css');
- assert.ok(css.includes('.pc-service-card-grid'));
+test('service selection exposes keyboard focus and responsive layout',()=>{
+ const css=read('frontend/src/styles.css'),cards=read('frontend/src/components/ServiceCards.tsx');
+ assert.ok(css.includes(':focus-visible'));
  assert.ok(css.includes('prefers-reduced-motion:reduce'));
- assert.ok(css.includes('.pc-service-select:focus-visible'));
+ assert.ok(cards.includes('pc-service-card-grid'));
 });

@@ -1,23 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+const read=(p)=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const styles=read('frontend/src/styles.css');
+const booking=read('frontend/src/pages/Booking.tsx');
+const cards=read('frontend/src/components/ServiceCards.tsx');
 
-const css=readFileSync(new URL('../frontend/src/styles.css',import.meta.url),'utf8');
-const booking=readFileSync(new URL('../frontend/src/pages/Booking.tsx',import.meta.url),'utf8');
-const finalRules=css.slice(css.indexOf('/* Booking step 1: explicitly use the existing PawCare light UI.'));
-
-test('booked service cards use explicit light theme overrides',()=>{
- assert.ok(finalRules.includes('.pc-booking-service-picker .pc-service-plan{'));
- assert.ok(finalRules.includes('background:#ffffff !important;'));
- assert.ok(finalRules.includes('background:#f7f9f8 !important;'));
- assert.ok(finalRules.includes('.pc-booking-service-picker .pc-service-tabbar button.active{'));
- assert.ok(finalRules.includes('.pc-booking-service-picker .pc-service-plan.selected{'));
- assert.ok(finalRules.includes('color:#203c38 !important;'));
+test('booking service selection uses current PawCare design system',()=>{
+ assert.ok(styles.includes('--surface:#FFFFFF'));
+ assert.ok(styles.includes("@import './legacy.css'"));
+ assert.ok(styles.includes('--navy:#17263B'));
+ assert.ok(cards.includes('pc-service-plan'));
+ assert.ok(cards.includes('pc-service-select'));
 });
-test('booking workflow remains unchanged',()=>{
- assert.ok(booking.includes('service_ids:serviceIds'));
- assert.ok(booking.includes('totalPrice=selected.reduce'));
- assert.ok(booking.includes('duration=selected.reduce'));
- assert.ok(booking.includes('<ServiceCards'));
- assert.ok(booking.includes('/appointments/availability'));
+test('booking workflow remains multi-service with live availability',()=>{
+ for(const value of ['service_ids:serviceIds','totalPrice=selected.reduce','duration=selected.reduce','<ServiceCards','/appointments/availability'])assert.ok(booking.includes(value));
+ assert.ok(booking.includes('duration<=600'));
+ assert.ok(cards.includes('selectedIds.length>=maxSelected'));
 });

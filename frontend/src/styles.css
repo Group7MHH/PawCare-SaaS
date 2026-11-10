@@ -24,13 +24,13 @@ button,a,input,select,textarea{transition:background-color .15s,border-color .15
 
 /* ---------- Shell ---------- */
 .app-layout{background:var(--bg);min-height:100vh;display:flex}
-.sb{width:248px;flex:none;height:100vh;position:sticky;top:0;z-index:50;display:flex;flex-direction:column;background:var(--navy);color:#C9D4E0;padding:20px 14px 14px}
+.sb{width:248px;flex:none;height:100dvh;position:sticky;top:0;z-index:50;display:flex;flex-direction:column;background:var(--navy);color:#C9D4E0;padding:20px 14px 14px}
 .sb-brand{display:flex;align-items:center;gap:11px;padding:2px 8px 20px;border-bottom:1px solid rgba(255,255,255,.09)}
 .sb-mark{width:36px;height:36px;border-radius:9px;background:var(--accent);color:var(--navy);display:grid;place-items:center;flex:none}
 .sb-brand b{display:block;font:700 20px/1.1 var(--font-head);color:#fff;letter-spacing:-.03em}
 .sb-brand small{display:block;font-size:10.5px;color:#8FA2B7;margin-top:3px}
 .sb-close{margin-left:auto;color:#C9D4E0!important}
-.sb-nav{flex:1;overflow-y:auto;padding:18px 0 8px;scrollbar-width:thin}
+.sb-nav{flex:1;min-height:0;overflow-y:auto;padding:18px 0 8px;scrollbar-width:thin}
 .sb-label{font-size:11px;font-weight:600;color:#8FA2B7;padding:0 10px;margin:0 0 8px;letter-spacing:.04em;text-transform:uppercase}
 .sb-gap{margin-top:22px}
 .sb-link{display:flex;align-items:center;gap:11px;min-height:40px;padding:9px 11px;margin-bottom:2px;border-radius:var(--r-sm);color:#C9D4E0;font-size:13.5px;font-weight:500;text-decoration:none;position:relative}
@@ -39,8 +39,8 @@ button,a,input,select,textarea{transition:background-color .15s,border-color .15
 .sb-link.active{background:rgba(255,255,255,.1);color:#fff;font-weight:600}
 .sb-link.active:before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
 .sb-link.active svg{color:var(--accent);opacity:1}
-.sb-foot{border-top:1px solid rgba(255,255,255,.09);padding-top:12px}
-.sb-user{width:100%;display:flex;align-items:center;gap:10px;padding:8px;border:0;border-radius:var(--r-sm);background:transparent;color:#fff;text-align:left;cursor:pointer}
+.sb-foot{flex:0 0 auto;border-top:1px solid rgba(255,255,255,.09);padding-top:12px}
+.sb-user{min-height:56px;width:100%;display:flex;align-items:center;gap:10px;padding:8px;border:0;border-radius:var(--r-sm);background:transparent;color:#fff;text-align:left;cursor:pointer}
 .sb-user:hover{background:rgba(255,255,255,.07)}
 .sb-user .who{min-width:0;flex:1;display:flex;flex-direction:column}
 .sb-user strong{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -178,6 +178,11 @@ button,a,input,select,textarea{transition:background-color .15s,border-color .15
 .pc-hero-ruled{position:absolute;inset:0;border-radius:var(--r);background:repeating-linear-gradient(180deg,transparent 0 21px,var(--rule-2) 21px 22px);opacity:.9}
 .pc-hero-badge{position:relative;z-index:1;width:68px;height:68px;border-radius:50%;background:var(--surface);border:1px solid var(--rule);display:grid;place-items:center}
 .pc-hero-orbit,.pc-hero-spark{display:none}
+/* Lỗ đóng sổ ở mép trái hero: gợi cuốn sổ khám */
+.pc-shared-hero{padding-left:46px}
+.pc-shared-hero:after{content:"";position:absolute;left:17px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--bg);border:1px solid var(--rule);box-shadow:0 -24px 0 var(--bg),0 24px 0 var(--bg),0 -24px 0 1px var(--rule),0 24px 0 1px var(--rule)}
+.pet-avatar{display:inline-flex;align-items:center;justify-content:center;color:inherit;line-height:1}
+.pet-emoji,.selection-icon,.summary-pet-icon,.pc-detail-pet-icon{display:grid;place-items:center;color:var(--blue)}
 .page-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px}
 .page-heading h1{font-size:clamp(24px,2.2vw,30px);margin:0 0 6px}
 .page-heading p{font-size:14px;color:var(--ink-2);margin:0}
@@ -225,7 +230,7 @@ button,a,input,select,textarea{transition:background-color .15s,border-color .15
 }
 @media(max-width:640px){
   .tb-profile span.n{display:none}.tb-profile{padding:3px}
-  .pc-shared-hero{padding:20px 18px 20px 22px}.pc-shared-hero-visual{display:none}
+  .pc-shared-hero{padding:20px 18px 20px 38px}.pc-shared-hero-visual{display:none}
   .panel{padding:16px}.modal{padding:18px}
   .page-heading{flex-direction:column;align-items:flex-start}
   .auth-card form{padding:18px}
