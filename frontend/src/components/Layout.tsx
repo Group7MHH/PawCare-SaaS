@@ -7,7 +7,7 @@ import {PawcareMark,NotebookStory} from './BrandArtwork';
 
 type NavItem={to:string;title:string;icon:LucideIcon};
 const customerLinks:NavItem[]=[{to:'/overview',title:'Tổng quan',icon:LayoutDashboard},{to:'/pets',title:'Thú cưng của tôi',icon:PawPrint},{to:'/services',title:'Dịch vụ',icon:Scissors},{to:'/book',title:'Đặt lịch chăm sóc',icon:CalendarPlus},{to:'/my-appointments',title:'Lịch hẹn của tôi',icon:CalendarDays},{to:'/payments',title:'Thanh toán',icon:CreditCard}];
-const adminLinks:NavItem[]=[{to:'/admin/dashboard',title:'Tổng quan',icon:LayoutDashboard},{to:'/admin/appointments',title:'Quản lý lịch hẹn',icon:CalendarDays},{to:'/admin/customers',title:'Khách hàng & thú cưng',icon:Users},{to:'/admin/catalog',title:'Dịch vụ & nhân viên',icon:Scissors}];
+const adminLinks:NavItem[]=[{to:'/admin/dashboard',title:'Tổng quan',icon:LayoutDashboard},{to:'/admin/appointments',title:'Lịch & thanh toán',icon:CalendarDays},{to:'/admin/customers',title:'Khách hàng & thú cưng',icon:Users},{to:'/admin/catalog',title:'Dịch vụ & nhân viên',icon:Scissors}];
 const staffLinks:NavItem[]=[{to:'/staff/dashboard',title:'Công việc của tôi',icon:LayoutDashboard},{to:'/staff/appointments',title:'Lịch được giao',icon:CalendarDays}];
 const adminOnlyLinks:NavItem[]=[{to:'/admin/team',title:'Thành viên cửa hàng',icon:UserCog},{to:'/admin/accounts',title:'Quản lý tài khoản',icon:ShieldCheck}];
 const roleName={admin:'Quản trị viên',staff:'Nhân viên',customer:'Khách hàng'} as const;
