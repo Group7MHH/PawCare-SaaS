@@ -17,13 +17,18 @@ type PaymentRow={
 };
 const router=Router();
 router.use(requireAuth,requireOrganization);
-const select=`SELECT p.*,a.status AS appointment_status,a.staff_id AS staff_id,s.name AS service_name,
+const select=`SELECT p.*,a.status AS appointment_status,a.staff_id AS staff_id,COALESCE(bundle.names,s.name) AS service_name,
  pet.name AS pet_name,u.full_name AS customer_name
  FROM payments p
  JOIN appointments a ON a.id=p.appointment_id
  JOIN services s ON s.id=a.service_id
  JOIN pets pet ON pet.id=a.pet_id
- JOIN users u ON u.id=p.customer_id`;
+ JOIN users u ON u.id=p.customer_id
+ LEFT JOIN LATERAL(
+  SELECT string_agg(COALESCE(aps.name_snapshot,svc.name),' + ' ORDER BY aps.position) AS names
+  FROM appointment_services aps JOIN services svc ON svc.id=aps.service_id
+  WHERE aps.appointment_id=a.id
+ ) bundle ON TRUE`;
 async function loadPayment(id:number,org:number,db:DB){
  const [payment]=await rows<PaymentRow>(`${select} WHERE p.appointment_id=? AND p.organization_id=?`,[id,org],db);
  if(!payment)throw new HttpError(404,'Không tìm thấy thông tin thanh toán cho lịch hẹn');
@@ -32,7 +37,7 @@ async function loadPayment(id:number,org:number,db:DB){
 function allowed(p:PaymentRow,user:{id:number;role:string}){
  if(user.role==='admin')return;
  if(user.role==='customer'&&p.customer_id===user.id)return;
- if(user.role==='staff'&&p.staff_id===user.id)return;
+ if(user.role==='staff'&&p.staff_id===user.id&&['confirmed','in_progress','completed'].includes(p.appointment_status))return;
  throw new HttpError(403,'Bạn không có quyền xem thanh toán này');
 }
 router.get('/config',asyncRoute(async(req,res)=>{
