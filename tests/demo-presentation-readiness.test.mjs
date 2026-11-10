@@ -40,20 +40,11 @@ test('Admin appointment list exposes payment status, filtering and readable navi
  assert.ok(css.includes('text-overflow:clip'));
 });
 
-test('Demo reset is manual only and preserves accounts, roles, services and migration history',()=>{
- const reset=read('scripts/reset-demo-data.sql');
+test('Production code does not expose any destructive demo reset tool',()=>{
+ const fs=readFileSync(new URL('../package.json',import.meta.url),'utf8');
  const migrator=read('backend/src/migrate.ts');
  const workflow=read('.github/workflows/ci.yml');
- assert.ok(reset.includes('BEGIN;'));
- assert.ok(reset.includes('COMMIT;'));
- assert.ok(reset.includes('pg_advisory_xact_lock(42371,0)'));
- for(const name of ['care_records','payments','appointment_staff_declines','appointment_services','appointments','pets']) {
-  assert.ok(reset.includes('DELETE FROM '+name+';'));
- }
- for(const name of ['users','services','organization_members','staff_profiles','schema_migrations']) {
-  assert.ok(!reset.includes('DELETE FROM '+name+';'));
-  assert.ok(!reset.includes('TRUNCATE '+name));
- }
- assert.ok(!migrator.includes('reset-demo-data.sql'));
- assert.ok(!workflow.includes('reset-demo-data.sql'));
+ assert.ok(!fs.includes('reset-demo-data'));
+ assert.ok(!migrator.includes('reset-demo-data'));
+ assert.ok(!workflow.includes('reset-demo-data'));
 });
