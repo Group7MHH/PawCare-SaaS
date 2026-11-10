@@ -72,14 +72,3 @@ PawCare's large illustrations now use local SVGs depicting **care journals, stet
 Admin configures the receiving bank in **Profile**. Current configured bank details are stored in Neon, and each transfer booking preserves a snapshot of the account details at booking time.
 
 **Demo constraint:** Admin clicking bank confirmation does not connect to or verify the bank. Do not use this demo flow for real payments without verification.
-
-
-## Reset demo transactions for a fresh presentation
-
-A one-time, **manual** SQL script is available at `scripts/reset-demo-data.sql`. It deletes pets, care records, appointments, appointment services/declines, payments, expired invitation records and audit events. It **preserves** users and their login credentials/roles, Staff profiles and memberships, services, the single store, bank settings, and migration history.
-
-1. Back up the target Neon database and verify it is the PawCare demo database.
-2. Open the SQL editor for that exact database; paste and execute `scripts/reset-demo-data.sql` **once**.
-3. Confirm `appointments_left`, `pets_left`, `payments_left`, and `care_records_left` are 0 while `accounts_kept` and `services_kept` remain as expected.
-
-The reset is intentionally **not** a migration, API endpoint, startup operation, or CI task. Deploying a code change will never automatically delete production data. The assistant cannot execute this against Neon without a connected database.
