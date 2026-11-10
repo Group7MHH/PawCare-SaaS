@@ -1,0 +1,9 @@
+/* PawCare workflow integrity: explicit cashflow breakdown and missed appointments. */
+.nb-app .pc-finance-ledger{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:16px 0 18px}
+.nb-app .pc-finance-ledger>span{display:flex;flex-direction:column;justify-content:space-between;gap:8px;padding:12px 11px;border:1px solid rgba(126,156,151,.28);border-radius:11px;background:rgba(251,252,247,.7)}
+.nb-app .pc-finance-ledger small{font-size:9px;font-weight:750;line-height:1.6;color:#65847e}
+.nb-app .pc-finance-ledger strong{font-size:clamp(12px,1.35vw,17px);font-weight:850;color:#264b53;letter-spacing:-.035em;overflow-wrap:anywhere}
+.nb-app .pc-finance-ledger>span:last-child{background:#faf0e5;border-color:#d9c6ae}
+.nb-app .pc-finance-ledger>span:last-child strong{color:#946b4f}
+@media(max-width:1020px){.nb-app .pc-finance-ledger{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:470px){.nb-app .pc-finance-ledger{gap:7px}.nb-app .pc-finance-ledger>span{padding:10px 8px}.nb-app .pc-finance-ledger strong{font-size:12px}}

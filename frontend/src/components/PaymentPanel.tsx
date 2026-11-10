@@ -13,7 +13,7 @@ export type Payment={
 };
 export type PaymentConfig={methods:string[];bank:{name:string;account:string;owner:string}|null;provider:'manual';automatic_confirmation:false};
 const labels:Record<PaymentStatus,string>={
- unpaid:'Chưa thanh toán',pending_review:'Chờ Admin đối soát',
+ unpaid:'Chưa thanh toán',pending_review:'Chờ đối soát',
  paid:'Đã thanh toán',refund_required:'Cần hoàn tiền',refunded:'Đã hoàn tiền',void:'Đã hủy thanh toán'
 };
 export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmentId:number;admin?:boolean;staff?:boolean}){
@@ -23,7 +23,7 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
  const refresh=()=>{qc.invalidateQueries({queryKey:['payment',appointmentId]});qc.invalidateQueries({queryKey:['payments']});qc.invalidateQueries({queryKey:['appointments']});qc.invalidateQueries({queryKey:['admin-appointments']});};
  const method=useMutation({mutationFn:(value:'cash'|'bank_transfer')=>api(`/payments/${appointmentId}/method`,json('PATCH',{method:value})),onSuccess:()=>{refresh();toast.success('Đã cập nhật phương thức thanh toán');},onError:e=>toast.error(errorMessage(e))});
  const notice=useMutation({mutationFn:()=>api(`/payments/${appointmentId}/transfer-notice`,json('POST',{note:note.trim()})),onSuccess:()=>{refresh();setNote('');toast.success('Đã gửi thông báo chuyển khoản, đang chờ kiểm tra');},onError:e=>toast.error(errorMessage(e))});
- const reconcile=useMutation({mutationFn:(action:'confirm_paid'|'reject_transfer'|'confirm_refund')=>api(`/payments/${appointmentId}/reconcile`,json('POST',{action,note:note.trim(),...(staff?{verification_reference:verificationReference.trim()}:{})})),onSuccess:()=>{refresh();setNote('');setVerificationReference('');toast.success('Đã cập nhật trạng thái thanh toán');},onError:e=>toast.error(errorMessage(e))});
+ const reconcile=useMutation({mutationFn:(action:'confirm_paid'|'reject_transfer'|'confirm_refund')=>api(`/payments/${appointmentId}/reconcile`,json('POST',{action,note:note.trim(),verification_reference:verificationReference.trim()||undefined})),onSuccess:()=>{refresh();setNote('');setVerificationReference('');toast.success('Đã cập nhật trạng thái thanh toán');},onError:e=>toast.error(errorMessage(e))});
  const p=payment.data?.payment;
  if(payment.isLoading)return <div className="pc-payment-loading" role="status">Đang tải thông tin thanh toán...</div>;
  if(payment.error||!p)return <div className="pc-payment-error" role="alert">Không thể tải trạng thái thanh toán. Vui lòng thử lại.</div>;
@@ -47,12 +47,12 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
    <div className="pc-payment-bank-note">Nếu ngân hàng của cửa hàng vừa được thay đổi, hãy xác nhận lại trước khi chuyển. Nội dung đề xuất: <strong>{p.payment_reference}</strong>. Vui lòng kiểm tra người thụ hưởng trước khi chuyển.</div>
    <label className="pc-payment-note">Ghi chú giao dịch (không bắt buộc)<textarea maxLength={300} rows={2} value={note} onChange={e=>setNote(e.target.value)} placeholder="Ví dụ: thời gian hoặc tên người chuyển"/></label>
    <button className="button button-primary" type="button" disabled={working} onClick={()=>notice.mutate()}><ClipboardCheck size={16}/> Tôi đã chuyển khoản</button>
-   <small>Nút này chỉ gửi thông báo. Thanh toán chỉ thành công sau khi Admin đối soát thực tế.</small>
+   <small>Nút này chỉ gửi thông báo. Thanh toán chỉ thành công sau khi nhân viên được giao hoặc Admin đối soát thực tế.</small>
   </div>}
   {!admin&&!staff&&p.method==='cash'&&unpaid&&<p className="pc-payment-info">Vui lòng thanh toán tại cửa hàng. Admin sẽ ghi nhận sau khi nhận tiền.</p>}
-  {!admin&&!staff&&p.status==='pending_review'&&<p className="pc-payment-info">Bạn đã báo chuyển khoản. Admin đang kiểm tra; đây chưa phải xác nhận đã nhận tiền.</p>}
+  {!admin&&!staff&&p.status==='pending_review'&&<p className="pc-payment-info">Bạn đã báo chuyển khoản. Nhân viên hoặc Admin đang kiểm tra; đây chưa phải xác nhận đã nhận tiền.</p>}
   {p.status==='refund_required'&&<p className="pc-payment-warning">Lịch hẹn đã hủy sau khi thanh toán. Vui lòng liên hệ cửa hàng để hoàn tiền; Admin cần ghi nhận sau khi hoàn thực tế.</p>}
-  {p.admin_note&&<p className="pc-payment-info">Ghi chú đối soát: {p.admin_note}</p>}
+  {(admin||staff)&&p.admin_note&&<p className="pc-payment-info">Ghi chú nội bộ: {p.admin_note}</p>}
   {staff&&<div className="pc-staff-reconcile">
    <div className="pc-staff-reconcile-head"><ShieldCheck size={19}/><div><strong>Đối soát chuyển khoản được giao</strong><small>Chỉ xác nhận khi đã trực tiếp kiểm tra sao kê của cửa hàng và thấy tiền thực nhận.</small></div></div>
    {p.status==='pending_review'&&p.method==='bank_transfer'&&p.appointment_status!=='cancelled'?<>
@@ -63,7 +63,8 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
    <p className="pc-staff-reconcile-foot">Hệ thống ghi người xác nhận và thời gian trong nhật ký. Thao tác này không tự kiểm tra ngân hàng; không xác nhận chỉ dựa vào ảnh chụp chuyển khoản.</p>
   </div>}
   {admin&&<div className="pc-payment-reconcile"><label className="pc-payment-note">Ghi chú Admin<textarea maxLength={500} rows={2} value={note} onChange={e=>setNote(e.target.value)} placeholder="Ghi chú kiểm tra giao dịch hoặc bằng chứng hoàn tiền"/></label><div className="pc-payment-actions">
-   {((p.method==='cash'&&unpaid)||(p.method==='bank_transfer'&&p.status==='pending_review'))&&<button className="button button-primary" type="button" disabled={working} onClick={()=>{if(confirm('Bạn đã kiểm tra và thực sự nhận được tiền?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/> {p.appointment_status==='cancelled'?'Đã nhận tiền · Cần hoàn':'Xác nhận đã nhận tiền'}</button>}
+   {p.method==='bank_transfer'&&p.status==='pending_review'&&<label className="pc-payment-note">Mã giao dịch trên sao kê<input type="text" maxLength={80} value={verificationReference} onChange={e=>setVerificationReference(e.target.value)} placeholder="Nhập mã giao dịch ngân hàng"/></label>}
+   {((p.method==='cash'&&unpaid)||(p.method==='bank_transfer'&&p.status==='pending_review'))&&<button className="button button-primary" type="button" disabled={working||(p.method==='bank_transfer'&&(verificationReference.trim().length<6||note.trim().length<10))} onClick={()=>{if(confirm('Bạn đã kiểm tra và thực sự nhận được tiền?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/> {p.appointment_status==='cancelled'?'Đã nhận tiền · Cần hoàn':'Xác nhận đã nhận tiền'}</button>}
    {p.method==='bank_transfer'&&p.status==='pending_review'&&<button className="button button-secondary" type="button" disabled={working||!note.trim()} onClick={()=>reconcile.mutate('reject_transfer')}>Từ chối đối soát</button>}
    {p.status==='refund_required'&&<button className="button button-primary" type="button" disabled={working||!note.trim()} onClick={()=>{if(confirm('Bạn đã hoàn tiền thật và có bằng chứng?'))reconcile.mutate('confirm_refund');}}>Xác nhận đã hoàn tiền</button>}
   </div><small>Chỉ xác nhận khi đã kiểm tra dòng tiền thật. Hệ thống không tự chuyển khoản hoặc thu tiền.</small></div>}
