@@ -32,7 +32,7 @@ test('bank settings migration snapshots transfer recipient and preserves older b
  assert.ok(payments.includes("recipient?.name??null"));
  assert.ok(read('backend/src/lib/payment-bank.ts').includes("source:'database'"));
 });
-test('Staff may demo-confirm only assigned pending bank transfers; Admin keeps refund rights',()=>{
+test('Staff only views assigned payment status; Admin handles all confirmations and refunds',()=>{
  const backend=read('backend/src/routes/appointments.ts');
  const screen=read('frontend/src/pages/AdminAppointments.tsx');
  const dashboard=read('frontend/src/pages/StaffDashboard.tsx');
@@ -46,10 +46,9 @@ test('Staff may demo-confirm only assigned pending bank transfers; Admin keeps r
  assert.ok(dashboard.includes('pc-staff-pay-tag'));
  assert.ok(!dashboard.includes('/reconcile'));
  const payment=read('backend/src/routes/payments.ts');
- assert.ok(payment.includes("router.post('/:id/reconcile',requireRole('admin','staff')"));
- assert.ok(payment.includes("p.staff_id!==req.user!.id"));
- assert.ok(payment.includes("action!=='confirm_paid'"));
- assert.ok(payment.includes("payment.staff_confirm_paid"));
+ assert.ok(payment.includes("router.post('/:id/reconcile',requireRole('admin')"));
+ assert.ok(!payment.includes("requireRole('admin','staff')"));
+ assert.ok(!payment.includes("payment.staff_confirm_paid"));
  assert.ok(payment.includes("demo_confirmation:demoBankConfirmation"));
 });
 test('customer payment detail no longer uses a dark overlay or body scroll lock',()=>{

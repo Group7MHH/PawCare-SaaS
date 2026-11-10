@@ -14,7 +14,7 @@ flowchart LR
   S[Staff] --> LOGIN((Login))
   S --> CLAIM((Accept or return assigned booking))
   S --> CARE((Start and complete care with result))
-  S --> PAYMENT((Confirm assigned payment))
+  S --> PAYMENT((View payment status only))
   S --> VIEW((View assigned customer and pet records))
 
   A[Admin] --> LOGIN
@@ -31,7 +31,7 @@ flowchart LR
 2. API checks booking capacity, reserves the time and creates a pending booking plus unpaid/awaiting-payment payment record.
 3. Staff accepts a targeted request or a common-queue booking. A declined booking returns to the queue; Admin handles exceptional cases.
 4. Staff starts the service and records the result when completing it. A care record is created for the pet.
-5. Payment state is separate from service completion. Assigned Staff or Admin confirms collected cash, or marks a bank transfer **as confirmed in demo only** after Customer notification. Admin handles rejected transfers and refunds.
+5. Payment state is separate from service completion. Only Admin confirms cash collected or marks bank transfer **as confirmed in demo only** after Customer notification, and handles rejected transfers/refunds. Staff only views payment status for their assigned bookings.
 6. Customer can see booking/payment outcomes; Admin sees store-wide reports.
 
 ## Permission summary
@@ -40,7 +40,8 @@ flowchart LR
 |---|---|---|---|
 | Manage own pet and booking | Yes | View assigned records | View and intervene |
 | Accept, start, complete assigned booking | No | Yes | Handle exceptions (not perform Staff completion) |
-| Confirm cash / bank demo payment | No | Assigned accepted booking only | Yes |
+| View payment status | Own bookings | Assigned accepted bookings | All bookings |
+| Confirm cash / bank demo payment | No | No | Yes |
 | Reject bank transfer / mark refund | No | No | Yes |
 | Manage accounts and Staff roles | No | No | Yes |
 | Configure bank recipient / services | No | No | Yes |

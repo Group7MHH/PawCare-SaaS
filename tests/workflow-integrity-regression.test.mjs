@@ -23,13 +23,13 @@ test('Admin bank changes require password reauthentication and customer cannot s
  assert.ok(payments.includes("bcrypt.compare(data.admin_password,adminAccount.password_hash)"));
  assert.ok(frontend.includes('admin_password:adminPassword'));
  assert.ok(frontend.includes('type="password"'));
- assert.ok(payments.includes("req.user!.role==='customer'?{...p,admin_note:null"));
- assert.ok(read('frontend/src/components/PaymentPanel.tsx').includes('(admin||staff)&&p.admin_note'));
+ assert.ok(payments.includes("req.user!.role==='admin'?p:{...p,admin_note:null"));
+ assert.ok(read('frontend/src/components/PaymentPanel.tsx').includes('admin&&p.admin_note'));
 });
 test('bank confirmation demo keeps actor and audit without requiring reference or note',()=>{
  const payments=read('backend/src/routes/payments.ts');
  const panel=read('frontend/src/components/PaymentPanel.tsx');
- assert.ok(payments.includes("p.staff_id!==req.user!.id"));
+ assert.ok(payments.includes("requireRole('admin')"));
  assert.ok(payments.includes('demo_confirmation:demoBankConfirmation'));
  assert.ok(payments.includes('reviewed_by=?'));
  assert.ok(!payments.includes('verification_reference'));

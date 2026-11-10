@@ -87,7 +87,7 @@ export function CustomerPayments(){
   <section className="pc-wallet-stats" aria-label="Thống kê giao dịch">
    <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">01 / GIAO DỊCH</span><strong>{summary?.total??'—'}</strong><small>Tổng số giao dịch</small><ReceiptText size={22} aria-hidden="true"/></div>
    <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">02 / CHỜ THANH TOÁN</span><strong>{summary?(summary.unpaid+summary.awaiting_payment):'—'}</strong><small>Tiền mặt chưa thu và chuyển khoản chưa thực hiện</small><WalletCards size={22} aria-hidden="true"/></div>
-   <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">03 / ĐANG ĐỐI SOÁT</span><strong>{summary?.pending_review??'—'}</strong><small>Admin hoặc Staff đang kiểm tra</small><Clock3 size={22} aria-hidden="true"/></div>
+   <div className="pc-wallet-stat"><span className="pc-wallet-stat-index">03 / ĐANG ĐỐI SOÁT</span><strong>{summary?.pending_review??'—'}</strong><small>Admin đang kiểm tra</small><Clock3 size={22} aria-hidden="true"/></div>
    <div className="pc-wallet-stat pc-wallet-stat--paid"><span className="pc-wallet-stat-index">04 / ĐÃ XÁC NHẬN</span><strong>{summary?money(Number(summary.paid_amount)):'—'}</strong><small>{summary?.paid??0} giao dịch đã thanh toán</small><CheckCircle2 size={22} aria-hidden="true"/></div>
   </section>
   <section className="pc-wallet-section" aria-label="Danh sách thanh toán">
@@ -112,7 +112,7 @@ export function CustomerPayments(){
     </div>}
    <div className="pc-wallet-list-foot"><span>Trang {page}/{pages} · {query.data?.total??0} giao dịch</span><div className="pc-wallet-pager"><button type="button" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} aria-label="Trang thanh toán trước"><ChevronLeft size={18}/></button><button type="button" onClick={()=>setPage(p=>Math.min(pages,p+1))} disabled={page>=pages} aria-label="Trang thanh toán sau"><ChevronRight size={18}/></button></div></div>
   </section>
-  <footer className="pc-wallet-bottom"><ShieldCheck size={19}/><span>Staff phụ trách hoặc Admin ghi nhận tiền mặt đã thu và xác nhận chuyển khoản trong bản demo. Nếu đã chuyển khoản, hãy mở giao dịch và gửi thông báo.</span></footer>
+  <footer className="pc-wallet-bottom"><ShieldCheck size={19}/><span>Admin ghi nhận tiền mặt đã thu và xác nhận chuyển khoản trong bản demo. Nếu đã chuyển khoản, hãy mở giao dịch và gửi thông báo.</span></footer>
   {active&&<section ref={detailRef} className="pc-wallet-inline-detail" aria-label="Chi tiết thanh toán đã chọn">
    <header className="pc-wallet-inline-head">
     <div><span className="pc-wallet-overline">CHI TIẾT GIAO DỊCH</span><h2>Thanh toán lịch #{String(selectedId).padStart(4,'0')}</h2><p>{selected?.payment_reference??'Xem hướng dẫn chuyển khoản và tình trạng đối soát tại đây.'}</p></div>
