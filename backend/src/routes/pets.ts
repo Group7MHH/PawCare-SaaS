@@ -6,10 +6,10 @@ import {isPrivileged,orgId,requireAuth} from '../lib/auth.js';
 const router=Router();router.use(requireAuth);
 const petSchema=z.object({name:z.string().trim().min(1).max(100),species:z.enum(['dog','cat','other']),breed:z.string().max(120).nullable().optional(),gender:z.enum(['male','female','unknown']).default('unknown'),birthday:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),weight_kg:z.coerce.number().positive().max(500).nullable().optional(),color:z.string().max(80).nullable().optional(),notes:z.string().max(2000).nullable().optional(),owner_id:z.coerce.number().int().positive().optional()});
 async function ownedPet(id:number,req:import('express').Request){const [pet]=await rows<any>('SELECT * FROM pets WHERE id=?',[id]);if(!pet)throw new HttpError(404,'Không tìm thấy thú cưng');if(!isPrivileged(req)&&pet.owner_id!==req.user!.id)throw new HttpError(403,'Không có quyền truy cập');
- if(req.user!.role==='staff'&&!(await rows('SELECT 1 FROM appointments WHERE pet_id=? AND organization_id=? AND staff_id=? LIMIT 1',[id,orgId(req),req.user!.id])).length)throw new HttpError(404,'Không tìm thấy thú cưng trong cửa hàng');return pet;}
+ if(req.user!.role==='staff'&&!(await rows('SELECT 1 FROM appointments WHERE pet_id=? AND organization_id=? AND staff_id=? AND status IN ('confirmed','in_progress','completed') LIMIT 1',[id,orgId(req),req.user!.id])).length)throw new HttpError(404,'Không tìm thấy thú cưng trong cửa hàng');return pet;}
 router.get('/',asyncRoute(async(req,res)=>{
  const filters:string[]=[];const params:unknown[]=[];
- if(!isPrivileged(req)){filters.push('p.owner_id=?');params.push(req.user!.id);}else { if(req.user!.role==='staff'){filters.push('EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=? AND a.staff_id=?)');params.push(orgId(req),req.user!.id);} if(req.query.owner_id){filters.push('p.owner_id=?');params.push(idParam(String(req.query.owner_id)));}}
+ if(!isPrivileged(req)){filters.push('p.owner_id=?');params.push(req.user!.id);}else { if(req.user!.role==='staff'){filters.push("EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=? AND a.staff_id=? AND a.status IN ('confirmed','in_progress','completed'))");params.push(orgId(req),req.user!.id);} if(req.query.owner_id){filters.push('p.owner_id=?');params.push(idParam(String(req.query.owner_id)));}}
  if(req.query.search){filters.push('(p.name ILIKE ? OR p.breed ILIKE ?)');params.push(...Array(2).fill(`%${String(req.query.search).slice(0,80)}%`));}
  if(isPrivileged(req))params.unshift(orgId(req));
  const pets=await rows<any>(`SELECT p.*,u.full_name AS owner_name,(SELECT COUNT(*) FROM care_records r WHERE r.pet_id=p.id ${isPrivileged(req)?'AND r.organization_id=?':''}) AS record_count FROM pets p JOIN users u ON p.owner_id=u.id ${filters.length?'WHERE '+filters.join(' AND '):''} ORDER BY p.created_at DESC`,params);
@@ -37,6 +37,8 @@ router.delete('/:id',asyncRoute(async(req,res)=>{
 const careSchema=z.object({title:z.string().min(2).max(160),record_type:z.enum(['vaccination','medical','grooming','other']).default('other'),care_date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),description:z.string().max(3000).nullable().optional(),next_due_date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional()});
 router.post('/:id/records',asyncRoute(async(req,res)=>{
  const pet=await ownedPet(idParam(req.params.id),req);const d=parse(careSchema,req.body);
+ if(req.user!.role==='staff' && !(await rows("SELECT 1 FROM appointments WHERE pet_id=? AND organization_id=? AND staff_id=? AND status IN ('in_progress','completed') LIMIT 1",[pet.id,orgId(req),req.user!.id])).length)
+  throw new HttpError(403,'Staff chỉ được ghi hồ sơ khi đang hoặc đã thực hiện chăm sóc cho thú cưng này');
  const r=await exec('INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,next_due_date) VALUES(?,?,?,?,?,?,?,?)',[pet.id,isPrivileged(req)?orgId(req):null,req.user!.id,d.title,d.record_type,d.care_date,d.description||null,d.next_due_date||null]);res.status(201).json({id:r.insertId,message:'Đã thêm hồ sơ chăm sóc'});
 }));
 router.delete('/:id/records/:recordId',asyncRoute(async(req,res)=>{
