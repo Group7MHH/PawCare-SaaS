@@ -34,7 +34,7 @@ test('bank confirmation demo keeps actor and audit without requiring reference o
  assert.ok(payments.includes('reviewed_by=?'));
  assert.ok(!payments.includes('verification_reference'));
  assert.ok(!panel.includes('verificationReference'));
- assert.ok(panel.includes('Xác nhận đã chuyển khoản'));
+ assert.ok(panel.includes('Xác nhận chuyển khoản (Demo)'));
 });
 test('dashboard distinguishes cash collected from completed services; next booking is queried globally',()=>{
  const backend=read('backend/src/routes/management.ts');
