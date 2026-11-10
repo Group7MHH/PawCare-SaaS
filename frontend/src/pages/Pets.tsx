@@ -1,8 +1,9 @@
 import {useState,type FormEvent} from 'react';
 import {PetAvatar} from '../components/PetAvatar';
+import {CareArtwork} from '../components/CareArtwork';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {Link,useNavigate,useParams} from 'react-router-dom';
-import {ArrowLeft,CalendarDays,ClipboardList,HeartPulse,Plus,PawPrint,Trash2,Edit3} from 'lucide-react';
+import {ArrowLeft,CalendarDays,ClipboardList,HeartPulse,Plus,PawPrint,Trash2,Edit3,ArrowUpRight} from 'lucide-react';
 import {toast} from 'react-hot-toast';
 import {api,dateOnly,errorMessage,json,speciesName,type Pet,type CareRecord} from '../lib/api';
 import {PageTitle,Panel,Modal,Field,SearchBox,Loading,Empty,ErrorNotice} from '../components/UI';
@@ -12,8 +13,57 @@ function PetEditor({pet,onClose}:{pet?:Pet;onClose:()=>void}){const qc=useQueryC
  const save=useMutation({mutationFn:()=>api(pet?`/pets/${pet.id}`:'/pets',json(pet?'PATCH':'POST',{...form,weight_kg:form.weight_kg?Number(form.weight_kg):null,birthday:form.birthday||null})),onSuccess:()=>{qc.invalidateQueries({queryKey:['pets']});qc.invalidateQueries({queryKey:['pet',String(pet?.id)]});qc.invalidateQueries({queryKey:['dashboard']});toast.success('Đã lưu hồ sơ thú cưng');onClose();},onError:e=>toast.error(errorMessage(e))});
  return <Modal title={pet?'Chỉnh sửa hồ sơ thú cưng':'Thêm thành viên'} onClose={onClose}><form className="form-stack" onSubmit={(e:FormEvent)=>{e.preventDefault();save.mutate();}}><div className="form-grid"><Field label="Tên thú cưng *"><input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Ví dụ: Milo"/></Field><Field label="Loài *"><select value={form.species} onChange={e=>setForm({...form,species:e.target.value})}><option value="dog">Chó</option><option value="cat">Mèo</option><option value="other">Khác</option></select></Field><Field label="Giống"><input value={form.breed} onChange={e=>setForm({...form,breed:e.target.value})} placeholder="Poodle, Anh lông ngắn..."/></Field><Field label="Giới tính"><select value={form.gender} onChange={e=>setForm({...form,gender:e.target.value})}><option value="unknown">Chưa rõ</option><option value="male">Đực</option><option value="female">Cái</option></select></Field><Field label="Ngày sinh"><input type="date" value={form.birthday} onChange={e=>setForm({...form,birthday:e.target.value})}/></Field><Field label="Cân nặng (kg)"><input min="0.1" max="500" step="0.1" type="number" value={form.weight_kg} onChange={e=>setForm({...form,weight_kg:e.target.value})}/></Field><Field label="Màu lông"><input value={form.color} onChange={e=>setForm({...form,color:e.target.value})} placeholder="Nâu, trắng..."/></Field></div><Field label="Ghi chú"><textarea rows={3} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Tính cách, sở thích, lưu ý sức khỏe..."/></Field><div className="modal-actions"><button type="button" className="button button-secondary" onClick={onClose}>Hủy bỏ</button><button type="submit" disabled={save.isPending} className="button button-primary">{save.isPending?'Đang lưu...':'Lưu hồ sơ'}</button></div></form></Modal>;
 }
-export function PetsPage(){const [search,setSearch]=useState(''),[adding,setAdding]=useState(false);const pets=useQuery({queryKey:['pets'],queryFn:()=>api<{items:Pet[]}>('/pets')});const list=(pets.data?.items||[]).filter(p=>`${p.name} ${p.breed}`.toLowerCase().includes(search.toLowerCase()));
- return <><PageTitle eyebrow="QUẢN LÝ THÚ CƯNG" title="Thú cưng của tôi" description="Lưu giữ từng cột mốc đáng yêu và thông tin chăm sóc của bé." action={<button className="button button-primary" onClick={()=>setAdding(true)}><Plus size={17}/> Thêm thú cưng</button>}/><div className="section-toolbar"><SearchBox value={search} onChange={setSearch} placeholder="Tìm theo tên hoặc giống..."/><div className="muted-text">{list.length} hồ sơ thú cưng</div></div>{pets.isLoading?<Loading/>:pets.error?<ErrorNotice message={errorMessage(pets.error)}/>:!list.length?<Panel><Empty title="Chưa tìm thấy thú cưng" description="Thêm hồ sơ hoặc thử từ khóa tìm kiếm khác." action={<button className="button button-primary" onClick={()=>setAdding(true)}><Plus size={16}/> Thêm thú cưng</button>}/></Panel>:<div className="pet-gallery">{list.map(p=><Link key={p.id} to={`/pets/${p.id}`} className="pet-gallery-card"><div className={`pet-cover ${p.species}`}><span><PetAvatar species={p.species} size={44}/></span><div className="pet-cover-pill">{speciesName(p.species)}</div></div><div className="pet-gallery-body"><div><h3>{p.name}</h3><span>{p.breed||'Chưa xác định giống'}</span></div><p><PawPrint size={14}/> {p.gender==='male'?'Bé đực':p.gender==='female'?'Bé cái':'Chưa rõ giới tính'} <span>·</span> {p.weight_kg?`${p.weight_kg} kg`:'Chưa có cân nặng'}</p><div className="pet-gallery-foot"><span>{p.record_count||0} hồ sơ chăm sóc</span><span className="text-link">Xem chi tiết →</span></div></div></Link>)}</div>}{adding&&<PetEditor onClose={()=>setAdding(false)}/>}</>;
+export function PetsPage(){
+ const [search,setSearch]=useState('');
+ const [adding,setAdding]=useState(false);
+ const [filter,setFilter]=useState<'all'|'dog'|'cat'|'other'>('all');
+ const [sort,setSort]=useState<'recent'|'name'|'records'>('recent');
+ const pets=useQuery({queryKey:['pets'],queryFn:()=>api<{items:Pet[]}>('/pets')});
+ const all=pets.data?.items||[];
+ const counts={all:all.length,dog:all.filter(p=>p.species==='dog').length,cat:all.filter(p=>p.species==='cat').length,other:all.filter(p=>p.species!=='dog'&&p.species!=='cat').length};
+ const cleaned=search.trim().toLocaleLowerCase('vi-VN');
+ const list=all.filter(p=>(filter==='all'||(filter==='other'?p.species!=='dog'&&p.species!=='cat':p.species===filter))&&
+  (!cleaned||(p.name+' '+(p.breed||'')).toLocaleLowerCase('vi-VN').includes(cleaned)))
+  .slice().sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'vi-VN'):sort==='records'?(b.record_count||0)-(a.record_count||0):0);
+ const records=all.reduce((sum,p)=>sum+(p.record_count||0),0);
+ const tabs=[{key:'all',label:'Tất cả'},{key:'dog',label:'Chó'},{key:'cat',label:'Mèo'},{key:'other',label:'Khác'}] as const;
+ return <div className="pc-pets-page">
+  <PageTitle eyebrow="QUẢN LÝ THÚ CƯNG" title="Thú cưng của tôi" description="Mỗi hồ sơ là một cuốn nhật ký chăm sóc riêng, được lưu giữ ngăn nắp tại PawCare." action={<button type="button" className="button button-primary" onClick={()=>setAdding(true)}><Plus size={17}/> Thêm thú cưng</button>}/>
+  <div className="pc-pets-overview-strip" aria-label="Tổng quan hồ sơ">
+   <div className="pc-pets-overview-label"><span className="pc-pets-record-index">CARE / INDEX</span><strong>Danh mục chăm sóc</strong><small>Những thông tin quan trọng, luôn trong tầm tay.</small></div>
+   <div className="pc-pets-overview-stat"><strong>{all.length}</strong><span>Hồ sơ thú cưng</span></div>
+   <div className="pc-pets-overview-stat"><strong>{records}</strong><span>Lượt ghi nhận chăm sóc</span></div>
+   <div className="pc-pets-overview-art" aria-hidden="true"><CareArtwork variant="record"/></div>
+  </div>
+  <div className="pc-pets-list-head"><div><span className="pc-pets-list-kicker">01 / BỘ SƯU TẬP HỒ SƠ</span><h2>Gia đình nhỏ của bạn</h2><p>Chọn một thẻ để mở nhật ký và xem lịch sử chăm sóc.</p></div><span className="pc-pets-visible-count" aria-live="polite">Hiển thị {list.length} / {all.length}</span></div>
+  <div className="pc-pets-tools">
+   <SearchBox value={search} onChange={setSearch} placeholder="Tìm theo tên, giống..."/>
+   <div className="pc-pets-filter" role="group" aria-label="Lọc theo loài">
+    {tabs.map(t=><button key={t.key} type="button" aria-pressed={filter===t.key} className={filter===t.key?'selected':''} onClick={()=>setFilter(t.key)}>{t.label}<span>{counts[t.key]}</span></button>)}
+   </div>
+   <label className="pc-pets-sort">Sắp xếp <select value={sort} onChange={e=>setSort(e.target.value as typeof sort)}><option value="recent">Mặc định</option><option value="name">Theo tên</option><option value="records">Nhiều hồ sơ nhất</option></select></label>
+  </div>
+  {pets.isLoading?<Loading/>:pets.error?<ErrorNotice message={errorMessage(pets.error)}/>:!list.length?<Panel><Empty title={all.length?'Không có hồ sơ phù hợp':'Chưa có thú cưng'} description={all.length?'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.':'Hãy tạo hồ sơ đầu tiên để bắt đầu lưu giữ hành trình chăm sóc.'} action={<button type="button" className="button button-primary" onClick={()=>setAdding(true)}><Plus size={16}/> Thêm thú cưng</button>}/></Panel>:
+  <div className="pc-record-collection" aria-live="polite">
+   {list.map((p,index)=><Link to={'/pets/'+p.id} key={p.id} className={'pc-record-card pc-record-card--'+(index%3)} aria-label={'Mở hồ sơ chăm sóc của '+p.name}>
+    <div className="pc-record-card-cover">
+     <span className="pc-record-card-number">HỒ SƠ / {String(index+1).padStart(2,'0')}</span>
+     <CareArtwork variant="record"/>
+     <span className="pc-record-card-avatar" aria-hidden="true"><PetAvatar species={p.species} size={56}/></span>
+     <span className="pc-record-card-species">{speciesName(p.species)}</span>
+    </div>
+    <div className="pc-record-card-body">
+     <span className="pc-record-card-eyebrow">SỔ CHĂM SÓC CÁ NHÂN</span>
+     <h3>{p.name}</h3>
+     <p>{p.breed||'Chưa cập nhật giống'}</p>
+     <div className="pc-record-card-facts"><span><small>GIỚI TÍNH</small><strong>{p.gender==='male'?'Đực':p.gender==='female'?'Cái':'Chưa rõ'}</strong></span><span><small>CÂN NẶNG</small><strong>{p.weight_kg?String(p.weight_kg)+' kg':'Chưa cập nhật'}</strong></span></div>
+     <div className="pc-record-card-footer"><span><ClipboardList size={15}/><strong>{p.record_count||0}</strong> lần chăm sóc</span><span className="pc-record-card-open">Mở hồ sơ <ArrowUpRight size={17}/></span></div>
+    </div>
+   </Link>)}
+  </div>}
+  <div className="pc-pets-bottom-note"><HeartPulse size={18}/><span>Hồ sơ được đồng bộ từ dữ liệu của bạn; thông tin sức khỏe chỉ mang tính ghi nhận, không thay thế tư vấn thú y.</span></div>
+  {adding&&<PetEditor onClose={()=>setAdding(false)}/>}
+ </div>;
 }
 export function PetDetail(){const {id}=useParams(),nav=useNavigate(),qc=useQueryClient();const [editing,setEditing]=useState(false),[addRecord,setAddRecord]=useState(false),[recordTab,setRecordTab]=useState<'all'|'vaccination'|'other'>('all'),[record,setRecord]=useState({title:'',record_type:'vaccination',care_date:new Date().toISOString().slice(0,10),description:'',next_due_date:''});
  const data=useQuery({queryKey:['pet',id],queryFn:()=>api<{pet:Pet;records:CareRecord[]}>(`/pets/${id}`)});
