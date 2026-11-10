@@ -56,8 +56,8 @@ PawCare supports **cash at store** and **manual bank transfer** (only if Admin c
 2. **Bank transfer:** Starts `awaiting_payment`. Customer sees the saved receiving account and chooses **Tôi đã chuyển khoản**, changing status to `pending_review`. Assigned Staff or Admin can choose **Xác nhận chuyển khoản (Demo)** to mark `paid`. This is a simulation only: PawCare **does not check actual bank balances**.
 3. Staff may confirm only their own accepted `confirmed`, `in_progress`, or `completed` appointment. Admin may confirm pending payments, reject a transfer with a reason, and record a refund with a reason. Neither Staff nor Customer can refund/reject.
 4. API locks the appointment and payment within the same transaction, rejects duplicate confirmation, and records reviewer, time, method, old/new status and action in `role_audit_logs`.
-5. Cancelled unpaid payments become `void`; already-paid cancelled payments become `refund_required`. Admin records `refunded` after handling a refund. A claimed transfer for a cancelled appointment remains for Admin reconciliation, possibly leading to `refund_required`.
-6. This is a **demo ledger**, not a payment gateway or bank verification. Do not present demo bank confirmations as proof that money arrived.
+5. Cancelled unpaid payments become `void`; already-paid cancelled payments become `refund_required`. Admin records `refunded` after handling a refund. A claimed transfer for a cancelled appointment remains in `pending_review`: Admin either rejects it as `void` or simulates receipt as `refund_required` (never `paid`) before refunding.
+6. Staff payment list and totals are scoped to accepted appointments assigned to that Staff; Customers see only their own transactions, Admin sees the store ledger. This is a **demo ledger**, not a payment gateway or bank verification. Do not present demo bank confirmations as proof that money arrived.
 
 Migrations 009–013 contain the historical manual payment schema/state. They remain required for existing and fresh database migrations.
 

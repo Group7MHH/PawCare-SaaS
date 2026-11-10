@@ -17,7 +17,7 @@ test('customer payment history uses real, customer-scoped paginated API and deta
  for(const needle of ['PaymentPanel','/payments?status=','search=','page=','limit=','aria-pressed={filter===f.key}','setSelectedId(p.appointment_id)','<PaymentPanel key={selectedId} appointmentId={selectedId}/>','refetchInterval:20000','summary?.paid']){
   assert.ok(page.includes(needle),needle);
  }
- assert.ok(backend.includes("if(req.user!.role!=='admin')"));
+ assert.ok(backend.includes("if(req.user!.role==='customer')"));
  assert.ok(backend.includes('p.customer_id=?'));
  assert.ok(backend.includes('pageParams(req)'));
  assert.ok(backend.includes('LIMIT ? OFFSET ?'));

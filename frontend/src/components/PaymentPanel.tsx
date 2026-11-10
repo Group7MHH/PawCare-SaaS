@@ -32,6 +32,7 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
  const unpaid=['unpaid','awaiting_payment'].includes(p.status)&&p.appointment_status!=='cancelled';
  const cashNeedsCollection=p.method==='cash'&&p.status==='unpaid'&&p.appointment_status!=='cancelled';
  const bankNeedsConfirmation=p.method==='bank_transfer'&&p.status==='pending_review';
+ const cancelledTransferAwaitingReview=p.appointment_status==='cancelled'&&bankNeedsConfirmation;
  const staffCanConfirm=['confirmed','in_progress','completed'].includes(p.appointment_status)&&(cashNeedsCollection||bankNeedsConfirmation);
  const working=method.isPending||notice.isPending||reconcile.isPending;
  return <section className="pc-payment-panel" aria-label="Thanh toán">
@@ -54,7 +55,7 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
    <small>Nút này chỉ gửi thông báo. Staff hoặc Admin sẽ xác nhận mô phỏng trong PawCare; không có kiểm tra ngân hàng thật.</small>
   </div>}
   {!admin&&!staff&&p.method==='cash'&&unpaid&&<p className="pc-payment-info">Vui lòng thanh toán tại quầy. Staff phụ trách hoặc Admin sẽ ghi nhận sau khi nhận tiền mặt.</p>}
-  {!admin&&!staff&&p.status==='pending_review'&&<p className="pc-payment-info">Bạn đã báo chuyển khoản. Đang chờ Staff hoặc Admin xác nhận trên bản demo; đây chưa phải xác minh tiền đã về.</p>}
+  {!admin&&!staff&&p.status==='pending_review'&&<p className="pc-payment-info">{cancelledTransferAwaitingReview?'Lịch đã hủy sau khi bạn báo chuyển khoản. Admin sẽ xử lý thông báo: từ chối nếu chưa nhận tiền, hoặc ghi nhận khoản cần hoàn tiền nếu đã nhận (demo).':'Bạn đã báo chuyển khoản. Đang chờ Staff hoặc Admin xác nhận trên bản demo; đây chưa phải xác minh tiền đã về.'}</p>}
   {p.status==='refund_required'&&<p className="pc-payment-warning">Lịch hẹn đã hủy sau khi thanh toán. Vui lòng liên hệ cửa hàng để hoàn tiền; Admin cần ghi nhận sau khi hoàn thực tế.</p>}
   {(admin||staff)&&p.admin_note&&<p className="pc-payment-info">Ghi chú nội bộ: {p.admin_note}</p>}
   {staff&&<div className="pc-staff-reconcile">
@@ -65,8 +66,9 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
    <p className="pc-staff-reconcile-foot">Chỉ xác nhận lịch do bạn phụ trách. Hệ thống lưu người xác nhận và thời gian thao tác.</p>
   </div>}
   {admin&&<div className="pc-payment-reconcile">
+   {cancelledTransferAwaitingReview&&<p className="pc-payment-warning">Lịch đã hủy. Nếu tiền thực tế đã về, xác nhận demo để tạo yêu cầu hoàn tiền; nếu chưa nhận tiền, từ chối đối soát. Không đánh dấu giao dịch này là thanh toán hoàn tất.</p>}
    <div className="pc-payment-actions">
-    {(cashNeedsCollection||bankNeedsConfirmation)&&<button type="button" className="button button-primary" disabled={working} onClick={()=>{if(confirm(p.method==='cash'?'Bạn xác nhận cửa hàng đã nhận đủ tiền mặt tại quầy?':'Xác nhận mô phỏng: PawCare không xác minh giao dịch ngân hàng. Đánh dấu đã thanh toán?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/>{p.method==='cash'?'Xác nhận đã nhận tiền mặt':'Xác nhận chuyển khoản (Demo)'}</button>}
+    {(cashNeedsCollection||bankNeedsConfirmation)&&<button type="button" className="button button-primary" disabled={working} onClick={()=>{if(confirm(p.method==='cash'?'Bạn xác nhận cửa hàng đã nhận đủ tiền mặt tại quầy?':cancelledTransferAwaitingReview?'Lịch đã hủy. Xác nhận mô phỏng chỉ để chuyển sang CẦN HOÀN TIỀN, không xác minh ngân hàng. Tiếp tục?':'Xác nhận mô phỏng: PawCare không xác minh giao dịch ngân hàng. Đánh dấu đã thanh toán?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/>{p.method==='cash'?'Xác nhận đã nhận tiền mặt':cancelledTransferAwaitingReview?'Ghi nhận cần hoàn tiền (Demo)':'Xác nhận chuyển khoản (Demo)'}</button>}
    </div>
    {(p.method==='bank_transfer'&&p.status==='pending_review'||p.status==='refund_required')&&<label className="pc-payment-note">Ghi chú cho thao tác từ chối hoặc hoàn tiền<textarea rows={2} maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder="Nhập lý do từ chối hoặc ghi chú hoàn tiền"/></label>}
    <div className="pc-payment-actions">
