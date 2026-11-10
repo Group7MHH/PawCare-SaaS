@@ -22,7 +22,7 @@ test('customer payment history uses real, customer-scoped paginated API and deta
  assert.ok(backend.includes('pageParams(req)'));
  assert.ok(backend.includes('LIMIT ? OFFSET ?'));
  assert.ok(backend.includes('WHERE ${scope}'));
- assert.ok(backend.includes('res.json({items,total:count.total,page,limit,summary})'));
+ assert.ok(backend.includes('res.json({items:publicItems,total:count.total,page,limit,summary})'));
 });
 test('transaction panel retains all customer payment actions and blocks self-confirmation',()=>{
  const panel=read('frontend/src/components/PaymentPanel.tsx');
