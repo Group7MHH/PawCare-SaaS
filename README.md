@@ -43,23 +43,23 @@ npm.cmd run test
 node --test tests/*.test.mjs
 ```
 
-The original project was MVP; a hosted card/payment gateway, messaging, password recovery and full end-to-end validation are still out of scope. PawCare now includes manual cash/transfer payment status tracking with Admin reconciliation; this does not automatically process money.
+The original project was MVP; a hosted card/payment gateway, messaging, password recovery and full end-to-end validation are still out of scope. PawCare now includes manual cash/transfer payment status tracking with assigned Staff or Admin confirmation; this does not automatically process money.
 
 ## UI and booking improvements
 The interface uses locally stored care-themed SVG artwork (`frontend/public/illustrations/care-*.svg`) with no dog/cat portrait artwork; services select relevant medical, bath, grooming, vaccination or dental icons from the service name/category. One appointment supports multiple services, totals are calculated from authoritative service prices/durations, and the server checks a contiguous slot for the full duration under a PostgreSQL transaction. Existing single-service appointments are backfilled by migration 006. Permanently deleting a service removes all bookings that include it, including multi-service bookings, following the store's existing deletion policy.
 
-## Manual payment workflow (v1)
+## Payment workflow (school demo)
 
-PawCare supports two methods: **cash at store** (default) and **bank transfer with human reconciliation**. The bank method appears only when all of `PAYMENT_BANK_NAME`, `PAYMENT_BANK_ACCOUNT`, and `PAYMENT_BANK_OWNER` are set on the backend (Render Environment). These are public recipient details, not login credentials.
+PawCare supports **cash at store** and **manual bank transfer** (only if Admin configured a recipient in **Profile**). Booking creates one payment record using the backend-calculated amount; payment state is independent of booking completion.
 
-1. Customer books up to 8 services; the server computes `price_snapshot` and creates one `payments` record in the **same database transaction**. The frontend cannot set the payment amount.
-2. Cash: initial state `unpaid`, Admin confirms `paid` only after physically receiving the money.
-3. Bank transfer: Customer sees the payee details and their unique reference (`PC0000...`), transfers using their own banking app, then chooses **Tôi đã chuyển khoản**. This changes status to `pending_review`, **not** `paid`. Admin manually verifies the actual funds before confirming.
-4. Admin may reject a claimed transfer with a required explanation. Customer can retry.
-5. Cancelled, unpaid bookings become `void`; paid bookings become `refund_required`, not automatically refunded. Admin marks `refunded` only after making and documenting a real refund. Claimed bank transfers on a subsequently cancelled booking remain pending reconciliation.
-6. The current payment method/status appears on **Lịch hẹn của tôi** and in the Admin appointment detail dialog. Financial state changes are auditable in `role_audit_logs`.
+1. **Cash:** Starts `unpaid`. Once money is physically received at the counter, the **assigned Staff** (after accepting the appointment) or **Admin** chooses **Xác nhận đã nhận tiền mặt**. Status becomes `paid`. No customer self-confirmation.
+2. **Bank transfer:** Starts `awaiting_payment`. Customer sees the saved receiving account and chooses **Tôi đã chuyển khoản**, changing status to `pending_review`. Assigned Staff or Admin can choose **Xác nhận chuyển khoản (Demo)** to mark `paid`. This is a simulation only: PawCare **does not check actual bank balances**.
+3. Staff may confirm only their own accepted `confirmed`, `in_progress`, or `completed` appointment. Admin may confirm pending payments, reject a transfer with a reason, and record a refund with a reason. Neither Staff nor Customer can refund/reject.
+4. API locks the appointment and payment within the same transaction, rejects duplicate confirmation, and records reviewer, time, method, old/new status and action in `role_audit_logs`.
+5. Cancelled unpaid payments become `void`; already-paid cancelled payments become `refund_required`. Admin records `refunded` after handling a refund. A claimed transfer for a cancelled appointment remains for Admin reconciliation, possibly leading to `refund_required`.
+6. This is a **demo ledger**, not a payment gateway or bank verification. Do not present demo bank confirmations as proof that money arrived.
 
-Migration `009_manual_payments.sql` creates the payment ledger and safely backfills existing bookings as **unpaid/void**, without claiming any historical cash was collected. The app applies migrations at startup; **back up Neon first**. The first deployment should be verified using a development database before production. This is *manual payment tracking* only: no real-time bank verification, payment gateway, QR integration, webhook, automatic refunds, or payment receipts from a licensed provider.
+Migrations 009–013 contain the historical manual payment schema/state. They remain required for existing and fresh database migrations.
 
 ## Artwork direction
 
@@ -67,17 +67,9 @@ PawCare's large illustrations now use local SVGs depicting **care journals, stet
 
 **Accounting safety:** permanent deletion of an account or service containing paid, pending-review or refund-related transactions is blocked so that accepted money and refund obligations are not silently erased. Admin must resolve such records using an appropriate retention/archival policy before any final deletion.
 
-## Admin bank settings in Profile and Staff transfer reconciliation (v2)
+## Bank settings
 
-- **Admin → Thông tin cá nhân** contains the bank recipient editor. The former `/admin/payment-settings` URL redirects to `/profile`; no separate bank menu item is shown. Only Admin can update recipient details. The saved bank details in Neon override Render environment defaults.
-- **Customer → Thanh toán** reports a bank transfer as `pending_review`, never as an automatic success.
-- **Staff → Lịch được giao → Chi tiết lịch** allows the Staff actually assigned to an accepted booking to confirm **only** a pending bank transfer after viewing the real bank statement. Staff must enter a bank transaction reference (at least six characters) and a verification note (at least ten characters). The backend checks Staff's assigned booking, payment method/status and appointment status, locks both booking and payment, stores the reviewer and audit entry, and prevents reuse of the same bank transaction reference within the store.
-- Staff **cannot** reject a transfer, confirm a refund, edit the bank recipient, confirm cash or settle someone else's booking. Admin retains those rights. Paid/refunded/cancelled transfers cannot be re-confirmed.
-- The server does **not** access bank accounts or verify funds automatically. Do not grant the Staff reconciliation capability unless Staff have an authorized way to view trustworthy bank records. An image or screenshot from a customer is not proof that funds have arrived.
-- `011_staff_payment_reconciliation.sql` adds a nullable bank transaction reference and an organization-scoped unique index. Existing payments remain unchanged. Back up Neon and validate the migration on a test database before production deployment.
+Admin configures the receiving bank in **Profile**. Current configured bank details are stored in Neon, and each transfer booking preserves a snapshot of the account details at booking time.
 
-## Demo-only payment confirmation
+**Demo constraint:** Staff and Admin clicking bank confirmation does not connect to or verify the bank. Do not use this demo flow for real payments without verification.
 
-For this school/demo deployment, assigned Staff and Admin can press **Xác nhận đã chuyển khoản** on a bank-transfer payment in `pending_review`, without entering a bank reference or proof. A confirmation dialog explicitly states that the system **does not verify funds with a bank**. The API logs the actor, method, previous/new status, and `demo_confirmation=true, bank_verified=false` in `role_audit_logs`; the payment retains reviewer/time. The payment status becomes `paid` in PawCare **for demonstration only**, not proof of real funds.
-
-Customer still only reports having transferred funds; they cannot mark themselves paid. Staff may confirm only their assigned, accepted bookings. Admin still handles rejection/refunds, which require notes. Do **not** use demo confirmation for production payments; real operations need bank-statement verification or a verified gateway/webhook before recording `paid`.

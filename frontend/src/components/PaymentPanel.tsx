@@ -30,6 +30,9 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
  const availableBank=config.data?.bank;
  const bank=p.bank_name_snapshot&&p.bank_account_snapshot&&p.bank_owner_snapshot?{name:p.bank_name_snapshot,account:p.bank_account_snapshot,owner:p.bank_owner_snapshot}:null;
  const unpaid=['unpaid','awaiting_payment'].includes(p.status)&&p.appointment_status!=='cancelled';
+ const cashNeedsCollection=p.method==='cash'&&p.status==='unpaid'&&p.appointment_status!=='cancelled';
+ const bankNeedsConfirmation=p.method==='bank_transfer'&&p.status==='pending_review';
+ const staffCanConfirm=['confirmed','in_progress','completed'].includes(p.appointment_status)&&(cashNeedsCollection||bankNeedsConfirmation);
  const working=method.isPending||notice.isPending||reconcile.isPending;
  return <section className="pc-payment-panel" aria-label="Thanh toán">
   <header className="pc-payment-heading"><span className="pc-payment-symbol"><CreditCard size={19}/></span><div><span className="pc-payment-overline">PAWCARE / THANH TOÁN</span><strong>Chi tiết thanh toán</strong></div><span className={`pc-payment-status pc-payment-status--${p.status}`}>{labels[p.status]}</span></header>
@@ -50,27 +53,27 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
    <button className="button button-primary" type="button" disabled={working} onClick={()=>notice.mutate()}><ClipboardCheck size={16}/> Tôi đã chuyển khoản</button>
    <small>Nút này chỉ gửi thông báo. Staff hoặc Admin sẽ xác nhận mô phỏng trong PawCare; không có kiểm tra ngân hàng thật.</small>
   </div>}
-  {!admin&&!staff&&p.method==='cash'&&unpaid&&<p className="pc-payment-info">Vui lòng thanh toán tại cửa hàng. Admin sẽ ghi nhận sau khi nhận tiền.</p>}
+  {!admin&&!staff&&p.method==='cash'&&unpaid&&<p className="pc-payment-info">Vui lòng thanh toán tại quầy. Staff phụ trách hoặc Admin sẽ ghi nhận sau khi nhận tiền mặt.</p>}
   {!admin&&!staff&&p.status==='pending_review'&&<p className="pc-payment-info">Bạn đã báo chuyển khoản. Đang chờ Staff hoặc Admin xác nhận trên bản demo; đây chưa phải xác minh tiền đã về.</p>}
   {p.status==='refund_required'&&<p className="pc-payment-warning">Lịch hẹn đã hủy sau khi thanh toán. Vui lòng liên hệ cửa hàng để hoàn tiền; Admin cần ghi nhận sau khi hoàn thực tế.</p>}
   {(admin||staff)&&p.admin_note&&<p className="pc-payment-info">Ghi chú nội bộ: {p.admin_note}</p>}
   {staff&&<div className="pc-staff-reconcile">
-   <div className="pc-staff-reconcile-head"><ShieldCheck size={19}/><div><strong>Xác nhận chuyển khoản (Demo)</strong><small>Mô phỏng xác nhận thanh toán; PawCare không kiểm tra tài khoản ngân hàng thật.</small></div></div>
-   {p.status==='pending_review'&&p.method==='bank_transfer'&&p.appointment_status!=='cancelled'
-    ?<button type="button" className="button button-primary" disabled={working} onClick={()=>{if(confirm('Đây chỉ là xác nhận mô phỏng trong demo, không chứng minh tiền đã về ngân hàng. Bạn muốn đánh dấu giao dịch này là đã thanh toán?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/> Xác nhận đã chuyển khoản</button>
-    :<p className="pc-payment-info">Không có giao dịch chuyển khoản đang chờ xác nhận.</p>}
-   <p className="pc-staff-reconcile-foot">Không cần nhập mã giao dịch hay bằng chứng. Hệ thống vẫn lưu nhân viên xác nhận và thời gian thao tác vào nhật ký.</p>
+   <div className="pc-staff-reconcile-head"><ShieldCheck size={19}/><div><strong>Ghi nhận thanh toán</strong><small>Chỉ xác nhận sau khi nhận tiền mặt. Chuyển khoản chỉ mô phỏng trong bản demo.</small></div></div>
+   {staffCanConfirm
+    ?<button type="button" className="button button-primary" disabled={working} onClick={()=>{if(confirm(p.method==='cash'?'Bạn xác nhận đã trực tiếp nhận đủ tiền mặt từ khách tại quầy?':'Đây chỉ là xác nhận mô phỏng; PawCare không kiểm tra ngân hàng. Bạn muốn đánh dấu đã thanh toán?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/>{p.method==='cash'?'Xác nhận đã nhận tiền mặt':'Xác nhận chuyển khoản (Demo)'}</button>
+    :<p className="pc-payment-info">{p.status==='paid'?'Giao dịch đã được ghi nhận thanh toán.':'Chưa có khoản cần xác nhận, hoặc bạn cần nhận lịch trước khi ghi nhận thanh toán.'}</p>}
+   <p className="pc-staff-reconcile-foot">Chỉ xác nhận lịch do bạn phụ trách. Hệ thống lưu người xác nhận và thời gian thao tác.</p>
   </div>}
   {admin&&<div className="pc-payment-reconcile">
    <div className="pc-payment-actions">
-    {((p.method==='cash'&&p.status==='unpaid')||(p.method==='bank_transfer'&&p.status==='pending_review'))&&<button type="button" className="button button-primary" disabled={working} onClick={()=>{if(confirm('Xác nhận mô phỏng: giao dịch sẽ được đánh dấu đã thanh toán trong PawCare, không xác minh ngân hàng. Tiếp tục?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/> Xác nhận đã chuyển khoản / nhận tiền (Demo)</button>}
+    {(cashNeedsCollection||bankNeedsConfirmation)&&<button type="button" className="button button-primary" disabled={working} onClick={()=>{if(confirm(p.method==='cash'?'Bạn xác nhận cửa hàng đã nhận đủ tiền mặt tại quầy?':'Xác nhận mô phỏng: PawCare không xác minh giao dịch ngân hàng. Đánh dấu đã thanh toán?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/>{p.method==='cash'?'Xác nhận đã nhận tiền mặt':'Xác nhận chuyển khoản (Demo)'}</button>}}
    </div>
    {(p.method==='bank_transfer'&&p.status==='pending_review'||p.status==='refund_required')&&<label className="pc-payment-note">Ghi chú cho thao tác từ chối hoặc hoàn tiền<textarea rows={2} maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder="Nhập lý do từ chối hoặc ghi chú hoàn tiền"/></label>}
    <div className="pc-payment-actions">
     {p.method==='bank_transfer'&&p.status==='pending_review'&&<button className="button button-secondary" type="button" disabled={working||!note.trim()} onClick={()=>reconcile.mutate('reject_transfer')}>Từ chối đối soát</button>}
     {p.status==='refund_required'&&<button className="button button-primary" type="button" disabled={working||!note.trim()} onClick={()=>{if(confirm('Bạn đã hoàn tiền thật và muốn ghi nhận trong PawCare?'))reconcile.mutate('confirm_refund');}}>Xác nhận đã hoàn tiền</button>}
    </div>
-   <small>Chức năng xác nhận thanh toán đang ở chế độ demo; không kết nối hay xác thực giao dịch ngân hàng.</small>
+   <small>Tiền mặt chỉ được xác nhận sau khi nhận thực tế; chuyển khoản là thao tác mô phỏng, không có xác minh ngân hàng.</small>
   </div>}
   <footer className="pc-payment-foot"><ShieldCheck size={15}/> Trạng thái được lưu trong hệ thống PawCare</footer>
  </section>;
