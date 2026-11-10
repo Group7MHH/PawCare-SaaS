@@ -1,0 +1,64 @@
+/* PawCare · Payment usability improvements. Keeps the Notebook design system. */
+.pc-wallet-inline-detail{max-width:920px;margin:24px auto 4px;padding:24px 27px;border:1px solid #d4c4af;border-radius:18px;background:#fffdf9;box-shadow:0 13px 38px rgba(36,55,65,.11);scroll-margin-top:88px;animation:pc-wallet-detail-appear .32s cubic-bezier(.22,1,.36,1) both}
+@keyframes pc-wallet-detail-appear{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.pc-wallet-inline-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 0 15px;border-bottom:1px solid #eadfd1}
+.pc-wallet-inline-head h2{font:800 clamp(21px,2.3vw,26px)/1.25 'Bricolage Grotesque','Be Vietnam Pro',sans-serif;color:#264453;letter-spacing:-.045em;margin:5px 0}
+.pc-wallet-inline-head p{font-size:11px;color:#8d887e;margin:0}
+.pc-wallet-inline-close{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #e0d4c5;border-radius:10px;background:#fffaf2;color:#3c606e;cursor:pointer;font:800 11px 'Be Vietnam Pro',sans-serif;transition:background .2s,transform .2s;flex-shrink:0}
+.pc-wallet-inline-close:hover{background:#eaf0e8;transform:translateY(-2px)}
+.pc-wallet-inline-detail .pc-payment-panel{max-width:100%;box-shadow:none;border-color:#e5dbc9;background:#faf7f0;margin:19px 0}
+.pc-wallet-inline-detail .pc-payment-heading{gap:10px;flex-wrap:wrap}
+.pc-wallet-inline-detail .pc-payment-status{margin-left:auto}
+.pc-wallet-inline-detail .pc-payment-bank{border:1px solid #c8dacb;background:#e9f0e8}
+.pc-wallet-inline-detail .pc-payment-ref{flex-wrap:wrap}
+.pc-wallet-inline-detail .pc-payment-ref strong{word-break:break-all}
+.pc-wallet-inline-detail .pc-wallet-appointment-link{margin:5px 0 0}
+.pc-bank-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.8fr);gap:20px;align-items:start;margin-top:20px}
+.pc-bank-edit,.pc-bank-guidance{background:#fffdf9;border:1px solid #e4d8c8;border-radius:16px;box-shadow:0 5px 20px rgba(39,59,64,.045)}
+.pc-bank-edit{padding:27px}
+.pc-bank-edit-head{display:flex;align-items:flex-start;gap:15px;padding-bottom:22px;border-bottom:1px solid #e9dfd3}
+.pc-bank-identity{width:54px;height:54px;flex-shrink:0;display:grid;place-items:center;background:#e1ece5;border:1px solid #d0dfd2;border-radius:14px;color:#568575}
+.pc-bank-edit-head h2{font:800 clamp(19px,2.2vw,25px)/1.24 'Bricolage Grotesque','Be Vietnam Pro',sans-serif;margin:5px 0 7px;letter-spacing:-.04em;color:#294452}
+.pc-bank-edit-head p{margin:0;color:#7a8782;font-size:11px;line-height:1.7}
+.pc-bank-form{display:flex;flex-direction:column;gap:20px;margin-top:23px}
+.pc-bank-form>label:not(.pc-bank-toggle){display:flex;flex-direction:column;gap:8px;font-size:11px;font-weight:800;color:#465e62}
+.pc-bank-form>label:not(.pc-bank-toggle)>input{height:47px;border:1px solid #dfd5c8;background:#fbfaf5;border-radius:10px;outline:none;padding:0 14px;color:#284653;font:600 13px 'Be Vietnam Pro',sans-serif;transition:border-color .2s,box-shadow .2s}
+.pc-bank-form>label:not(.pc-bank-toggle)>input:focus{border-color:#83aa99;box-shadow:0 0 0 3px rgba(126,166,145,.13)}
+.pc-bank-toggle{display:flex;align-items:flex-start;gap:11px;border:1px solid #d4e2d8;border-radius:12px;background:#edf3ec;padding:15px;cursor:pointer}
+.pc-bank-toggle input{width:18px;height:18px;flex-shrink:0;margin:2px 0 0;accent-color:#528777}
+.pc-bank-toggle span{display:flex;flex-direction:column;gap:5px}
+.pc-bank-toggle strong{color:#315a50;font-size:12px}
+.pc-bank-toggle small{color:#768f82;font-size:10px;line-height:1.7}
+.pc-bank-actions{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.pc-bank-actions .button{display:flex;align-items:center;gap:8px}
+.pc-bank-actions>span{font-size:10px;color:#a08469}
+.pc-bank-aside{display:flex;flex-direction:column;gap:16px}
+.pc-bank-preview{border-radius:16px;overflow:hidden;background:linear-gradient(125deg,#2b4a59,#3b6c70);color:#faf3e6;box-shadow:0 12px 30px rgba(38,63,67,.13);border:1px solid #3d6064}
+.pc-bank-preview-head{display:flex;gap:9px;align-items:center;padding:19px 22px;border-bottom:1px solid rgba(255,255,255,.16);font-size:9px;letter-spacing:.09em;font-weight:800}
+.pc-bank-preview-head>span:last-child{margin-left:auto;color:#b2cebc}
+.pc-bank-preview-body{display:flex;flex-direction:column;gap:8px;padding:26px 22px 28px;min-height:185px}
+.pc-bank-preview-body small{color:#b1cfc1;font-size:9px;letter-spacing:.11em;font-weight:800}
+.pc-bank-preview-body strong{font-size:17px;margin-top:8px}
+.pc-bank-preview-body b{font:800 clamp(20px,2.3vw,27px)/1.25 'Bricolage Grotesque','Be Vietnam Pro',sans-serif;letter-spacing:.025em;overflow-wrap:anywhere}
+.pc-bank-preview-body>span{font-size:11px;color:#d9e8de}
+.pc-bank-preview-foot{display:flex;align-items:center;gap:8px;background:rgba(13,36,40,.2);padding:15px 22px;font-size:10px;color:#cfdfd2}
+.pc-bank-guidance{padding:21px 20px}
+.pc-bank-guidance>div{display:flex;align-items:center;gap:9px;color:#44675d;margin-bottom:7px}
+.pc-bank-guidance>div svg{flex-shrink:0}
+.pc-bank-guidance strong{font-size:12px;color:#284e54}
+.pc-bank-guidance p{font-size:11px;color:#7b8982;line-height:1.8;margin:0 0 19px;padding-left:29px}
+.pc-bank-guidance p:last-child{margin-bottom:0}
+.pc-staff-pay-readonly{margin:14px 0;padding:14px;border:1px solid #d7e4dc;background:#eff6f0;border-radius:11px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pc-staff-pay-readonly>div{display:flex;flex-direction:column;gap:5px}
+.pc-staff-pay-readonly strong{font-size:12px;color:#294f50}
+.pc-staff-pay-readonly small{font-size:10px;color:#7e8b81}
+.pc-staff-pay-tag{display:inline-flex;justify-content:center;align-items:center;text-align:center;line-height:1.35;white-space:normal;max-width:165px;padding:7px 10px;border:1px solid #ebd9c4;border-radius:20px;background:#fff2e0;color:#927049;font-size:10px;font-weight:800}
+.pc-staff-pay-tag--paid{color:#37745b;border-color:#bfdbc9;background:#e4f1e7}
+.pc-staff-pay-tag--pending_review{color:#53728b;border-color:#cbdceb;background:#e8f0f6}
+.pc-staff-pay-tag--refunded,.pc-staff-pay-tag--void{color:#7d8585;border-color:#dbe2df;background:#f0f0ee}
+.pc-staff-pay-tag--refund_required{color:#a6624b;border-color:#edcdbd;background:#fce9df}
+.nb-staff-task .pc-staff-pay-tag{font-size:9px;padding:5px 8px;margin-top:7px;max-width:none}
+@media(max-width:950px){.pc-bank-layout{grid-template-columns:1fr}.pc-bank-aside{display:grid;grid-template-columns:1fr 1fr;gap:14px}}
+@media(max-width:690px){.pc-bank-aside{grid-template-columns:1fr}.pc-bank-edit{padding:20px 16px}.pc-bank-guidance{padding:18px}.pc-wallet-inline-detail{padding:19px 15px;scroll-margin-top:72px}.pc-wallet-inline-head{align-items:flex-start}.pc-wallet-inline-close{padding:9px 10px}.pc-wallet-inline-detail .pc-payment-panel{padding:13px}}
+@media(max-width:470px){.pc-wallet-inline-head h2{font-size:19px}.pc-wallet-inline-head p{font-size:10px}.pc-wallet-inline-detail .pc-payment-status{margin:3px 0 0}.pc-bank-actions .button{width:100%;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.pc-wallet-inline-detail{animation:none!important}.pc-wallet-inline-close,.pc-bank-form input{transition:none!important;transform:none!important}}

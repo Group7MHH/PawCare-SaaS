@@ -3,6 +3,7 @@ import {z} from 'zod';
 import {pool,rows,exec,transaction,type DB} from '../lib/db.js';
 import {asyncRoute,HttpError,idParam,pageParams,parse} from '../lib/http.js';
 import {orgId,requireAuth,requireOrganization,requireRole} from '../lib/auth.js';
+import {getBankSettings,getActiveBank} from '../lib/payment-bank.js';
 
 export type PaymentStatus='unpaid'|'pending_review'|'paid'|'refund_required'|'refunded'|'void';
 type PaymentRow={
@@ -10,16 +11,11 @@ type PaymentRow={
  amount:number;currency:string;method:'cash'|'bank_transfer';status:PaymentStatus;
  payment_reference:string;customer_note:string|null;admin_note:string|null;
  paid_at:string|null;reviewed_at:string|null;reviewed_by:number|null;
+ bank_name_snapshot:string|null;bank_account_snapshot:string|null;bank_owner_snapshot:string|null;
  appointment_status:string;service_name:string;pet_name:string;customer_name:string;
 };
 const router=Router();
 router.use(requireAuth,requireOrganization);
-const bank=()=>{
- const name=(process.env.PAYMENT_BANK_NAME||'').trim();
- const account=(process.env.PAYMENT_BANK_ACCOUNT||'').trim();
- const owner=(process.env.PAYMENT_BANK_OWNER||'').trim();
- return name&&account&&owner?{name,account,owner}:null;
-};
 const select=`SELECT p.*,a.status AS appointment_status,s.name AS service_name,
  pet.name AS pet_name,u.full_name AS customer_name
  FROM payments p
@@ -36,8 +32,35 @@ function allowed(p:PaymentRow,user:{id:number;role:string}){
  if(user.role!=='admin'&&p.customer_id!==user.id)
   throw new HttpError(403,'Bạn không có quyền xem thanh toán này');
 }
-router.get('/config',asyncRoute(async(_req,res)=>{
- res.json({methods:['cash',...(bank()?['bank_transfer']:[])],bank:bank(),provider:'manual',automatic_confirmation:false});
+router.get('/config',asyncRoute(async(req,res)=>{
+ const bank=await getActiveBank(orgId(req));
+ res.setHeader('Cache-Control','no-store');
+ res.json({methods:['cash',...(bank?['bank_transfer']:[])],bank,provider:'manual',automatic_confirmation:false});
+}));
+router.get('/admin-bank',requireRole('admin'),asyncRoute(async(req,res)=>{
+ const settings=await getBankSettings(orgId(req));
+ res.setHeader('Cache-Control','no-store');
+ res.json({settings});
+}));
+router.put('/admin-bank',requireRole('admin'),asyncRoute(async(req,res)=>{
+ const data=parse(z.object({
+  name:z.string().trim().min(2).max(80),
+  account:z.string().trim().regex(/^[0-9]{6,32}$/,'Số tài khoản phải gồm 6 đến 32 chữ số'),
+  owner:z.string().trim().min(2).max(100),
+  enabled:z.boolean()
+ }).strict(),req.body);
+ await transaction(async db=>{
+  await exec(`INSERT INTO payment_bank_settings(organization_id,bank_name,bank_account,bank_owner,enabled,updated_by,updated_at)
+  VALUES(?,?,?,?,?,?,now()) ON CONFLICT(organization_id) DO UPDATE SET
+  bank_name=EXCLUDED.bank_name,bank_account=EXCLUDED.bank_account,
+  bank_owner=EXCLUDED.bank_owner,enabled=EXCLUDED.enabled,
+  updated_by=EXCLUDED.updated_by,updated_at=now()`,[orgId(req),data.name,data.account,data.owner,data.enabled,req.user!.id],db);
+  await exec('INSERT INTO role_audit_logs(actor_id,organization_id,action,details) VALUES(?,?,?,?::jsonb)',[
+   req.user!.id,orgId(req),'payment_bank.update',
+   JSON.stringify({bank_name:data.name,bank_account_last4:data.account.slice(-4),enabled:data.enabled})
+  ],db);
+ });
+ res.json({message:'Đã lưu thông tin tài khoản nhận chuyển khoản'});
 }));
 router.get('/',asyncRoute(async(req,res)=>{
  // Paginate server-side: a customer can view their full payment history, not only the latest 200.
@@ -84,12 +107,14 @@ router.get('/',asyncRoute(async(req,res)=>{
 router.get('/:id',asyncRoute(async(req,res)=>{
  const p=await loadPayment(idParam(req.params.id),orgId(req),pool);
  allowed(p,req.user!);
+ res.setHeader('Cache-Control','no-store');
  res.json({payment:p});
 }));
 router.patch('/:id/method',asyncRoute(async(req,res)=>{
  if(req.user!.role!=='customer')throw new HttpError(403,'Chỉ khách hàng chọn phương thức thanh toán');
  const method=parse(z.object({method:z.enum(['cash','bank_transfer'])}).strict(),req.body).method;
- if(method==='bank_transfer'&&!bank())throw new HttpError(409,'Cửa hàng chưa cấu hình thông tin chuyển khoản');
+ const recipient=method==='bank_transfer'?await getActiveBank(orgId(req)):null;
+ if(method==='bank_transfer'&&!recipient)throw new HttpError(409,'Cửa hàng chưa cấu hình thông tin chuyển khoản');
  const id=idParam(req.params.id);
  await transaction(async db=>{
   const [locked]=await rows<PaymentRow>(`SELECT p.*,a.status AS appointment_status
@@ -98,13 +123,15 @@ router.patch('/:id/method',asyncRoute(async(req,res)=>{
   if(!locked)throw new HttpError(404,'Không tìm thấy thanh toán');
   if(locked.customer_id!==req.user!.id)throw new HttpError(403,'Không có quyền chỉnh sửa thanh toán này');
   if(locked.status!=='unpaid'||locked.appointment_status==='cancelled')throw new HttpError(409,'Không thể đổi phương thức cho thanh toán đã xử lý');
-  await exec('UPDATE payments SET method=?,customer_note=NULL WHERE id=?',[method,locked.id],db);
+  await exec('UPDATE payments SET method=?,customer_note=NULL,bank_name_snapshot=?,bank_account_snapshot=?,bank_owner_snapshot=? WHERE id=?',[
+   method,recipient?.name??null,recipient?.account??null,recipient?.owner??null,locked.id
+  ],db);
  });
  res.json({message:'Đã cập nhật phương thức thanh toán'});
 }));
 router.post('/:id/transfer-notice',asyncRoute(async(req,res)=>{
  if(req.user!.role!=='customer')throw new HttpError(403,'Chỉ khách hàng được gửi xác nhận chuyển khoản');
- if(!bank())throw new HttpError(409,'Cửa hàng chưa cấu hình chuyển khoản');
+ // An existing bank transfer retains its original payee snapshot even when Admin changes the account.
  const {note}=parse(z.object({note:z.string().trim().max(300).optional()}).strict(),req.body);
  const id=idParam(req.params.id);
  await transaction(async db=>{

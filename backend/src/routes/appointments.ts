@@ -3,6 +3,7 @@ import {z} from 'zod';
 import {pool,rows,exec,transaction,lockStaff,type DB} from '../lib/db.js';
 import {asyncRoute,HttpError,idParam,parse,pageParams} from '../lib/http.js';
 import {isPrivileged,orgId,requireAuth,requireOrganization} from '../lib/auth.js';
+import {getActiveBank} from '../lib/payment-bank.js';
 import {canTransition,hasStaffCapacity,isoUTC,sqlUTC,validateBookingTime} from '../lib/scheduling.js';
 const router=Router();router.use(requireAuth,requireOrganization);
 const bookingSchema=z.object({
@@ -28,8 +29,9 @@ async function getSelectedServices(org:number,ids:number[],db:DB=pool):Promise<B
  return ordered;
 }
 const appointmentSelect=`SELECT a.*,u.full_name AS customer_name,u.phone AS customer_phone,p.name AS pet_name,p.species AS pet_species,COALESCE(bundle.names,s.name) AS service_name,COALESCE(bundle.ids,ARRAY[a.service_id]) AS service_ids,
-  a.duration_minutes_snapshot AS duration_minutes,st.full_name AS staff_name
-  FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id LEFT JOIN users st ON a.staff_id=st.id
+  a.duration_minutes_snapshot AS duration_minutes,st.full_name AS staff_name,
+  pay.status AS payment_status,pay.method AS payment_method
+  FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id LEFT JOIN users st ON a.staff_id=st.id LEFT JOIN payments pay ON pay.appointment_id=a.id
   LEFT JOIN LATERAL (
     SELECT string_agg(ms.name,' + ' ORDER BY aps.position) AS names,
            array_agg(aps.service_id ORDER BY aps.position) AS ids
@@ -120,7 +122,7 @@ async function hasBookingCapacity(db:DB,org:number,start:string,end:string){
 }
 router.post('/',asyncRoute(async(req,res)=>{
  const d=parse(bookingSchema,req.body);
- if(d.payment_method==='bank_transfer'&&!(process.env.PAYMENT_BANK_NAME&&process.env.PAYMENT_BANK_ACCOUNT&&process.env.PAYMENT_BANK_OWNER))throw new HttpError(409,'Cửa hàng chưa cấu hình chuyển khoản');
+ // The bank recipient is resolved again inside the transaction, then saved with the payment.
  if(req.user!.role==='staff')throw new HttpError(403,'Staff không được tự tạo lịch thay khách');
  if(isPrivileged(req)&&!d.customer_id)throw new HttpError(422,'Cần chọn khách hàng khi tạo lịch thay khách');
  const customerId=isPrivileged(req)?d.customer_id!:req.user!.id;
@@ -134,6 +136,8 @@ router.post('/',asyncRoute(async(req,res)=>{
  }
  const result=await transaction(async db=>{
   // Lock rows so a selected service cannot be permanently deleted mid-booking.
+  const recipient=d.payment_method==='bank_transfer'?await getActiveBank(orgId(req),db):null;
+  if(d.payment_method==='bank_transfer'&&!recipient)throw new HttpError(409,'Cửa hàng chưa cấu hình tài khoản chuyển khoản');
   const services=await getSelectedServices(orgId(req),ids,db);
   const totalDuration=services.reduce((sum,service)=>sum+service.duration_minutes,0);
   const totalPrice=services.reduce((sum,service)=>sum+Number(service.price),0);
@@ -154,8 +158,9 @@ router.post('/',asyncRoute(async(req,res)=>{
       [created.insertId,service.id,position,service.price,service.duration_minutes],db);
   }
   // Payment and booking are committed atomically. No user-provided amount is trusted.
-  await exec("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,payment_reference) VALUES(?,?,?,?,?,?)",[
-    orgId(req),created.insertId,customerId,totalPrice,d.payment_method,'PC'+String(created.insertId).padStart(8,'0')
+  await exec("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,payment_reference,bank_name_snapshot,bank_account_snapshot,bank_owner_snapshot) VALUES(?,?,?,?,?,?,?,?,?)",[
+    orgId(req),created.insertId,customerId,totalPrice,d.payment_method,'PC'+String(created.insertId).padStart(8,'0'),
+    recipient?.name??null,recipient?.account??null,recipient?.owner??null
   ],db);
   return created;
  });
