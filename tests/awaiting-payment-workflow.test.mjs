@@ -30,6 +30,6 @@ test('customer, staff, admin render the waiting label and filters',()=>{
  assert.ok(list.includes("{key:'awaiting_payment',label:'Chờ thanh toán'}"));
  assert.ok(list.includes("summary.unpaid+summary.awaiting_payment"));
  assert.ok(staff.includes("a.payment_status==='awaiting_payment'?'Chờ thanh toán'"));
- assert.ok(admin.includes("a.payment_status==='awaiting_payment'?'Chờ thanh toán'"));
+ assert.ok(admin.includes("awaiting_payment:'Chờ thanh toán'"));
  assert.ok(read('backend/src/routes/management.ts').includes('awaiting_payment:finance.awaiting_payment'));
 });
