@@ -1,0 +1,94 @@
+/* PawCare · Customer Payment Journal — editorial, responsive, accessible */
+.pc-customer-payments{--pay-ink:#203a49;--pay-muted:#70817f;--pay-border:#e5ddcf;--pay-copper:#bb8a5c;--pay-ease:cubic-bezier(.22,1,.36,1);width:100%;min-width:0}
+.pc-customer-payments button{font-family:inherit}
+.pc-customer-payments button:focus-visible,.pc-customer-payments a:focus-visible,.pc-customer-payments input:focus-visible{outline:3px solid #80a795;outline-offset:3px}
+.pc-wallet-intro{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) 235px;align-items:center;gap:25px;min-height:250px;margin:18px 0 22px;padding:31px 36px;border:1px solid #d8c8b5;border-radius:19px;background:linear-gradient(116deg,#244354 0%,#345766 67%,#446c72 100%);box-shadow:0 12px 29px rgba(37,61,69,.13);overflow:hidden}
+.pc-wallet-intro:before{content:'';position:absolute;inset:0;z-index:-1;opacity:.09;background:repeating-linear-gradient(0deg,transparent 0 32px,#fff 32px 33px)}
+.pc-wallet-intro:after{content:'';position:absolute;right:-32px;top:-135px;width:390px;height:390px;border-radius:50%;border:1px solid rgba(255,255,255,.11);box-shadow:0 0 0 34px rgba(255,255,255,.025),0 0 0 75px rgba(255,255,255,.025);pointer-events:none}
+.pc-wallet-intro-copy{max-width:680px;z-index:1}
+.pc-wallet-index,.pc-wallet-overline{font:800 10px/1.4 'Be Vietnam Pro',sans-serif;letter-spacing:.15em;color:#dfb383}
+.pc-wallet-intro h2{margin:13px 0 13px;font:800 clamp(23px,3.3vw,36px)/1.2 'Bricolage Grotesque','Be Vietnam Pro',sans-serif;letter-spacing:-.045em;color:#fff9ef}
+.pc-wallet-intro p{max-width:560px;font-size:12px;line-height:1.9;color:#dfebe8;margin:0 0 22px}
+.pc-wallet-trust{display:inline-flex;gap:9px;align-items:center;color:#e2eede;font-size:11px;font-weight:700;border:1px solid rgba(233,244,225,.2);border-radius:30px;padding:10px 13px;background:rgba(236,248,240,.06)}
+.pc-wallet-ledger{position:relative;height:200px;width:195px;justify-self:center;transform:rotate(-5deg);transition:transform .38s var(--pay-ease)}
+.pc-wallet-intro:hover .pc-wallet-ledger{transform:rotate(-2deg) translateY(-5px)}
+.pc-wallet-ledger:before{content:'';position:absolute;inset:13px 0 0 27px;border-radius:14px;background:#bbd3c2;border:1px solid #a3c0b0;transform:rotate(12deg)}
+.pc-wallet-ledger-sheet{position:absolute;inset:0 20px 13px 0;border-radius:13px;padding:17px 16px;background:linear-gradient(135deg,#fffaf0,#f1e2cb);box-shadow:0 16px 25px rgba(17,36,49,.25);border:1px solid #e2caaa;display:flex;flex-direction:column;gap:11px}
+.pc-wallet-ledger-tape{z-index:2;position:absolute;top:-10px;left:54px;width:52px;height:19px;background:rgba(217,179,132,.78);transform:rotate(3deg)}
+.pc-wallet-ledger-top{display:flex;align-items:center;justify-content:space-between;font-size:8px;letter-spacing:.13em;font-weight:800;color:#927d68}
+.pc-wallet-ledger-top b{color:#b28256}
+.pc-wallet-ledger-stamp{width:58px;height:58px;align-self:center;display:grid;place-items:center;color:#4d857a;border:1px solid #bfd2c4;border-radius:15px;background:#e5ede4}
+.pc-wallet-ledger-sheet i{height:5px;width:80%;border-radius:6px;background:#d2bea5}
+.pc-wallet-ledger-sheet i:nth-of-type(2){width:92%}
+.pc-wallet-ledger-sheet i:nth-of-type(3){width:56%}
+.pc-wallet-ledger-bottom{margin-top:auto;display:flex;align-items:center;gap:5px;color:#779282;font-size:7px;font-weight:800;letter-spacing:.025em}
+.pc-wallet-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:34px}
+.pc-wallet-stat{position:relative;min-height:136px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;overflow:hidden;border:1px solid var(--pay-border);border-radius:14px;padding:19px 19px 17px;background:#fffdf8;box-shadow:0 4px 13px rgba(40,58,60,.038);transition:transform .3s var(--pay-ease),box-shadow .3s ease,border-color .3s ease}
+.pc-wallet-stat:hover{transform:translateY(-5px);box-shadow:0 15px 28px rgba(38,55,58,.105);border-color:#d5c2ad}
+.pc-wallet-stat>svg{position:absolute;top:18px;right:18px;color:#a6bcae}
+.pc-wallet-stat-index{position:absolute;top:20px;left:19px;font-size:9px;line-height:1.5;font-weight:800;letter-spacing:.105em;color:#b28b68}
+.pc-wallet-stat strong{font:800 clamp(21px,2.4vw,29px)/1.2 'Bricolage Grotesque','Be Vietnam Pro',sans-serif;letter-spacing:-.04em;color:var(--pay-ink);font-variant-numeric:tabular-nums;word-break:break-word}
+.pc-wallet-stat small{font-size:11px;color:var(--pay-muted)}
+.pc-wallet-stat--paid{background:linear-gradient(125deg,#eaf1e9,#fdfcf7);border-color:#cdddcc}
+.pc-wallet-stat--paid>svg{color:#729a82}
+.pc-wallet-stat--paid strong{font-size:clamp(18px,2vw,24px)}
+.pc-wallet-section{min-width:0;border:1px solid var(--pay-border);border-radius:17px;overflow:hidden;background:#fffdf9;box-shadow:0 8px 23px rgba(40,55,59,.045)}
+.pc-wallet-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:24px 24px 20px}
+.pc-wallet-section-head h2{font:800 clamp(21px,2.5vw,27px)/1.2 'Bricolage Grotesque','Be Vietnam Pro',sans-serif;letter-spacing:-.045em;margin:6px 0;color:var(--pay-ink)}
+.pc-wallet-section-head p{margin:0;color:var(--pay-muted);font-size:11px;line-height:1.7}
+.pc-wallet-count{align-self:flex-start;flex-shrink:0;font-size:10px;font-weight:800;color:#977453;border:1px solid #e4d5c3;padding:9px 11px;border-radius:25px;background:#fbf6ed}
+.pc-wallet-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 24px 20px;border-bottom:1px solid #ece4d9}
+.pc-wallet-search{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 14px;background:#f8f6f0;border:1px solid #e4d9ca;border-radius:10px;color:#71918e;flex:1 1 235px;min-width:170px}
+.pc-wallet-search:focus-within{border-color:#86aca0;box-shadow:0 0 0 3px rgba(102,155,132,.12)}
+.pc-wallet-search input{border:0;outline:0;background:transparent;font:12px/1.5 'Be Vietnam Pro',sans-serif;color:#264758;width:100%;min-width:0}
+.pc-wallet-search input::placeholder{color:#9eaaa6}
+.pc-wallet-filters{display:flex;flex:3 1 500px;align-items:center;gap:6px;overflow-x:auto;max-width:100%;scrollbar-width:thin;padding:3px 0}
+.pc-wallet-filters button{border:1px solid transparent;border-radius:9px;padding:10px 12px;background:transparent;color:#7d817b;font:750 10px/1.3 'Be Vietnam Pro',sans-serif;white-space:nowrap;cursor:pointer;transition:background .2s ease,color .2s ease,border-color .2s ease}
+.pc-wallet-filters button:hover{background:#f2ede6;color:#375968}
+.pc-wallet-filters button[aria-pressed=true]{background:#e4eee7;border-color:#c8d9cc;color:#386b59}
+.pc-wallet-list{display:flex;flex-direction:column}
+.pc-wallet-item{position:relative;display:grid;grid-template-columns:26px 51px minmax(0,1.5fr) minmax(110px,.8fr) minmax(104px,.77fr) 20px;align-items:center;gap:14px;width:100%;min-width:0;text-align:left;padding:18px 22px;border:0;border-bottom:1px solid #eee8e0;background:#fffdfa;color:var(--pay-ink);cursor:pointer;animation:pc-wallet-row-enter .35s var(--pay-ease) both;transition:background-color .2s,transform .25s var(--pay-ease)}
+@keyframes pc-wallet-row-enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.pc-wallet-item:last-child{border-bottom:0}
+.pc-wallet-item:hover,.pc-wallet-item--selected{background:#f3f6f0}
+.pc-wallet-item-index{font-size:10px;font-weight:800;letter-spacing:.08em;color:#c2a78b}
+.pc-wallet-item-icon{width:47px;height:47px;display:grid;place-items:center;border-radius:13px;background:#e9f0e9;border:1px solid #dbe6db;color:#578675;transition:transform .25s var(--pay-ease)}
+.pc-wallet-item:nth-child(3n + 2) .pc-wallet-item-icon{background:#f4e7d8;border-color:#e9d7c3;color:#b78456}
+.pc-wallet-item:hover .pc-wallet-item-icon{transform:rotate(-5deg) translateY(-2px)}
+.pc-wallet-item-main,.pc-wallet-item-meta{display:flex;flex-direction:column;gap:5px;min-width:0}
+.pc-wallet-item-main strong{font:800 12px/1.5 'Be Vietnam Pro',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-wallet-item-main small,.pc-wallet-item-meta small{color:#87928c;font-size:10px;line-height:1.6}
+.pc-wallet-item-ref{color:#b28b67;font-size:9px;font-weight:750;letter-spacing:.075em}
+.pc-wallet-item-meta strong{font-size:13px;color:#335267;font-weight:850;font-variant-numeric:tabular-nums}
+.pc-wallet-status{display:inline-flex;align-items:center;justify-content:center;border-radius:30px;padding:8px 11px;font-size:10px;font-weight:800;line-height:1.3;color:#8b7153;background:#f7ead8;border:1px solid #eeddbf}
+.pc-wallet-status--paid{color:#347258;background:#e4f1e9;border-color:#cae0d2}
+.pc-wallet-status--pending_review{color:#577491;background:#e7eef7;border-color:#d1ddec}
+.pc-wallet-status--refund_required{color:#9b5e47;background:#f9e6dc;border-color:#e9cdbe}
+.pc-wallet-status--refunded,.pc-wallet-status--void{color:#7b8182;background:#f0f0eb;border-color:#e0e5e0}
+.pc-wallet-item-chevron{color:#a0aea8;transition:transform .25s var(--pay-ease)}
+.pc-wallet-item:hover .pc-wallet-item-chevron{transform:translateX(4px);color:#547d6e}
+.pc-wallet-list-foot{display:flex;align-items:center;justify-content:space-between;gap:13px;padding:15px 23px;border-top:1px solid #ebe4da;font-size:10px;color:#8b938e}
+.pc-wallet-pager{display:flex;gap:7px}
+.pc-wallet-pager button{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;border:1px solid #e4d8c7;background:#fffaf1;color:#3b6576;cursor:pointer}
+.pc-wallet-pager button:disabled{opacity:.42;cursor:not-allowed}
+.pc-wallet-pager button:hover:not(:disabled){background:#e7efea}
+.pc-wallet-empty{padding:25px}
+.pc-wallet-bottom{margin:18px 0 28px;display:flex;gap:11px;align-items:flex-start;color:#7b8982;font-size:11px;line-height:1.8}
+.pc-wallet-bottom svg{flex-shrink:0;color:#759b87}
+.pc-wallet-detail-backdrop{position:fixed;inset:0;z-index:1200;display:flex;justify-content:flex-end;background:rgba(25,42,51,.42);backdrop-filter:blur(3px);animation:pc-wallet-backdrop .2s ease both}
+@keyframes pc-wallet-backdrop{from{opacity:0}to{opacity:1}}
+.pc-wallet-detail{height:100dvh;overflow-y:auto;overscroll-behavior:contain;width:min(100%,515px);background:#faf8f2;padding:27px 25px 35px;box-shadow:-16px 0 45px rgba(24,44,51,.16);animation:pc-wallet-drawer .35s var(--pay-ease) both}
+@keyframes pc-wallet-drawer{from{transform:translateX(30px);opacity:.5}to{transform:translateX(0);opacity:1}}
+.pc-wallet-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:8px 0 18px;border-bottom:1px solid #e9decf}
+.pc-wallet-detail-head h2{color:#294351;font:800 25px/1.3 'Bricolage Grotesque','Be Vietnam Pro',sans-serif;letter-spacing:-.04em;margin:7px 0 2px}
+.pc-wallet-detail-head p{font-size:11px;color:#89918c;margin:0}
+.pc-wallet-detail-close{width:38px;height:38px;display:grid;place-items:center;border:1px solid #dfd4c6;border-radius:11px;color:#516b71;background:#fffefa;cursor:pointer}
+.pc-wallet-detail-close:hover{background:#eff3ec}
+.pc-wallet-detail .pc-payment-panel{box-shadow:none;background:#fffdf9}
+.pc-wallet-appointment-link{display:flex;align-items:center;justify-content:center;gap:7px;font-size:11px;color:#39697b;font-weight:800;padding:13px;margin-top:17px;text-decoration:none;border:1px dashed #c5d5c7;border-radius:11px}
+.pc-wallet-appointment-link:hover{background:#e7f0e8}
+.pc-customer-payments .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1150px){.pc-wallet-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.pc-wallet-item{grid-template-columns:22px 46px minmax(0,1.4fr) minmax(100px,.8fr) 21px}.pc-wallet-status{grid-column:3 / 5;justify-self:start}.pc-wallet-item-chevron{grid-column:5;grid-row:1}}
+@media(max-width:720px){.pc-wallet-intro{grid-template-columns:1fr;padding:26px 23px;min-height:unset}.pc-wallet-ledger{position:absolute;right:-45px;top:15px;opacity:.18;pointer-events:none}.pc-wallet-intro-copy{position:relative;z-index:2}.pc-wallet-section-head{padding:20px 17px 16px}.pc-wallet-toolbar{padding:0 17px 14px;gap:6px}.pc-wallet-search{flex-basis:100%}.pc-wallet-filters{flex-basis:100%}.pc-wallet-item{padding:16px 14px;grid-template-columns:42px minmax(0,1fr) auto;gap:10px}.pc-wallet-item-index{display:none}.pc-wallet-item-icon{width:42px;height:42px;grid-column:1;grid-row:1 / 3}.pc-wallet-item-main{grid-column:2;grid-row:1}.pc-wallet-item-meta{grid-column:2;grid-row:2}.pc-wallet-status{grid-column:3;grid-row:1;align-self:start}.pc-wallet-item-chevron{grid-column:3;grid-row:2;justify-self:end}.pc-wallet-list-foot{padding:12px 15px}.pc-wallet-detail{padding:18px 16px 30px}}
+@media(max-width:510px){.pc-wallet-stats{gap:9px}.pc-wallet-stat{padding:15px 12px 13px;min-height:125px}.pc-wallet-stat-index{left:12px;top:14px;font-size:8px}.pc-wallet-stat>svg{top:15px;right:12px;width:18px}.pc-wallet-stat strong{font-size:22px}.pc-wallet-stat--paid strong{font-size:17px}.pc-wallet-section-head{align-items:flex-start;flex-direction:column}.pc-wallet-count{align-self:flex-start}.pc-wallet-item{grid-template-columns:38px minmax(0,1fr) auto}.pc-wallet-item-main strong{white-space:normal;overflow:visible}.pc-wallet-status{font-size:9px;padding:7px 8px}.pc-wallet-item-meta strong{font-size:12px}.pc-wallet-item-meta small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.pc-wallet-intro .pc-wallet-ledger,.pc-wallet-stat,.pc-wallet-item,.pc-wallet-item-icon,.pc-wallet-item-chevron,.pc-wallet-detail,.pc-wallet-detail-backdrop{animation:none!important;transition:none!important;transform:none!important}}

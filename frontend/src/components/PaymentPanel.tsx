@@ -8,7 +8,7 @@ export type PaymentStatus='unpaid'|'pending_review'|'paid'|'refund_required'|'re
 export type Payment={
  id:number;appointment_id:number;amount:number;currency:'VND';method:'cash'|'bank_transfer';
  status:PaymentStatus;payment_reference:string;customer_note:string|null;admin_note:string|null;
- paid_at:string|null;appointment_status:string;
+ paid_at:string|null;created_at:string;appointment_status:string;service_name:string;pet_name:string;
 };
 export type PaymentConfig={methods:string[];bank:{name:string;account:string;owner:string}|null;provider:'manual';automatic_confirmation:false};
 const labels:Record<PaymentStatus,string>={
