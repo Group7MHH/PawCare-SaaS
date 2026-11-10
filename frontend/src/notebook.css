@@ -320,3 +320,67 @@
 .nb-stat-enumeral{font:800 10px/1 var(--font-body);letter-spacing:.14em;color:rgba(80,76,67,.5);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(92,77,62,.14);display:block;width:max-content}
 .nb-admin-appointment-index{height:35px;width:35px;display:grid;place-items:center;border-radius:9px;background:#f5eee4;color:#a58668;font:800 12px/1 var(--font-head);flex:none}
 @media(max-width:520px){.nb-staff-num-index{width:33px;height:33px;font-size:11px}}
+
+/* ================================================================
+   PAWCARE PET VISUALS · EDITION 03
+   Large pet characters are natural detailed WebP illustrations.
+   Preserve small functional SVG icons; no overlapping hand-drawn
+   facial paths or fake pet silhouettes at hero scale.
+   ================================================================ */
+.nb-cover-illustration{overflow:visible;isolation:isolate}
+.nb-cover-illustration .pc-cover-svg{
+  width:min(100%,540px);max-height:370px;height:auto;object-fit:contain;
+  filter:none;animation:none;transform:translateY(0);
+  transition:transform .4s cubic-bezier(.2,.7,.2,1)
+}
+.nb-customer-cover:hover .pc-cover-svg{transform:translateY(-5px);filter:none}
+.nb-staff-header-art.nb-care-illustration{
+  width:225px;height:192px;flex-basis:225px;overflow:hidden;border-radius:18px;
+  border:1px solid rgba(97,121,104,.17);box-shadow:0 10px 28px rgba(60,80,73,.13)
+}
+.nb-care-illustration .pc-care-svg{
+  width:100%;height:100%;display:block;object-fit:cover;object-position:52% 30%;
+  border-radius:17px;filter:none;transform:none;transition:transform .35s ease
+}
+.nb-staff-header:hover .pc-care-svg{transform:scale(1.025)}
+.nb-care-illustration .nb-staff-art-label{display:none}
+.nb-admin-intro-art{
+  width:165px;height:132px;top:-4px;right:180px;overflow:hidden;
+  border-radius:14px;opacity:.96;border:1px solid rgba(97,121,104,.17);
+  box-shadow:0 10px 28px rgba(60,80,73,.12)
+}
+.nb-admin-intro-art .pc-ledger-svg{
+  width:100%;height:100%;object-fit:cover;object-position:41% center;
+  transform:none;border-radius:14px;transition:transform .35s ease
+}
+.nb-admin-intro:hover .pc-ledger-svg{transform:scale(1.025)}
+.pc-pet-portrait{object-fit:cover;object-position:center 35%;border-radius:50%}
+.pc-service-plan-artwork{
+  transform:none;border-radius:13px;background:#f3ede3;
+  border:1px solid rgba(59,88,86,.12);box-shadow:0 4px 12px rgba(43,68,78,.06)
+}
+.pc-service-svg{object-fit:cover;object-position:center center;image-rendering:auto}
+.pc-service-plan:hover .pc-service-plan-artwork,
+.pc-service-plan:focus-within .pc-service-plan-artwork{
+  transform:translateY(-3px);box-shadow:0 9px 19px rgba(43,68,78,.12)
+}
+.pc-service-plan:hover .pc-service-svg{transform:scale(1.035)}
+@media(max-width:900px){.nb-admin-intro-art{display:none}}
+@media(max-width:760px){
+ .nb-cover-illustration .pc-cover-svg{width:100%;min-width:0;height:auto;max-height:245px}
+ .nb-staff-header-art.nb-care-illustration{width:170px;height:160px;flex-basis:170px}
+}
+@media(max-width:520px){
+ .nb-cover-illustration .pc-cover-svg{width:235px;min-width:0;max-height:220px;height:auto}
+ .nb-staff-header-art.nb-care-illustration{right:-45px;top:4px;width:165px;height:155px;opacity:.65}
+}
+@media(prefers-reduced-motion:reduce){
+ .nb-cover-illustration .pc-cover-svg,
+ .nb-customer-cover:hover .pc-cover-svg,
+ .nb-care-illustration .pc-care-svg,
+ .nb-staff-header:hover .pc-care-svg,
+ .nb-admin-intro-art .pc-ledger-svg,
+ .nb-admin-intro:hover .pc-ledger-svg,
+ .pc-pet-portrait,.pc-service-svg,
+ .pc-service-plan-artwork{animation:none!important;transform:none!important;transition:none!important}
+}
