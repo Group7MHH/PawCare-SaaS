@@ -384,3 +384,106 @@
  .pc-pet-portrait,.pc-service-svg,
  .pc-service-plan-artwork{animation:none!important;transform:none!important;transition:none!important}
 }
+
+/* ================================================================
+   PAWCARE — HAND-DRAWN JOURNAL ART DIRECTION
+   Editorial ink-and-wash scenes (not faux-vector pet faces).
+   Keep UI controls and charts semantic; use imagery only as supporting art.
+   ================================================================ */
+.nb-customer-cover{
+  background:linear-gradient(112deg,#f6eee1 0%,#f2e5d1 64%,#e3d5bd 100%);
+  border:1px solid #d6c1a5;
+  box-shadow:0 14px 32px rgba(76,61,42,.1);
+}
+.nb-customer-cover:before{
+  background:repeating-linear-gradient(0deg,transparent 0 27px,rgba(116,92,72,.15) 27px 28px);
+  opacity:.12;
+}
+.nb-customer-cover:after{background:rgba(94,77,61,.12)}
+.nb-cover-label{color:#91683e}
+.nb-cover-label-mark{border-color:#ba9264}
+.nb-cover-line{background:#b99d7b}
+.nb-cover-copy h2{color:#203746}
+.nb-cover-copy h2 em{color:#a56a43}
+.nb-cover-copy p{color:#566970}
+.nb-cover-foot{color:#867565}
+.nb-cover-foot-line{background:#b9a18b}
+.nb-action-quiet{color:#325565}
+.nb-action-quiet:hover{color:#1d3441}
+.nb-cover-illustration{isolation:isolate;overflow:hidden}
+.nb-cover-illustration:before{
+  background:radial-gradient(ellipse at 50% 58%,rgba(255,250,238,.42),transparent 72%);
+}
+.nb-cover-illustration .pc-cover-svg{
+  display:block;width:min(100%,550px);height:auto;max-height:365px;
+  object-fit:contain;object-position:center;
+  filter:none;animation:none;transform:none;
+  -webkit-mask-image:radial-gradient(ellipse 74% 72% at 50% 49%,#000 72%,transparent 99%);
+  mask-image:radial-gradient(ellipse 74% 72% at 50% 49%,#000 72%,transparent 99%);
+  transition:transform .35s cubic-bezier(.2,.7,.2,1);
+}
+.nb-customer-cover:hover .pc-cover-svg{filter:none;transform:translateY(-4px)}
+.nb-cover-illustration .nb-art-caption{color:#80694c;border-color:#cdb08c;bottom:10px}
+
+/* Portraits remain legible when reduced to a small pet identity token. */
+.pc-pet-portrait{object-fit:cover;object-position:center center;border-radius:50%}
+.nb-pet-polaroid-portrait>.pet-avatar{
+  border:3px solid #fff9ef;
+  box-shadow:0 7px 13px rgba(52,66,60,.13)
+}
+.nb-pet-polaroid:hover .pc-pet-portrait{transform:scale(1.045)}
+
+/* Keep the handwritten scenes contained, with editorial paper edges. */
+.nb-sidebar-illustration .pc-notebook-story,
+.nb-quick-deco .pc-notebook-story{
+  object-fit:contain;mix-blend-mode:multiply;filter:contrast(1.03);
+}
+.nb-staff-header-art.nb-care-illustration,
+.nb-admin-intro-art{
+  border:1px solid #d6c5af;
+  border-radius:12px;
+  box-shadow:0 9px 22px rgba(69,61,48,.1);
+}
+.nb-care-illustration .pc-care-svg,
+.nb-admin-intro-art .pc-ledger-svg{
+  width:100%;height:100%;object-fit:cover;border-radius:11px;
+  filter:none;transform:none;transition:transform .3s ease;
+}
+.nb-staff-header:hover .pc-care-svg,
+.nb-admin-intro:hover .pc-ledger-svg{transform:scale(1.025)}
+
+/* Every service now has its own drawn pet-care scene, not a generic icon. */
+.pc-service-plan-artwork{
+  background:#f8efe2;border:1px solid #dec9af;border-radius:11px;
+  transform:rotate(-1.5deg);box-shadow:0 5px 12px rgba(64,47,31,.1);
+  transition:transform .27s ease,box-shadow .27s ease;
+}
+.pc-service-svg{width:100%;height:100%;object-fit:cover;object-position:center 43%;border-radius:10px}
+.pc-service-plan:hover .pc-service-plan-artwork,
+.pc-service-plan:focus-within .pc-service-plan-artwork{
+  transform:translateY(-4px) rotate(0deg);
+  box-shadow:0 11px 22px rgba(64,47,31,.13)
+}
+.pc-service-plan:hover .pc-service-svg{transform:scale(1.035)}
+
+@media(max-width:760px){
+  .nb-cover-illustration .pc-cover-svg{
+    max-height:250px;min-width:0;width:100%;object-fit:contain;
+  }
+}
+@media(max-width:520px){
+  .nb-cover-illustration .pc-cover-svg{
+    max-height:220px;width:235px;min-width:0;
+  }
+  .nb-cover-illustration .nb-art-caption{display:none}
+  .nb-staff-header-art.nb-care-illustration{opacity:.68}
+}
+@media(prefers-reduced-motion:reduce){
+  .nb-cover-illustration .pc-cover-svg,
+  .nb-customer-cover:hover .pc-cover-svg,
+  .nb-staff-header:hover .pc-care-svg,
+  .nb-admin-intro:hover .pc-ledger-svg,
+  .pc-service-plan-artwork,.pc-service-svg,.pc-pet-portrait{
+    animation:none!important;transition:none!important;transform:none!important;
+  }
+}
