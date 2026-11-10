@@ -29,7 +29,7 @@ test('transaction panel retains all customer payment actions and blocks self-con
  const backend=read('backend/src/routes/payments.ts');
  assert.ok(panel.includes('transfer-notice'));
  assert.ok(panel.includes('Tôi đã chuyển khoản'));
- assert.ok(panel.includes('Chờ Admin đối soát'));
+ assert.ok(panel.includes('Chờ đối soát'));
  assert.ok(backend.includes("requireRole('admin','staff')"));
  assert.ok(backend.includes("action!=='confirm_paid'"));
  assert.ok(backend.includes("status='pending_review'"));
