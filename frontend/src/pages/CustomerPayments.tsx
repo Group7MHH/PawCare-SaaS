@@ -71,8 +71,8 @@ export function CustomerPayments(){
    <div className="pc-wallet-intro-copy">
     <span className="pc-wallet-index">PAWCARE / PAYMENT JOURNAL</span>
     <h2>Mọi khoản chăm sóc, rõ ràng từng bước.</h2>
-    <p>Giao dịch chỉ được xác nhận khi cửa hàng kiểm tra tiền thực nhận. Bạn không cần cung cấp mật khẩu hay mã OTP ngân hàng cho PawCare.</p>
-    <span className="pc-wallet-trust"><ShieldCheck size={16}/> Chuyển khoản và đối soát minh bạch</span>
+    <p>Tiền mặt được ghi nhận sau khi thu tại quầy; xác nhận chuyển khoản chỉ là mô phỏng trong PawCare. Không cung cấp mật khẩu hay mã OTP ngân hàng.</p>
+    <span className="pc-wallet-trust"><ShieldCheck size={16}/> Theo dõi thanh toán thủ công và demo</span>
    </div>
    <div className="pc-wallet-ledger" aria-hidden="true">
     <span className="pc-wallet-ledger-tape"/>
@@ -80,7 +80,7 @@ export function CustomerPayments(){
      <span className="pc-wallet-ledger-top">CARE / LEDGER <b>01</b></span>
      <span className="pc-wallet-ledger-stamp"><ReceiptText size={35} strokeWidth={1.4}/></span>
      <i/><i/><i/>
-     <span className="pc-wallet-ledger-bottom"><CheckCircle2 size={16}/> VERIFIED BY ADMIN</span>
+     <span className="pc-wallet-ledger-bottom"><CheckCircle2 size={16}/> DEMO LEDGER</span>
     </div>
    </div>
   </section>
