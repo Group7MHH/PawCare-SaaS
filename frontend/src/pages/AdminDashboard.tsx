@@ -1,7 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
 import type {CSSProperties} from 'react';
 import {Link} from 'react-router-dom';
-import {Activity,ArrowRight,ArrowUpRight,CalendarDays,ChartNoAxesCombined,CheckCircle2,ChevronRight,ClipboardList,TrendingUp,Wallet} from 'lucide-react';
+import {Activity,ArrowRight,ArrowUpRight,CalendarDays,ChartNoAxesCombined,CheckCircle2,ChevronRight,ClipboardList,PawPrint,TrendingUp,Users,Wallet} from 'lucide-react';
 import {api,dateTime,money,type Stats} from '../lib/api';
 import {Loading,Badge,Empty,ErrorNotice} from '../components/UI';
 import {AdminLedger} from '../components/BrandArtwork';
