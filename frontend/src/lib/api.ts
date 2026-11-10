@@ -1,6 +1,5 @@
 export type Role='customer'|'staff'|'admin';
 export type User={id:number;full_name:string;email:string;role:Role;phone?:string|null;address?:string|null;organization_id:number|null;organization_name:string|null};
-export type Organization={id:number;name:string;slug:string;is_active:boolean};
 export type Pet={id:number;owner_id:number;owner_name?:string;name:string;species:'dog'|'cat'|'other';breed:string|null;gender:string;birthday:string|null;weight_kg:number|null;color:string|null;notes:string|null;record_count?:number};
 export type CareRecord={id:number;pet_id:number;title:string;record_type:string;care_date:string;description:string|null;next_due_date:string|null};
 export type Service={id:number;name:string;category:string;description:string|null;duration_minutes:number;price:number;is_active:boolean};
@@ -21,5 +20,4 @@ export const dateOnly=(value:string|null|undefined)=>value?String(value).slice(0
 export const speciesName=(type:string)=>({dog:'Chó',cat:'Mèo',other:'Khác'}[type]||type);
 export const statusName:Record<string,string>={pending:'Chờ Staff tiếp nhận',confirmed:'Đã xác nhận',in_progress:'Đang thực hiện',completed:'Hoàn thành',cancelled:'Đã hủy'};
 export const statusClass:Record<string,string>={pending:'amber',confirmed:'teal',in_progress:'blue',completed:'green',cancelled:'red'};
-export function localDateTimeInput(date:Date){const offset=date.getTimezoneOffset()*60000;return new Date(date.getTime()-offset).toISOString().slice(0,16);}
 export function errorMessage(err:unknown){return err instanceof Error?err.message:'Đã xảy ra lỗi';}

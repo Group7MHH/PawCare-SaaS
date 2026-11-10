@@ -52,3 +52,18 @@ test('Staff candidate listing does not include demoted customers',()=>{
  const catalog=read('backend/src/routes/catalog.ts');
  assert.match(catalog,/m\.role='staff' AND u\.role='staff' AND u\.is_active=TRUE/);
 });
+
+test('Staff dashboard customer and pet counts are restricted to assigned appointments',()=>{
+ const source=read('backend/src/routes/management.ts');
+ assert.match(source,/const where=staff\?'organization_id=\? AND staff_id=\?':'organization_id=\?'/);
+ assert.match(source,/COUNT\(DISTINCT customer_id\) AS value FROM appointments WHERE \$\{where\}`,params/);
+ assert.match(source,/COUNT\(DISTINCT pet_id\) AS value FROM appointments WHERE \$\{where\}`,params/);
+});
+
+test('Single-store API no longer exposes unused multi-store selection and legacy Staff creation',()=>{
+ assert.doesNotMatch(read('backend/src/lib/auth.ts'),/updateSessionOrganization/);
+ assert.doesNotMatch(read('backend/src/routes/auth.ts'),/select-organization/);
+ assert.doesNotMatch(read('backend/src/routes/catalog.ts'),/router\.post\('\/staff'/);
+ assert.doesNotMatch(read('backend/src/routes/organizations.ts'),/router\.get\('\/organizations'/);
+ assert.doesNotMatch(read('frontend/src/lib/api.ts'),/localDateTimeInput|export type Organization=/);
+});

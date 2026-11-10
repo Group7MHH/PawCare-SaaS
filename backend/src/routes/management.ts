@@ -48,8 +48,8 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
  const params=staff?[org,id]:[org];
  const where=staff?'organization_id=? AND staff_id=?':'organization_id=?';
  const [[customers],[pets],[totals]]=await Promise.all([
-  rows<any>('SELECT COUNT(DISTINCT customer_id) AS value FROM appointments WHERE organization_id=?',[org]),
-  rows<any>('SELECT COUNT(DISTINCT pet_id) AS value FROM appointments WHERE organization_id=?',[org]),
+  rows<any>(`SELECT COUNT(DISTINCT customer_id) AS value FROM appointments WHERE ${where}`,params),
+  rows<any>(`SELECT COUNT(DISTINCT pet_id) AS value FROM appointments WHERE ${where}`,params),
   rows<any>(`SELECT COUNT(*)::int AS appointments,COUNT(*) FILTER (WHERE status='completed')::int AS completed,
    COALESCE(SUM(price_snapshot) FILTER (WHERE status='completed'),0) AS revenue
    FROM appointments WHERE ${where}`,params)
