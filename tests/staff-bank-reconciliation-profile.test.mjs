@@ -20,7 +20,8 @@ test('only assigned staff can simulate confirmation of pending bank transfers',(
  assert.ok(reconcile.includes("requireRole('admin','staff')"));
  assert.ok(reconcile.includes("p.staff_id!==req.user!.id"));
  assert.ok(reconcile.includes("if(action!=='confirm_paid')"));
- assert.ok(reconcile.includes("p.method!=='bank_transfer'||p.status!=='pending_review'"));
+ assert.ok(reconcile.includes("p.method==='bank_transfer'&&p.status==='pending_review'"));
+ assert.ok(reconcile.includes("p.method==='cash'&&p.status==='unpaid'"));
  assert.ok(reconcile.includes("['confirmed','in_progress','completed']"));
  assert.ok(!reconcile.includes("verification_reference"));
  assert.ok(reconcile.includes('demo_confirmation:demoBankConfirmation'));
@@ -38,8 +39,8 @@ test('Staff sees reconcile form only for their accepted appointments, Admin reta
  assert.ok(appointments.includes("selected.staff_id===user.id&&selected.status!=='pending'"));
  assert.ok(appointments.includes('appointmentId={selected.id} staff'));
  assert.ok(!payment.includes('verification_reference:verificationReference.trim()'));
- assert.ok(payment.includes('Xác nhận đã chuyển khoản'));
- assert.ok(payment.includes('Mô phỏng xác nhận thanh toán'));
+ assert.ok(payment.includes('Xác nhận chuyển khoản (Demo)'));
+ assert.ok(payment.includes('Chuyển khoản chỉ mô phỏng trong bản demo.'));
  assert.ok(payment.includes('{admin&&<div className="pc-payment-reconcile">'));
  assert.ok(payment.includes("confirm_refund"));
  assert.ok(!read('frontend/src/pages/CustomerPayments.tsx').includes('confirm_paid'));
