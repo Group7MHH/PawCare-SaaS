@@ -217,3 +217,106 @@
  .nb-admin-intro{align-items:flex-start;flex-direction:column;margin-bottom:20px}.nb-admin-intro h1{font-size:37px}.nb-admin-intro .nb-action-primary{min-height:41px}.nb-admin-revenue{padding:23px 17px}.nb-revenue-total>strong{font-size:clamp(26px,7vw,38px)}.nb-chart-bars{gap:9px}.nb-admin-figures{grid-template-columns:repeat(2,1fr)}.nb-admin-stat-a{grid-column:span 2;min-height:140px}.nb-admin-stat-a strong{font-size:36px}.nb-admin-stat-b,.nb-admin-stat-c{min-height:150px}.nb-admin-sidebar-panels{grid-template-columns:1fr}.nb-admin-appointment{gap:8px}.nb-admin-appointment-main strong{font-size:10.5px}.nb-admin-appointment-main small{font-size:9.5px}.nb-admin-appointment>.badge{font-size:9px}.nb-completed-grid{grid-template-columns:1fr}.nb-admin-alert{flex-wrap:wrap}.nb-admin-alert a{margin-left:auto}
 }
 @media(max-width:400px){.nb-cover-copy{padding-right:92px}.nb-cover-copy h2{font-size:27px}.nb-cover-art{right:-91px;opacity:.7}.nb-pet-polaroid-portrait{height:78px}.nb-pet-polaroid-body>span svg{display:none}.nb-pet-album-grid{gap:6px}.nb-ticket-summary{gap:8px;padding:12px 10px}.nb-ticket-primary>strong{font-size:13px}.nb-ticket-date{width:51px;height:59px}.nb-quick-notes{padding:20px}.nb-staff-figures{grid-template-columns:1fr 1fr}}
+
+/* ================================================================
+   PAWCARE ORIGINAL VECTOR ART SYSTEM · EDITION 02
+   Artwork is authored as local SVG files, not platform emoji or
+   oversized generic icon glyphs. Existing API / workflows unchanged.
+   ================================================================ */
+.pc-brand-mark{display:block;width:100%;height:100%;object-fit:contain;flex:none}
+.nb-logo .pc-brand-mark{width:30px;height:30px}
+.nb-book-identity-mark{display:grid;place-items:center}
+.nb-book-identity-mark .pc-brand-mark{width:21px;height:21px;opacity:.78}
+.nb-sidebar-illustration{position:relative;min-height:90px;height:auto;gap:8px;padding:4px 3px 4px 6px}
+.nb-sidebar-illustration .pc-notebook-story{width:112px;height:63px;object-fit:contain;filter:drop-shadow(0 3px 2px rgba(147,112,77,.07));opacity:.94;flex:none}
+.nb-sidebar-illustration span{font-size:8px;line-height:1.7;letter-spacing:.1em;max-width:125px}
+.nb-edge-tab .pc-brand-mark{width:16px;height:16px;transform:rotate(-5deg)}
+.nb-footer-mark{display:inline-flex;vertical-align:-3px;width:13px;height:13px;margin:0 4px}
+.nb-footer-mark .pc-brand-mark{width:13px;height:13px}
+
+/* Customer cover: one hand-crafted composition replaces stacked Dog,
+   Cat, Heart and Sparkles icon cards. Render SVG without cropping. */
+.nb-cover-illustration{min-height:310px;display:grid;place-items:center;padding:0 12px 0 0;overflow:visible;position:relative}
+.nb-cover-illustration:before{content:"";position:absolute;left:13%;right:2%;top:15%;bottom:6%;background:radial-gradient(ellipse,rgba(235,169,111,.18),transparent 67%);pointer-events:none}
+.nb-cover-illustration .pc-cover-svg{display:block;width:min(100%,490px);height:100%;max-height:365px;object-fit:contain;object-position:center bottom;position:relative;z-index:1;filter:drop-shadow(0 17px 13px rgba(9,25,36,.2));animation:pc-art-breathe 7s ease-in-out infinite;transition:transform .6s cubic-bezier(.2,.7,.2,1),filter .4s ease}
+.nb-customer-cover:hover .pc-cover-svg{transform:translateY(-8px) scale(1.025);filter:drop-shadow(0 26px 16px rgba(9,25,36,.25))}
+.nb-cover-illustration .nb-art-caption{position:absolute;z-index:2;bottom:16px;right:30px;border-top:1px solid rgba(246,215,178,.35);padding-top:10px;color:#f2ceb0;letter-spacing:.13em;font:800 8px var(--font-body)}
+.nb-cover-label-mark .pc-brand-mark{width:20px;height:20px}
+.nb-index-strip .pc-brand-mark{width:17px;height:17px;vertical-align:middle}
+
+/* The pet photo keeps an illustration hierarchy instead of a Lucide
+   species icon inside a giant empty circle. */
+.pet-avatar{isolation:isolate;border-radius:50%;overflow:hidden;vertical-align:middle}
+.pc-pet-portrait{display:block;flex:none;object-fit:cover;max-width:100%;max-height:100%;border-radius:50%;transition:transform .3s cubic-bezier(.2,.7,.2,1)}
+.nb-pet-polaroid-portrait .pet-avatar{width:min(118px,90%);height:min(118px,90%);box-shadow:0 9px 18px rgba(33,66,65,.15);border:3px solid rgba(255,255,255,.84)}
+.nb-pet-polaroid-portrait .pc-pet-portrait{width:100%;height:100%;object-fit:cover}
+.nb-pet-polaroid:focus-visible .pc-pet-portrait,.nb-pet-polaroid:hover .pc-pet-portrait{transform:scale(1.08) rotate(3deg)}
+.nb-pet-polaroid-portrait .nb-pet-photo-ornament{background:rgba(255,255,255,.23)}
+.nb-quick-deco .pc-notebook-story{width:142px;height:65px;object-fit:contain;opacity:.78}
+
+/* Staff: genuine editorial illustration integrated with the header,
+   and still respecting the original responsive workboard layout. */
+.nb-staff-header-art.nb-care-illustration{flex:0 0 clamp(174px,22vw,240px);height:207px;align-self:center;overflow:visible}
+.nb-care-illustration .pc-care-svg{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 9px 8px rgba(78,106,86,.12));transform:rotate(-2deg);transition:transform .55s cubic-bezier(.2,.72,.2,1)}
+.nb-staff-header:hover .pc-care-svg{transform:rotate(1deg) translateY(-6px)}
+.nb-care-illustration .nb-staff-art-label{z-index:2;bottom:6px;right:5px;font-size:8px;padding:8px 10px;box-shadow:0 8px 18px rgba(89,68,43,.1);align-items:center}
+.nb-care-illustration .nb-staff-art-label .pc-brand-mark{width:15px;height:15px}
+
+/* Admin: a quiet ledger illustration behind the heading, not a fake
+   KPI. The real series and totals remain rendered from the API. */
+.nb-admin-intro{position:relative;isolation:isolate;min-height:130px}
+.nb-admin-intro>div:first-child{position:relative;z-index:2}
+.nb-admin-intro>.nb-action-primary{position:relative;z-index:3;flex:none}
+.nb-admin-intro-art{position:absolute;z-index:1;right:190px;top:-12px;width:170px;height:145px;opacity:.78;pointer-events:none}
+.nb-admin-intro-art .pc-ledger-svg{display:block;width:100%;height:100%;object-fit:contain;transform:rotate(3deg);transition:transform .5s ease}
+.nb-admin-intro:hover .pc-ledger-svg{transform:translateY(-5px) rotate(-1deg)}
+.nb-stat-brand .pc-brand-mark{width:26px;height:26px}
+
+/* Service catalogue: one original vignette per real service type,
+   instead of repeating Scissors + Clock + Shield on every card. */
+.pc-service-plan{position:relative;isolation:isolate;overflow:hidden;border-radius:17px;transition:transform .28s cubic-bezier(.2,.7,.2,1),border-color .28s,box-shadow .28s}
+.pc-service-plan:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(#d9a46f,#8faaa0);opacity:0;transition:opacity .28s}
+.pc-service-plan:hover:before,.pc-service-plan:focus-within:before,.pc-service-plan.selected:before{opacity:1}
+.pc-service-plan:hover{transform:translateY(-5px);box-shadow:0 16px 32px rgba(29,53,62,.11)}
+.pc-service-plan:focus-within{outline:2px solid #849e9d;outline-offset:2px}
+.pc-service-plan-top{min-height:104px;align-items:flex-start;margin-bottom:10px;position:relative}
+.pc-service-serial{max-width:calc(100% - 132px);padding-top:7px;font-size:10px;font-weight:800;letter-spacing:.09em;color:#9e8069;line-height:1.5;white-space:normal}
+.pc-service-plan-artwork{flex:0 0 125px;width:125px;height:94px;display:block;border-radius:13px;overflow:hidden;border:1px solid rgba(59,88,86,.09);box-shadow:0 4px 12px rgba(43,68,78,.08);transform:rotate(3deg);transition:transform .32s cubic-bezier(.2,.7,.2,1),box-shadow .32s}
+.pc-service-svg{display:block;width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.pc-service-plan:hover .pc-service-plan-artwork,.pc-service-plan:focus-within .pc-service-plan-artwork{transform:rotate(0) translateY(-4px);box-shadow:0 10px 19px rgba(43,68,78,.14)}
+.pc-service-plan:hover .pc-service-svg{transform:scale(1.065)}
+.pc-service-plan-detail{align-items:baseline;gap:9px;font-size:12.2px}
+.pc-service-detail-line{flex:0 0 12px;height:1px;background:#c19a73;align-self:center}
+.pc-service-plan h3{font:800 19px/1.35 var(--font-head)}
+
+@keyframes pc-art-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media(max-width:1150px){.nb-admin-intro-art{right:175px;width:128px;opacity:.45}.nb-cover-illustration .pc-cover-svg{min-width:260px}}
+@media(max-width:900px){.nb-sidebar-illustration .pc-notebook-story{width:102px}.nb-admin-intro-art{display:none}}
+@media(max-width:760px){
+ .nb-cover-illustration{padding:0;overflow:hidden;min-height:235px}
+ .nb-cover-illustration .pc-cover-svg{width:100%;min-width:210px;height:255px;object-fit:contain;object-position:center bottom}
+ .nb-cover-illustration .nb-art-caption{display:none}
+ .nb-staff-header-art.nb-care-illustration{flex-basis:170px;height:176px}
+ .pc-service-plan-artwork{width:115px;height:84px;flex-basis:115px}
+ .pc-service-plan-top{min-height:94px}
+}
+@media(max-width:520px){
+ .nb-cover-illustration .pc-cover-svg{min-width:180px;width:235px;height:225px;max-height:225px}
+ .nb-cover-illustration{min-height:210px;place-items:center}
+ .nb-staff-header-art.nb-care-illustration{width:170px;right:-45px;top:4px;height:164px;opacity:.65;position:absolute;flex:none}
+ .nb-care-illustration .nb-staff-art-label{display:none}
+ .nb-pet-polaroid-portrait .pet-avatar{width:min(82px,88%);height:min(82px,88%)}
+ .pc-service-plan-artwork{width:103px;height:78px;flex-basis:103px}
+ .pc-service-serial{max-width:calc(100% - 110px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .nb-cover-illustration .pc-cover-svg,.nb-customer-cover:hover .pc-cover-svg,.nb-care-illustration .pc-care-svg,.nb-staff-header:hover .pc-care-svg,.nb-admin-intro-art .pc-ledger-svg,.nb-admin-intro:hover .pc-ledger-svg,.pc-service-plan-artwork,.pc-service-svg,.pc-pet-portrait{animation:none!important;transition:none!important;transform:none!important}
+}
+
+/* Journal indexing replaces ornamental icon repetition in KPI grids. */
+.nb-index-chapter{font:800 10px/1 var(--font-body);letter-spacing:.05em;color:#b28b63;min-width:25px;display:inline-block;border-right:1px solid rgba(168,140,113,.35);padding-right:8px;margin-right:3px}
+.nb-staff-num-index{grid-row:span 2;align-self:center;width:40px;height:40px;display:grid;place-items:center;border-radius:10px;border:1px solid #dbcbb8;background:#f4e6d5;color:#9b714f;font:800 13px/1 var(--font-head);letter-spacing:-.025em}
+.nb-staff-num-index.amber{background:#fae9c9;color:#a67837}.nb-staff-num-index.blue{background:#e7eef2;color:#5d8197}.nb-staff-num-index.green{background:#e2eee4;color:#5a8a6f}
+.nb-stat-enumeral{font:800 10px/1 var(--font-body);letter-spacing:.14em;color:rgba(80,76,67,.5);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(92,77,62,.14);display:block;width:max-content}
+.nb-admin-appointment-index{height:35px;width:35px;display:grid;place-items:center;border-radius:9px;background:#f5eee4;color:#a58668;font:800 12px/1 var(--font-head);flex:none}
+@media(max-width:520px){.nb-staff-num-index{width:33px;height:33px;font-size:11px}}

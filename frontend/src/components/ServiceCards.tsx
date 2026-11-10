@@ -1,6 +1,7 @@
 import {useMemo,useState} from 'react';
 import {Link} from 'react-router-dom';
-import {ArrowRight,Check,Clock3,Scissors,ShieldCheck} from 'lucide-react';
+import {ArrowRight,Check} from 'lucide-react';
+import {ServiceArtwork} from './BrandArtwork';
 import {money,type Service} from '../lib/api';
 
 type Props={
@@ -29,12 +30,12 @@ export function ServiceCards({services,selectedIds=[],onToggle,totalDuration=0,m
     return <article key={service.id} className={`pc-service-plan ${selected?'selected':''}`}>
      <div className="pc-service-plan-top">
       <span className="pc-service-serial">{String(index+1).padStart(2,'0')} / {service.category||'Dịch vụ'}</span>
-      <span className="pc-service-plan-icon"><Scissors size={19}/></span>
+      <span className="pc-service-plan-artwork" aria-hidden="true"><ServiceArtwork label={`${service.category||''} ${service.name}`}/></span>
      </div>
      <h3>{service.name}</h3>
      <p className="pc-service-description">{service.description?.trim()||'Dịch vụ chăm sóc thú cưng tại PawCare.'}</p>
-     <div className="pc-service-plan-detail"><Clock3 size={16}/><span>Thời lượng: <strong>{service.duration_minutes} phút</strong></span></div>
-     <div className="pc-service-plan-detail"><ShieldCheck size={16}/><span>Nhân viên PawCare trực tiếp thực hiện</span></div>
+     <div className="pc-service-plan-detail"><span className="pc-service-detail-line" aria-hidden="true"/><span>Thời lượng: <strong>{service.duration_minutes} phút</strong></span></div>
+     <div className="pc-service-plan-detail"><span className="pc-service-detail-line" aria-hidden="true"/><span>Nhân viên PawCare trực tiếp thực hiện</span></div>
      <div className="pc-service-plan-bottom">
       <div><small>Giá dịch vụ</small><strong>{money(service.price)}</strong></div>
       {onToggle?
