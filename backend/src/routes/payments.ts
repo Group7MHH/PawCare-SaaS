@@ -82,8 +82,12 @@ router.get('/',asyncRoute(async(req,res)=>{
  const {page,limit}=pageParams(req);
  const scopeParams:(string|number)[]=[orgId(req)];
  let scope='p.organization_id=?';
- if(req.user!.role!=='admin'){
+ if(req.user!.role==='customer'){
   scope+=' AND p.customer_id=?';
+  scopeParams.push(req.user!.id);
+ }else if(req.user!.role==='staff'){
+  // Match the detail endpoint: Staff only sees payments on accepted bookings assigned to them.
+  scope+=" AND a.staff_id=? AND a.status IN ('confirmed','in_progress','completed')";
   scopeParams.push(req.user!.id);
  }
  const params=[...scopeParams];
@@ -116,7 +120,7 @@ router.get('/',asyncRoute(async(req,res)=>{
   COUNT(*) FILTER (WHERE p.status='refund_required')::int AS refund_required,
   COUNT(*) FILTER (WHERE p.status='refunded')::int AS refunded,
   COALESCE(SUM(p.amount) FILTER (WHERE p.status='paid'),0)::text AS paid_amount
-  FROM payments p WHERE ${scope}`,scopeParams);
+  FROM payments p JOIN appointments a ON a.id=p.appointment_id WHERE ${scope}`,scopeParams);
  res.setHeader('Cache-Control','no-store');
  const publicItems=req.user!.role==='customer'
   ?items.map(p=>({...p,admin_note:null,bank_transaction_reference:undefined}))
