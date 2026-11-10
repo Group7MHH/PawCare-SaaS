@@ -137,9 +137,12 @@ router.patch('/:id/method',asyncRoute(async(req,res)=>{
  if(method==='bank_transfer'&&!recipient)throw new HttpError(409,'Cửa hàng chưa cấu hình thông tin chuyển khoản');
  const id=idParam(req.params.id);
  await transaction(async db=>{
+  // Lock the booking before its payment, matching cancellation/reconciliation lock order.
+  const [booking]=await rows<{id:number}>('SELECT id FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
+  if(!booking)throw new HttpError(404,'Không tìm thấy lịch hẹn');
   const [locked]=await rows<PaymentRow>(`SELECT p.*,a.status AS appointment_status
    FROM payments p JOIN appointments a ON a.id=p.appointment_id
-   WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p`,[id,orgId(req)],db);
+   WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p,a`,[id,orgId(req)],db);
   if(!locked)throw new HttpError(404,'Không tìm thấy thanh toán');
   if(locked.customer_id!==req.user!.id)throw new HttpError(403,'Không có quyền chỉnh sửa thanh toán này');
   if(!['unpaid','awaiting_payment'].includes(locked.status)||locked.appointment_status==='cancelled')throw new HttpError(409,'Không thể đổi phương thức cho thanh toán đã xử lý');
@@ -155,9 +158,12 @@ router.post('/:id/transfer-notice',asyncRoute(async(req,res)=>{
  const {note}=parse(z.object({note:z.string().trim().max(300).optional()}).strict(),req.body);
  const id=idParam(req.params.id);
  await transaction(async db=>{
+  // Serialize transfer notices with cancellations and Admin reconciliation.
+  const [booking]=await rows<{id:number}>('SELECT id FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
+  if(!booking)throw new HttpError(404,'Không tìm thấy lịch hẹn');
   const [p]=await rows<PaymentRow>(`SELECT p.*,a.status AS appointment_status
    FROM payments p JOIN appointments a ON a.id=p.appointment_id
-   WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p`,[id,orgId(req)],db);
+   WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p,a`,[id,orgId(req)],db);
   if(!p)throw new HttpError(404,'Không tìm thấy thanh toán');
   if(p.customer_id!==req.user!.id)throw new HttpError(403,'Không có quyền xác nhận thanh toán này');
   if(p.status!=='awaiting_payment'||p.method!=='bank_transfer'||p.appointment_status==='cancelled')
