@@ -30,7 +30,8 @@ test('transaction panel retains all customer payment actions and blocks self-con
  assert.ok(panel.includes('transfer-notice'));
  assert.ok(panel.includes('Tôi đã chuyển khoản'));
  assert.ok(panel.includes('Chờ Admin đối soát'));
- assert.ok(backend.includes("requireRole('admin')"));
+ assert.ok(backend.includes("requireRole('admin','staff')"));
+ assert.ok(backend.includes("action!=='confirm_paid'"));
  assert.ok(backend.includes("status='pending_review'"));
  assert.ok(backend.includes("if(action==='confirm_paid')"));
  assert.ok(!read('frontend/src/pages/CustomerPayments.tsx').includes('/reconcile'));

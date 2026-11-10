@@ -8,7 +8,7 @@ import {PageTitle,Loading,ErrorNotice} from '../components/UI';
 type Bank={name:string;account:string;owner:string};
 type BankSettings={bank:Bank|null;enabled:boolean;source:'database'|'environment'|'none'};
 type FormBank=Bank&{enabled:boolean};
-export function AdminBankSettings(){
+export function AdminBankSettings({embedded=false}:{embedded?:boolean}){
  const qc=useQueryClient();
  const settings=useQuery({queryKey:['payment-bank-admin'],queryFn:()=>api<{settings:BankSettings}>('/payments/admin-bank')});
  const [form,setForm]=useState<FormBank>({name:'',account:'',owner:'',enabled:true});
@@ -35,9 +35,10 @@ export function AdminBankSettings(){
   if(form.name.trim().length<2||form.owner.trim().length<2){toast.error('Vui lòng điền đầy đủ tên ngân hàng và chủ tài khoản');return;}
   save.mutate({name:form.name.trim(),account:form.account.trim(),owner:form.owner.trim(),enabled:form.enabled});
  };
- return <div className="pc-admin-bank-page">
+ return <section className={embedded?'pc-admin-bank-page pc-profile-bank-section':'pc-admin-bank-page'}>
+  {embedded?<header className="pc-profile-bank-title"><span className="pc-wallet-overline">THÔNG TIN CỬA HÀNG / THANH TOÁN</span><h2>Quản lý tài khoản ngân hàng</h2><p>Thay đổi tài khoản nhận tiền ngay trong Thông tin cá nhân của Admin.</p></header>:
   <PageTitle eyebrow="THANH TOÁN / QUẢN TRỊ" title="Tài khoản nhận chuyển khoản"
-   description="Thay đổi tài khoản ngân hàng ngay trong PawCare. Chỉ Admin có quyền chỉnh sửa; thông tin mới được dùng cho các giao dịch chuyển khoản mới."/>
+   description="Thay đổi tài khoản ngân hàng ngay trong PawCare. Chỉ Admin có quyền chỉnh sửa; thông tin mới được dùng cho các giao dịch chuyển khoản mới."/>}
   <div className="pc-bank-layout">
    <section className="pc-bank-edit">
     <header className="pc-bank-edit-head"><span className="pc-bank-identity"><Landmark size={25}/></span><div><span className="pc-wallet-overline">CẤU HÌNH CỬA HÀNG</span><h2>Thông tin người thụ hưởng</h2><p>Khách hàng sẽ thấy những thông tin này khi chọn chuyển khoản.</p></div></header>
@@ -56,8 +57,8 @@ export function AdminBankSettings(){
      <div className="pc-bank-preview-body"><small>THÔNG TIN NHẬN CHUYỂN KHOẢN</small><strong>{form.name||'Tên ngân hàng'}</strong><b>{form.account||'•••• •••• ••••'}</b><span>{form.owner||'Tên chủ tài khoản'}</span></div>
      <div className="pc-bank-preview-foot"><CheckCircle2 size={16}/>{form.enabled?'Đang cho phép chuyển khoản':'Đang tạm ngừng chuyển khoản'}</div>
     </section>
-    <section className="pc-bank-guidance"><div><ShieldCheck size={20}/><strong>Quyền hạn và đối soát</strong></div><p>Staff chỉ xem trạng thái đã thanh toán của lịch được giao. Chỉ Admin được xác nhận tiền thực nhận hoặc hoàn tiền.</p><div><Info size={20}/><strong>Lịch hẹn đã tạo</strong></div><p>Tài khoản ngân hàng được lưu theo từng giao dịch chuyển khoản mới. Việc thay đổi cấu hình không tự chuyển hướng các khoản khách đã được hướng dẫn thanh toán.</p><div><LockKeyhole size={20}/><strong>Nguồn cấu hình</strong></div><p>{settings.data?.settings.source==='environment'?'Đang sử dụng thông tin từ Render. Sau khi lưu tại đây, thiết lập của Admin được ưu tiên.':settings.data?.settings.source==='database'?'Đang sử dụng cấu hình Admin đã lưu trong PostgreSQL.':'Chưa có ngân hàng được cấu hình. Bạn có thể thêm tại đây.'}</p></section>
+    <section className="pc-bank-guidance"><div><ShieldCheck size={20}/><strong>Quyền hạn và đối soát</strong></div><p>Staff phụ trách có thể xác nhận chuyển khoản sau khi đối chiếu mã giao dịch và tiền thực nhận. Chỉ Admin được sửa tài khoản ngân hàng và xử lý hoàn tiền.</p><div><Info size={20}/><strong>Lịch hẹn đã tạo</strong></div><p>Tài khoản ngân hàng được lưu theo từng giao dịch chuyển khoản mới. Việc thay đổi cấu hình không tự chuyển hướng các khoản khách đã được hướng dẫn thanh toán.</p><div><LockKeyhole size={20}/><strong>Nguồn cấu hình</strong></div><p>{settings.data?.settings.source==='environment'?'Đang sử dụng thông tin từ Render. Sau khi lưu tại đây, thiết lập của Admin được ưu tiên.':settings.data?.settings.source==='database'?'Đang sử dụng cấu hình Admin đã lưu trong PostgreSQL.':'Chưa có ngân hàng được cấu hình. Bạn có thể thêm tại đây.'}</p></section>
    </aside>
   </div>
- </div>;
+ </section>;
 }

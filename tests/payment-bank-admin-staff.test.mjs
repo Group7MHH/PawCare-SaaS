@@ -8,8 +8,9 @@ test('Admin manages receiving bank through a protected interface, not Render var
  const nav=read('frontend/src/components/Layout.tsx');
  const route=read('backend/src/routes/payments.ts');
  const page=read('frontend/src/pages/AdminBankSettings.tsx');
- assert.ok(app.includes('<Route path="/admin/payment-settings" element={<AdminOnly><AdminBankSettings/></AdminOnly>}/>'));
- assert.ok(nav.includes("{to:'/admin/payment-settings',title:'Tài khoản ngân hàng',icon:CreditCard}"));
+ assert.ok(app.includes('<Route path="/admin/payment-settings" element={<AdminOnly><Navigate to="/profile" replace/></AdminOnly>}/>'));
+ assert.ok(read('frontend/src/pages/Profile.tsx').includes("{user?.role==='admin'&&<AdminBankSettings embedded/>}"));
+ assert.ok(!nav.includes("to:'/admin/payment-settings'"));
  assert.ok(route.includes("router.put('/admin-bank',requireRole('admin')"));
  assert.ok(route.includes("router.get('/admin-bank',requireRole('admin')"));
  assert.ok(route.includes("payment_bank_settings"));
@@ -31,7 +32,7 @@ test('bank settings migration snapshots transfer recipient and preserves older b
  assert.ok(payments.includes("recipient?.name??null"));
  assert.ok(read('backend/src/lib/payment-bank.ts').includes("source:'database'"));
 });
-test('Staff payment status is scoped to assigned appointments and read-only',()=>{
+test('Staff may confirm only assigned pending bank transfers with evidence; Admin keeps refund rights',()=>{
  const backend=read('backend/src/routes/appointments.ts');
  const screen=read('frontend/src/pages/AdminAppointments.tsx');
  const dashboard=read('frontend/src/pages/StaffDashboard.tsx');
@@ -40,10 +41,16 @@ test('Staff payment status is scoped to assigned appointments and read-only',()=
  assert.ok(backend.includes("if(req.user!.role==='staff')"));
  assert.ok(backend.includes("clauses.push('a.staff_id=?')"));
  assert.ok(screen.includes('pc-staff-pay-readonly'));
+ assert.ok(screen.includes('appointmentId={selected.id} staff'));
  assert.ok(screen.includes('Đã thanh toán'));
  assert.ok(dashboard.includes('pc-staff-pay-tag'));
  assert.ok(!dashboard.includes('/reconcile'));
- assert.ok(read('backend/src/routes/payments.ts').includes("router.post('/:id/reconcile',requireRole('admin')"));
+ const payment=read('backend/src/routes/payments.ts');
+ assert.ok(payment.includes("router.post('/:id/reconcile',requireRole('admin','staff')"));
+ assert.ok(payment.includes("p.staff_id!==req.user!.id"));
+ assert.ok(payment.includes("action!=='confirm_paid'"));
+ assert.ok(payment.includes("payment.staff_confirm_paid"));
+ assert.ok(payment.includes("verification_reference"));
 });
 test('customer payment detail no longer uses a dark overlay or body scroll lock',()=>{
  const page=read('frontend/src/pages/CustomerPayments.tsx');
