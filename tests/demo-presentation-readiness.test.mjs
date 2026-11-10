@@ -24,7 +24,13 @@ test('Admin appointment list exposes payment status, filtering and readable navi
  assert.ok(backend.includes("LEFT JOIN payments pay ON pay.appointment_id=a.id"));
  assert.ok(backend.includes('ORDER BY a.starts_at DESC,a.id DESC'));
  assert.ok(page.includes('Quản lý lịch hẹn và thanh toán'));
- assert.ok(page.includes('Lọc trạng thái thanh toán'));
+ assert.ok(page.includes('aria-label="Lọc trạng thái thanh toán"'));
+ assert.ok(page.includes('pc-pay-filter-chip'));
+ assert.ok(page.includes('aria-pressed={paymentStatus===item.v}'));
+ assert.ok(page.includes('setPaymentStatus(item.v)'));
+ assert.ok(!page.includes('className="pc-payment-filter"'));
+ assert.ok(css.includes('.pc-pay-filter-options{'));
+ assert.ok(css.includes('overflow-x:auto'));
  assert.ok(page.includes('payment_status='));
  assert.ok(page.includes('<th>THANH TOÁN</th>'));
  assert.ok(page.includes("paid:'Đã thanh toán'"));
