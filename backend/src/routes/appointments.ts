@@ -33,12 +33,19 @@ const appointmentSelect=`SELECT a.*,u.full_name AS customer_name,u.phone AS cust
   pay.status AS payment_status,pay.method AS payment_method
   FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id LEFT JOIN users st ON a.staff_id=st.id LEFT JOIN payments pay ON pay.appointment_id=a.id
   LEFT JOIN LATERAL (
-    SELECT string_agg(ms.name,' + ' ORDER BY aps.position) AS names,
+    SELECT string_agg(COALESCE(aps.name_snapshot,ms.name),' + ' ORDER BY aps.position) AS names,
            array_agg(aps.service_id ORDER BY aps.position) AS ids
     FROM appointment_services aps JOIN services ms ON ms.id=aps.service_id
     WHERE aps.appointment_id=a.id
   ) bundle ON TRUE`;
-function mapAppointment(a:any){return {...a,starts_at:isoUTC(a.starts_at),ends_at:isoUTC(a.ends_at),needs_admin_attention:Boolean(a.needs_admin_attention)||(a.status==='pending'&&a.staff_id===null&&new Date(isoUTC(a.starts_at)).getTime()<=Date.now()+2*3600000)};}
+function mapAppointment(a:any){
+ const overdue=['pending','confirmed'].includes(a.status)&&new Date(isoUTC(a.starts_at)).getTime()<Date.now();
+ const needsAttention=Boolean(a.needs_admin_attention)||
+  (a.status==='pending'&&new Date(isoUTC(a.starts_at)).getTime()<=Date.now()+2*3600000)||
+  overdue;
+ return {...a,starts_at:isoUTC(a.starts_at),ends_at:isoUTC(a.ends_at),
+  is_overdue:overdue,needs_admin_attention:needsAttention};
+}
 async function accessible(id:number,req:import('express').Request,db:DB=pool){
  const [a]=await rows<any>(`${appointmentSelect} WHERE a.id=? AND a.organization_id=?`,[id,orgId(req)],db);
  if(!a)throw new HttpError(404,'Không tìm thấy lịch hẹn');
@@ -57,7 +64,9 @@ router.get('/',asyncRoute(async(req,res)=>{
   }else{clauses.push('a.staff_id=?');params.push(req.user!.id);}
  }
  if(req.query.status&&req.query.status!=='all'){clauses.push('a.status=?');params.push(String(req.query.status));}
- if(req.query.needs_attention==='true' && req.user!.role==='admin'){clauses.push("(a.needs_admin_attention=TRUE OR (a.status='pending' AND a.staff_id IS NULL AND a.starts_at <= now() + interval '2 hours'))");}
+ if(req.query.needs_attention==='true' && req.user!.role==='admin'){
+  clauses.push("(a.needs_admin_attention=TRUE OR (a.status='pending' AND a.starts_at <= now() + interval '2 hours') OR (a.status='confirmed' AND a.starts_at < now()))");
+ }
  if(req.query.search){clauses.push('(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?)');params.push(...Array(3).fill(`%${String(req.query.search).slice(0,80)}%`));}
  const where=clauses.length?' WHERE '+clauses.join(' AND '):'';
  const [{total}]=await rows<any>(`SELECT COUNT(*) AS total FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id ${where}`,params);
@@ -110,14 +119,14 @@ async function verifyAvailability(db:DB,staffId:number|null,start:string,end:str
  * Every booking (assigned or unassigned) reserves one capacity slot. The global
  * booking advisory lock makes simultaneous reservations safe across API replicas.
  */
-async function hasBookingCapacity(db:DB,org:number,start:string,end:string){
+async function hasBookingCapacity(db:DB,org:number,start:string,end:string,exceptId?:number){
  const [staff]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total
   FROM organization_members m JOIN users u ON u.id=m.user_id
   WHERE m.organization_id=? AND m.role='staff' AND m.is_active=TRUE
     AND u.role='staff' AND u.is_active=TRUE`,[org],db);
  const bookings=await rows<{starts_at:Date|string;ends_at:Date|string}>(`SELECT starts_at,ends_at
   FROM appointments WHERE organization_id=? AND status<>'cancelled'
-  AND starts_at<? AND ends_at>?`,[org,end,start],db);
+  AND starts_at<? AND ends_at>? ${exceptId?'AND id<>?':''}`,[org,end,start,...(exceptId?[exceptId]:[])],db);
  return hasStaffCapacity(bookings,staff?.total??0,new Date(start),new Date(end));
 }
 router.post('/',asyncRoute(async(req,res)=>{
@@ -154,8 +163,8 @@ router.post('/',asyncRoute(async(req,res)=>{
   const created=await exec('INSERT INTO appointments(organization_id,customer_id,pet_id,service_id,staff_id,starts_at,ends_at,price_snapshot,notes,duration_minutes_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?)',
     [orgId(req),customerId,d.pet_id,services[0].id,preferredStaff,st,en,totalPrice,d.notes||null,totalDuration],db);
   for(const [position,service] of services.entries()){
-    await exec('INSERT INTO appointment_services(appointment_id,service_id,position,price_snapshot,duration_minutes_snapshot) VALUES(?,?,?,?,?)',
-      [created.insertId,service.id,position,service.price,service.duration_minutes],db);
+    await exec('INSERT INTO appointment_services(appointment_id,service_id,position,price_snapshot,duration_minutes_snapshot,name_snapshot) VALUES(?,?,?,?,?,?)',
+      [created.insertId,service.id,position,service.price,service.duration_minutes,service.name],db);
   }
   // Payment and booking are committed atomically. No user-provided amount is trusted.
   await exec("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,payment_reference,bank_name_snapshot,bank_account_snapshot,bank_owner_snapshot) VALUES(?,?,?,?,?,?,?,?,?)",[
@@ -189,11 +198,21 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
  const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+originalDuration*60000));const staffId=d.staff_id===undefined?current.staff_id:d.staff_id;
  if(d.status==='confirmed'&&!staffId)throw new HttpError(422,'Chưa phân công nhân viên');
  await transaction(async db=>{
+   // Booking creation and rescheduling must share a global capacity lock.
+   // Serialize it before Staff locks to preserve lock ordering across API replicas.
+   if(d.starts_at!==undefined)await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
    await lockStaff(db,[current.staff_id,staffId]);
    // Prevent stale writes to a schedule concurrently changed by another request.
    const [fresh]=await rows<any>('SELECT status,staff_id,starts_at,ends_at FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
    if(!fresh || fresh.status!==current.status || isoUTC(fresh.starts_at)!==isoUTC(current.starts_at) || fresh.staff_id!==current.staff_id)throw new HttpError(409,'Lịch đã thay đổi, hãy tải lại trang');
-   if(d.starts_at!==undefined||d.staff_id!==undefined)await verifyAvailability(db,staffId,st,en,id);
+   if(d.starts_at!==undefined){
+    if(!await hasBookingCapacity(db,orgId(req),st,en,id))
+     throw new HttpError(409,'Khung giờ mới đã hết công suất. Hãy chọn giờ khác');
+   }
+   if((d.starts_at!==undefined||d.staff_id!==undefined)&&staffId)
+    await verifyAvailability(db,staffId,st,en,id);
+   if(!staffId&&fresh.status==='confirmed'&&d.status!=='cancelled')
+    throw new HttpError(422,'Lịch đã xác nhận phải có nhân viên phụ trách');
    if(req.user!.role==='admin' && d.staff_id && current.status==='pending'){
     const declined=await rows<any>('SELECT 1 FROM appointment_staff_declines WHERE appointment_id=? AND staff_id=?',[id,d.staff_id],db);
     if(declined.length)throw new HttpError(409,'Nhân viên đã từ chối lịch này; hãy chọn người khác');

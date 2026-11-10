@@ -1,5 +1,7 @@
 import {Router} from 'express';
 import {z} from 'zod';
+import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
 import {pool,rows,exec,transaction,type DB} from '../lib/db.js';
 import {asyncRoute,HttpError,idParam,pageParams,parse} from '../lib/http.js';
 import {orgId,requireAuth,requireOrganization,requireRole} from '../lib/auth.js';
@@ -16,13 +18,20 @@ type PaymentRow={
 };
 const router=Router();
 router.use(requireAuth,requireOrganization);
-const select=`SELECT p.*,a.status AS appointment_status,a.staff_id AS staff_id,s.name AS service_name,
+const bankChangeLimit=rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:'draft-7',legacyHeaders:false,
+ message:{message:'Quá nhiều lần thay đổi thông tin ngân hàng. Vui lòng thử lại sau.'}});
+const select=`SELECT p.*,a.status AS appointment_status,a.staff_id AS staff_id,COALESCE(bundle.names,s.name) AS service_name,
  pet.name AS pet_name,u.full_name AS customer_name
  FROM payments p
  JOIN appointments a ON a.id=p.appointment_id
  JOIN services s ON s.id=a.service_id
  JOIN pets pet ON pet.id=a.pet_id
- JOIN users u ON u.id=p.customer_id`;
+ JOIN users u ON u.id=p.customer_id
+ LEFT JOIN LATERAL(
+  SELECT string_agg(COALESCE(aps.name_snapshot,svc.name),' + ' ORDER BY aps.position) AS names
+  FROM appointment_services aps JOIN services svc ON svc.id=aps.service_id
+  WHERE aps.appointment_id=a.id
+ ) bundle ON TRUE`;
 async function loadPayment(id:number,org:number,db:DB){
  const [payment]=await rows<PaymentRow>(`${select} WHERE p.appointment_id=? AND p.organization_id=?`,[id,org],db);
  if(!payment)throw new HttpError(404,'Không tìm thấy thông tin thanh toán cho lịch hẹn');
@@ -31,7 +40,7 @@ async function loadPayment(id:number,org:number,db:DB){
 function allowed(p:PaymentRow,user:{id:number;role:string}){
  if(user.role==='admin')return;
  if(user.role==='customer'&&p.customer_id===user.id)return;
- if(user.role==='staff'&&p.staff_id===user.id)return;
+ if(user.role==='staff'&&p.staff_id===user.id&&['confirmed','in_progress','completed'].includes(p.appointment_status))return;
  throw new HttpError(403,'Bạn không có quyền xem thanh toán này');
 }
 router.get('/config',asyncRoute(async(req,res)=>{
@@ -44,13 +53,17 @@ router.get('/admin-bank',requireRole('admin'),asyncRoute(async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  res.json({settings});
 }));
-router.put('/admin-bank',requireRole('admin'),asyncRoute(async(req,res)=>{
+router.put('/admin-bank',requireRole('admin'),bankChangeLimit,asyncRoute(async(req,res)=>{
  const data=parse(z.object({
   name:z.string().trim().min(2).max(80),
   account:z.string().trim().regex(/^[0-9]{6,32}$/,'Số tài khoản phải gồm 6 đến 32 chữ số'),
   owner:z.string().trim().min(2).max(100),
-  enabled:z.boolean()
+  enabled:z.boolean(),
+  admin_password:z.string().min(1).max(100)
  }).strict(),req.body);
+ const [adminAccount]=await rows<{password_hash:string}>('SELECT password_hash FROM users WHERE id=? AND role=? AND is_active=TRUE',[req.user!.id,'admin']);
+ if(!adminAccount||!await bcrypt.compare(data.admin_password,adminAccount.password_hash))
+  throw new HttpError(403,'Mật khẩu Admin không chính xác');
  await transaction(async db=>{
   await exec(`INSERT INTO payment_bank_settings(organization_id,bank_name,bank_account,bank_owner,enabled,updated_by,updated_at)
   VALUES(?,?,?,?,?,?,now()) ON CONFLICT(organization_id) DO UPDATE SET
@@ -104,13 +117,17 @@ router.get('/',asyncRoute(async(req,res)=>{
   COALESCE(SUM(p.amount) FILTER (WHERE p.status='paid'),0)::text AS paid_amount
   FROM payments p WHERE ${scope}`,scopeParams);
  res.setHeader('Cache-Control','no-store');
- res.json({items,total:count.total,page,limit,summary});
+ const publicItems=req.user!.role==='customer'
+  ?items.map(p=>({...p,admin_note:null,bank_transaction_reference:undefined}))
+  :items;
+ res.json({items:publicItems,total:count.total,page,limit,summary});
 }));
 router.get('/:id',asyncRoute(async(req,res)=>{
  const p=await loadPayment(idParam(req.params.id),orgId(req),pool);
  allowed(p,req.user!);
  res.setHeader('Cache-Control','no-store');
- res.json({payment:p});
+ // Internal reconciliation notes are never exposed to customers.
+ res.json({payment:req.user!.role==='customer'?{...p,admin_note:null,bank_transaction_reference:undefined}:p});
 }));
 router.patch('/:id/method',asyncRoute(async(req,res)=>{
  if(req.user!.role!=='customer')throw new HttpError(403,'Chỉ khách hàng chọn phương thức thanh toán');
@@ -146,7 +163,7 @@ router.post('/:id/transfer-notice',asyncRoute(async(req,res)=>{
    throw new HttpError(409,'Chỉ có thể thông báo chuyển khoản cho lịch chưa thanh toán');
   await exec("UPDATE payments SET status='pending_review',customer_note=? WHERE id=?",[note||null,p.id],db);
  });
- res.json({message:'Đã gửi thông báo. Thanh toán đang chờ Admin đối soát, chưa được xác nhận thành công.'});
+ res.json({message:'Đã gửi thông báo. Thanh toán đang chờ nhân viên phụ trách hoặc Admin đối soát.'});
 }));
 router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
@@ -156,6 +173,10 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
   verification_reference:z.string().trim().max(80).optional()
  }).strict(),req.body);
  await transaction(async db=>{
+  // Acquire booking row first, consistently with cancellation and rescheduling.
+  // This avoids lock-order inversions while payment and booking are updated together.
+  const [bookingLock]=await rows<{id:number}>('SELECT id FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
+  if(!bookingLock)throw new HttpError(404,'Không tìm thấy lịch hẹn');
   const [p]=await rows<PaymentRow>(`SELECT p.*,a.status AS appointment_status,a.staff_id
    FROM payments p JOIN appointments a ON a.id=p.appointment_id
    WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p,a`,[id,orgId(req)],db);
@@ -189,15 +210,20 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
    if(!note)throw new HttpError(422,'Cần ghi lại bằng chứng/ghi chú hoàn tiền');
    status='refunded';
   }
-  const reviewerNote=staffReviewer
-   ?`Staff đã đối chiếu sao kê. Mã giao dịch: ${verification_reference}. Ghi chú: ${note}`
-   :note||null;
+  if(action==='confirm_paid'&&p.method==='bank_transfer'&&p.status==='pending_review'&&req.user!.role==='admin'){
+  if(!verification_reference||verification_reference.length<6)throw new HttpError(422,'Admin cần nhập mã giao dịch đã kiểm tra trên sao kê (từ 6 ký tự)');
+  if(!note||note.length<10)throw new HttpError(422,'Admin cần ghi chú xác minh tiền thực nhận (ít nhất 10 ký tự)');
+ }
+ // The reviewer and reference are stored separately; keep notes within VARCHAR(500).
+ const reviewerNote=note||null;
   await exec("UPDATE payments SET status=?,admin_note=?,reviewed_by=?,reviewed_at=now(),paid_at=CASE WHEN ?='paid' THEN now() ELSE paid_at END,bank_transaction_reference=CASE WHEN ? IS NOT NULL THEN ? ELSE bank_transaction_reference END WHERE id=?",[
-   status,reviewerNote,req.user!.id,status,staffReviewer?verification_reference:null,staffReviewer?verification_reference:null,p.id
+   status,reviewerNote,req.user!.id,status,
+    action==='confirm_paid'&&p.method==='bank_transfer'?verification_reference:null,
+    action==='confirm_paid'&&p.method==='bank_transfer'?verification_reference:null,p.id
   ],db);
   await exec('INSERT INTO role_audit_logs(actor_id,organization_id,action,details) VALUES(?,?,?,?::jsonb)',[
    req.user!.id,orgId(req),staffReviewer?'payment.staff_confirm_paid':'payment.'+action,
-   JSON.stringify({appointment_id:id,payment_id:p.id,from:p.status,to:status,method:p.method,amount:p.amount,actor_role:req.user!.role,...(staffReviewer?{bank_transaction_reference:verification_reference}: {})})
+   JSON.stringify({appointment_id:id,payment_id:p.id,from:p.status,to:status,method:p.method,amount:p.amount,actor_role:req.user!.role,...(action==='confirm_paid'&&p.method==='bank_transfer'?{bank_transaction_reference:verification_reference}: {})})
   ],db);
  });
  res.json({message:action==='confirm_paid'?'Đã xác nhận nhận tiền':action==='reject_transfer'?'Đã từ chối đối soát và hoàn về trạng thái chưa thanh toán':'Đã ghi nhận hoàn tiền'});

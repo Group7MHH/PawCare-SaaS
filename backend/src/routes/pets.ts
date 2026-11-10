@@ -40,6 +40,19 @@ router.post('/:id/records',asyncRoute(async(req,res)=>{
  const r=await exec('INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,next_due_date) VALUES(?,?,?,?,?,?,?,?)',[pet.id,isPrivileged(req)?orgId(req):null,req.user!.id,d.title,d.record_type,d.care_date,d.description||null,d.next_due_date||null]);res.status(201).json({id:r.insertId,message:'Đã thêm hồ sơ chăm sóc'});
 }));
 router.delete('/:id/records/:recordId',asyncRoute(async(req,res)=>{
- const pet=await ownedPet(idParam(req.params.id),req);const r=await exec(`DELETE FROM care_records WHERE id=? AND pet_id=? ${isPrivileged(req)?'AND organization_id=?':'AND created_by_user_id=?'}` ,isPrivileged(req)?[idParam(req.params.recordId),pet.id,orgId(req)]:[idParam(req.params.recordId),pet.id,req.user!.id]);if(!r.affectedRows)throw new HttpError(404,'Không tìm thấy hồ sơ');res.json({message:'Đã xóa hồ sơ'});
+ const pet=await ownedPet(idParam(req.params.id),req),recordId=idParam(req.params.recordId);
+ const [record]=await rows<{id:number;created_by_user_id:number|null;appointment_id:number|null;organization_id:number|null}>(
+  'SELECT id,created_by_user_id,appointment_id,organization_id FROM care_records WHERE id=? AND pet_id=?',[recordId,pet.id]);
+ if(!record)throw new HttpError(404,'Không tìm thấy hồ sơ');
+ // Completed appointment records are part of the immutable care history.
+ if(record.appointment_id!==null)throw new HttpError(409,'Không thể xóa hồ sơ gắn với lịch chăm sóc. Vui lòng liên hệ Admin để điều chỉnh.');
+ if(req.user!.role==='staff' && (record.created_by_user_id!==req.user!.id || record.organization_id!==orgId(req)))
+  throw new HttpError(403,'Staff chỉ được xóa ghi chú chăm sóc do mình tạo tại cửa hàng');
+ if(req.user!.role==='customer' && record.created_by_user_id!==req.user!.id)
+  throw new HttpError(403,'Bạn chỉ được xóa ghi chú do mình tạo');
+ const r=await exec('DELETE FROM care_records WHERE id=? AND pet_id=? AND appointment_id IS NULL AND created_by_user_id=?',
+  [recordId,pet.id,record.created_by_user_id]);
+ if(!r.affectedRows)throw new HttpError(409,'Hồ sơ đã thay đổi. Hãy tải lại trang.');
+ res.json({message:'Đã xóa ghi chú chăm sóc'});
 }));
 export default router;

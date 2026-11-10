@@ -13,15 +13,16 @@ export function AdminBankSettings({embedded=false}:{embedded?:boolean}){
  const settings=useQuery({queryKey:['payment-bank-admin'],queryFn:()=>api<{settings:BankSettings}>('/payments/admin-bank')});
  const [form,setForm]=useState<FormBank>({name:'',account:'',owner:'',enabled:true});
  const [dirty,setDirty]=useState(false);
+ const [adminPassword,setAdminPassword]=useState('');
  useEffect(()=>{
   if(dirty||!settings.data)return;
   const existing=settings.data.settings;
   setForm({name:existing.bank?.name??'',account:existing.bank?.account??'',owner:existing.bank?.owner??'',enabled:existing.enabled});
  },[settings.data,dirty]);
  const save=useMutation({
-  mutationFn:(payload:FormBank)=>api<{message:string}>('/payments/admin-bank',json('PUT',payload)),
+  mutationFn:(payload:FormBank)=>api<{message:string}>('/payments/admin-bank',json('PUT',{...payload,admin_password:adminPassword})),
   onSuccess:r=>{
-   setDirty(false);toast.success(r.message);
+   setDirty(false);setAdminPassword('');toast.success(r.message);
    qc.invalidateQueries({queryKey:['payment-bank-admin']});
    qc.invalidateQueries({queryKey:['payment-config']});
    qc.invalidateQueries({queryKey:['payments']});
@@ -33,6 +34,7 @@ export function AdminBankSettings({embedded=false}:{embedded?:boolean}){
   e.preventDefault();
   if(!/^\d{6,32}$/.test(form.account.trim())){toast.error('Số tài khoản phải có từ 6 đến 32 chữ số');return;}
   if(form.name.trim().length<2||form.owner.trim().length<2){toast.error('Vui lòng điền đầy đủ tên ngân hàng và chủ tài khoản');return;}
+  if(!adminPassword){toast.error('Nhập mật khẩu Admin để xác nhận thay đổi tài khoản ngân hàng');return;}
   save.mutate({name:form.name.trim(),account:form.account.trim(),owner:form.owner.trim(),enabled:form.enabled});
  };
  return <section className={embedded?'pc-admin-bank-page pc-profile-bank-section':'pc-admin-bank-page'}>
@@ -48,6 +50,7 @@ export function AdminBankSettings({embedded=false}:{embedded?:boolean}){
      <label><span>Số tài khoản nhận tiền</span><input inputMode="numeric" autoComplete="off" pattern="[0-9]{6,32}" value={form.account} maxLength={32} required placeholder="Nhập số tài khoản" onChange={e=>update({account:e.target.value.replace(/\s/g,'')})}/></label>
      <label><span>Tên chủ tài khoản</span><input value={form.owner} maxLength={100} minLength={2} required placeholder="Tên chủ tài khoản theo ngân hàng" onChange={e=>update({owner:e.target.value})}/></label>
      <label className="pc-bank-toggle"><input type="checkbox" checked={form.enabled} onChange={e=>update({enabled:e.target.checked})}/><span><strong>Cho phép khách chọn chuyển khoản</strong><small>Tắt khi cần tạm ngừng nhận chuyển khoản mới. Thanh toán tại cửa hàng vẫn hoạt động.</small></span></label>
+     <label><span>Mật khẩu Admin để xác nhận thay đổi</span><input type="password" autoComplete="current-password" required value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Nhập mật khẩu quản trị viên"/></label>
      <div className="pc-bank-actions"><button className="button button-primary" type="submit" disabled={save.isPending}><Save size={16}/>{save.isPending?'Đang lưu...':'Lưu cấu hình ngân hàng'}</button><span>{dirty?'Có thay đổi chưa lưu':'Đang dùng cấu hình đã lưu'}</span></div>
     </form>}
    </section>

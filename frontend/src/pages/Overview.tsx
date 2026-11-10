@@ -20,7 +20,7 @@ export function Overview(){
  if(pets.isLoading||stats.isLoading)return <Loading/>;
  if(pets.error||stats.error)return <ErrorNotice message="Không thể tải trang tổng quan. Vui lòng kiểm tra kết nối."/>;
  const list=pets.data?.items||[],dashboard=stats.data,recent=dashboard?.recent||[];
- const next=recent.filter(a=>['pending','confirmed','in_progress'].includes(a.status)&&(a.status==='in_progress'||new Date(a.starts_at).getTime()>=Date.now())).sort((a,b)=>String(a.starts_at).localeCompare(String(b.starts_at)))[0];
+ const next=dashboard?.next||null;
  const firstName=user?.full_name.split(' ').slice(-1)[0]||'bạn';
  return <div className="nb-dashboard nb-customer-dashboard">
   <div className="nb-intro nb-enter"><div><span className="nb-overline"><span className="nb-overline-dot"/> TRANG 01 · HỒ SƠ CÁ NHÂN</span><h1>{greeting()}, {firstName}<span className="nb-hello-mark">.</span></h1><p>Những điều tốt đẹp bắt đầu từ việc chăm sóc bé mỗi ngày.</p></div><span className="nb-date-stamp"><BookHeart size={17}/> SỔ TAY PAWCARE</span></div>
