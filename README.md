@@ -75,3 +75,9 @@ PawCare's large illustrations now use local SVGs depicting **care journals, stet
 - Staff **cannot** reject a transfer, confirm a refund, edit the bank recipient, confirm cash or settle someone else's booking. Admin retains those rights. Paid/refunded/cancelled transfers cannot be re-confirmed.
 - The server does **not** access bank accounts or verify funds automatically. Do not grant the Staff reconciliation capability unless Staff have an authorized way to view trustworthy bank records. An image or screenshot from a customer is not proof that funds have arrived.
 - `011_staff_payment_reconciliation.sql` adds a nullable bank transaction reference and an organization-scoped unique index. Existing payments remain unchanged. Back up Neon and validate the migration on a test database before production deployment.
+
+## Demo-only payment confirmation
+
+For this school/demo deployment, assigned Staff and Admin can press **Xác nhận đã chuyển khoản** on a bank-transfer payment in `pending_review`, without entering a bank reference or proof. A confirmation dialog explicitly states that the system **does not verify funds with a bank**. The API logs the actor, method, previous/new status, and `demo_confirmation=true, bank_verified=false` in `role_audit_logs`; the payment retains reviewer/time. The payment status becomes `paid` in PawCare **for demonstration only**, not proof of real funds.
+
+Customer still only reports having transferred funds; they cannot mark themselves paid. Staff may confirm only their assigned, accepted bookings. Admin still handles rejection/refunds, which require notes. Do **not** use demo confirmation for production payments; real operations need bank-statement verification or a verified gateway/webhook before recording `paid`.

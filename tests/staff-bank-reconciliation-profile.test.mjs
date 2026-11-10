@@ -13,7 +13,7 @@ test('Admin bank editor is embedded in Admin profile only, no sidebar link',()=>
  assert.ok(!sidebar.includes("to:'/admin/payment-settings'"));
  assert.ok(read('frontend/src/main.tsx').includes('<Navigate to="/profile" replace/>'));
 });
-test('only staff assigned to confirmed or in-progress bookings can confirm actual bank transfers',()=>{
+test('only assigned staff can simulate confirmation of pending bank transfers',()=>{
  const backend=read('backend/src/routes/payments.ts');
  const start=backend.indexOf("router.post('/:id/reconcile'");
  const reconcile=backend.slice(start);
@@ -22,10 +22,10 @@ test('only staff assigned to confirmed or in-progress bookings can confirm actua
  assert.ok(reconcile.includes("if(action!=='confirm_paid')"));
  assert.ok(reconcile.includes("p.method!=='bank_transfer'||p.status!=='pending_review'"));
  assert.ok(reconcile.includes("['confirmed','in_progress','completed']"));
- assert.ok(reconcile.includes("verification_reference.length<6"));
- assert.ok(reconcile.includes("note.length<10"));
+ assert.ok(!reconcile.includes("verification_reference"));
+ assert.ok(reconcile.includes('demo_confirmation:demoBankConfirmation'));
  assert.ok(reconcile.includes('FOR UPDATE OF p,a'));
- assert.ok(reconcile.includes('bank_transaction_reference=CASE'));
+ assert.ok(reconcile.includes('reviewed_by=?'));
  assert.ok(reconcile.includes("payment.staff_confirm_paid"));
  const db=read('database/011_staff_payment_reconciliation.sql');
  assert.ok(db.includes('UNIQUE INDEX'));
@@ -37,9 +37,9 @@ test('Staff sees reconcile form only for their accepted appointments, Admin reta
  const payment=read('frontend/src/components/PaymentPanel.tsx');
  assert.ok(appointments.includes("selected.staff_id===user.id&&selected.status!=='pending'"));
  assert.ok(appointments.includes('appointmentId={selected.id} staff'));
- assert.ok(payment.includes('verification_reference:verificationReference.trim()'));
- assert.ok(payment.includes('Đã kiểm tra sao kê'));
- assert.ok(payment.includes('Xác nhận đã nhận chuyển khoản'));
+ assert.ok(!payment.includes('verification_reference:verificationReference.trim()'));
+ assert.ok(payment.includes('Xác nhận đã chuyển khoản'));
+ assert.ok(payment.includes('Mô phỏng xác nhận thanh toán'));
  assert.ok(payment.includes('{admin&&<div className="pc-payment-reconcile">'));
  assert.ok(payment.includes("confirm_refund"));
  assert.ok(!read('frontend/src/pages/CustomerPayments.tsx').includes('confirm_paid'));

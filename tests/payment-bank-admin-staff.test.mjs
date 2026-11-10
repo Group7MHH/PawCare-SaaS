@@ -32,7 +32,7 @@ test('bank settings migration snapshots transfer recipient and preserves older b
  assert.ok(payments.includes("recipient?.name??null"));
  assert.ok(read('backend/src/lib/payment-bank.ts').includes("source:'database'"));
 });
-test('Staff may confirm only assigned pending bank transfers with evidence; Admin keeps refund rights',()=>{
+test('Staff may demo-confirm only assigned pending bank transfers; Admin keeps refund rights',()=>{
  const backend=read('backend/src/routes/appointments.ts');
  const screen=read('frontend/src/pages/AdminAppointments.tsx');
  const dashboard=read('frontend/src/pages/StaffDashboard.tsx');
@@ -50,7 +50,7 @@ test('Staff may confirm only assigned pending bank transfers with evidence; Admi
  assert.ok(payment.includes("p.staff_id!==req.user!.id"));
  assert.ok(payment.includes("action!=='confirm_paid'"));
  assert.ok(payment.includes("payment.staff_confirm_paid"));
- assert.ok(payment.includes("verification_reference"));
+ assert.ok(payment.includes("demo_confirmation:demoBankConfirmation"));
 });
 test('customer payment detail no longer uses a dark overlay or body scroll lock',()=>{
  const page=read('frontend/src/pages/CustomerPayments.tsx');

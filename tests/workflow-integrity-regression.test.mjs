@@ -26,15 +26,15 @@ test('Admin bank changes require password reauthentication and customer cannot s
  assert.ok(payments.includes("req.user!.role==='customer'?{...p,admin_note:null"));
  assert.ok(read('frontend/src/components/PaymentPanel.tsx').includes('(admin||staff)&&p.admin_note'));
 });
-test('both Admin and Staff require bank reference and verification note on transfer confirmation',()=>{
+test('bank confirmation demo keeps actor and audit without requiring reference or note',()=>{
  const payments=read('backend/src/routes/payments.ts');
  const panel=read('frontend/src/components/PaymentPanel.tsx');
- assert.ok(payments.includes("req.user!.role==='admin'"));
- assert.ok(payments.includes("verification_reference.length<6"));
- assert.ok(payments.includes("note.length<10"));
- assert.ok(payments.includes("action==='confirm_paid'&&p.method==='bank_transfer'?verification_reference:null"));
- assert.ok(panel.includes('verification_reference:verificationReference.trim()||undefined'));
- assert.ok(read('database/011_staff_payment_reconciliation.sql').includes('UNIQUE INDEX'));
+ assert.ok(payments.includes("p.staff_id!==req.user!.id"));
+ assert.ok(payments.includes('demo_confirmation:demoBankConfirmation'));
+ assert.ok(payments.includes('reviewed_by=?'));
+ assert.ok(!payments.includes('verification_reference'));
+ assert.ok(!panel.includes('verificationReference'));
+ assert.ok(panel.includes('Xác nhận đã chuyển khoản'));
 });
 test('dashboard distinguishes cash collected from completed services; next booking is queried globally',()=>{
  const backend=read('backend/src/routes/management.ts');
