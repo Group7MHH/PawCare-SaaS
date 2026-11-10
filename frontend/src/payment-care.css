@@ -65,3 +65,5 @@
 @media(max-width:760px){.pc-payment-heading{flex-wrap:wrap}.pc-payment-status{margin-left:auto}.pc-checkout-methods{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.pc-payment-choices,.pc-checkout-methods{grid-template-columns:1fr}.pc-payment-panel{padding:13px}.pc-payment-total strong{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.pc-payment-panel,.nb-cover-illustration .pc-cover-svg{animation:none!important}.pc-payment-choices button,.pc-checkout-methods button,.pc-payment-ref button,.pc-service-svg{transition:none!important;transform:none!important}}
+
+.pc-payment-status--awaiting_payment{color:#916c31;background:#fff1cd;border-color:#e9d49d}

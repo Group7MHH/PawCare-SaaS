@@ -30,7 +30,7 @@ export function AdminDashboard(){
   <div className="nb-admin-mosaic">
    <section className="nb-admin-revenue nb-enter"><div className="nb-admin-revenue-header"><div><span className="nb-section-kicker">01 / DOANH THU</span><h2>Doanh thu đã hoàn thành</h2></div><span className="nb-revenue-period"><ChartNoAxesCombined size={16}/> 6 THÁNG</span></div><div className="nb-revenue-total"><strong>{money(stats.revenue||0)}</strong><span><span className="nb-revenue-completed"><CheckCircle2 size={15}/> {completedCount} lịch hoàn thành</span>Doanh thu dịch vụ theo lịch hoàn tất, không phải số tiền đã thu.</span></div><div className="pc-finance-ledger" aria-label="Dòng tiền thanh toán">
     <span><small>Đã thu, chưa hoàn</small><strong>{money(stats.collected||0)}</strong></span>
-    <span><small>Chưa thanh toán</small><strong>{money(stats.unpaid||0)}</strong></span>
+    <span><small>Chưa thanh toán / Chờ thanh toán</small><strong>{money((Number(stats.unpaid)||0)+(Number(stats.awaiting_payment)||0))}</strong></span>
     <span><small>Chờ đối soát</small><strong>{money(stats.pending_review||0)}</strong></span>
     <span><small>Cần hoàn tiền</small><strong>{money(stats.refund_required||0)}</strong></span>
    </div><RevenueGraph series={series}/><div className="nb-revenue-foot"><span>PAWCARE / FINANCIAL JOURNAL</span><span>Đơn vị: VNĐ</span></div></section>

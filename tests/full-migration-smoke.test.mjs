@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const migrations=Array.from({length:12},(_,i)=>String(i+1).padStart(3,'0'));
+const migrations=Array.from({length:13},(_,i)=>String(i+1).padStart(3,'0'));
 const list=[
 '001_postgres_schema.sql','002_default_services.sql','003_owner_multitenant.sql',
 '004_single_store.sql','005_completed_revenue.sql','006_multi_service_appointments.sql',
 '007_staff_assignment.sql','008_staff_self_service_queue.sql','009_manual_payments.sql',
 '010_payment_bank_settings.sql','011_staff_payment_reconciliation.sql',
-'012_service_name_snapshot.sql'
+'012_service_name_snapshot.sql','013_awaiting_bank_payment.sql'
 ];
 test('Full PostgreSQL migration smoke test with immutable service/payment history',
  {skip:!process.env.TEST_DATABASE_URL},async()=>{
@@ -61,6 +61,11 @@ test('Full PostgreSQL migration smoke test with immutable service/payment histor
    const first=(await db.query("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,payment_reference,bank_transaction_reference,status) VALUES($1,$2,$3,$4,'bank_transfer',$5,$6,'paid') RETURNING id",
     [org,a,customer,200000,'PC_TEST_01','BANK_REF_001'])).rows[0].id;
    assert.ok(first);
+   const awaiting=await newAppointment(4);
+   await db.query("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,status,payment_reference) VALUES($1,$2,$3,$4,'bank_transfer','awaiting_payment',$5)",
+     [org,awaiting,customer,200000,'PC_TEST_WAIT']);
+   const check=await db.query('SELECT status FROM payments WHERE appointment_id=$1',[awaiting]);
+   assert.equal(check.rows[0].status,'awaiting_payment');
    const b=await newAppointment(3);
    await assert.rejects(db.query("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,payment_reference,bank_transaction_reference,status) VALUES($1,$2,$3,$4,'bank_transfer',$5,$6,'paid')",
     [org,b,customer,200000,'PC_TEST_02','BANK_REF_001']),e=>e.code==='23505');

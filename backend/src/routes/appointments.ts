@@ -167,8 +167,8 @@ router.post('/',asyncRoute(async(req,res)=>{
       [created.insertId,service.id,position,service.price,service.duration_minutes,service.name],db);
   }
   // Payment and booking are committed atomically. No user-provided amount is trusted.
-  await exec("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,payment_reference,bank_name_snapshot,bank_account_snapshot,bank_owner_snapshot) VALUES(?,?,?,?,?,?,?,?,?)",[
-    orgId(req),created.insertId,customerId,totalPrice,d.payment_method,'PC'+String(created.insertId).padStart(8,'0'),
+  await exec("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,status,payment_reference,bank_name_snapshot,bank_account_snapshot,bank_owner_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?)",[
+    orgId(req),created.insertId,customerId,totalPrice,d.payment_method,d.payment_method==='bank_transfer'?'awaiting_payment':'unpaid','PC'+String(created.insertId).padStart(8,'0'),
     recipient?.name??null,recipient?.account??null,recipient?.owner??null
   ],db);
   return created;

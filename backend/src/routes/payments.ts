@@ -7,7 +7,7 @@ import {asyncRoute,HttpError,idParam,pageParams,parse} from '../lib/http.js';
 import {orgId,requireAuth,requireOrganization,requireRole} from '../lib/auth.js';
 import {getBankSettings,getActiveBank} from '../lib/payment-bank.js';
 
-export type PaymentStatus='unpaid'|'pending_review'|'paid'|'refund_required'|'refunded'|'void';
+export type PaymentStatus='unpaid'|'awaiting_payment'|'pending_review'|'paid'|'refund_required'|'refunded'|'void';
 type PaymentRow={
  id:number;organization_id:number;appointment_id:number;customer_id:number;
  amount:number;currency:string;method:'cash'|'bank_transfer';status:PaymentStatus;
@@ -89,7 +89,7 @@ router.get('/',asyncRoute(async(req,res)=>{
  const params=[...scopeParams];
  let where=scope;
  if(req.query.status&&String(req.query.status)!=='all'){
-  const status=z.enum(['unpaid','pending_review','paid','refund_required','refunded','void']).safeParse(req.query.status);
+  const status=z.enum(['unpaid','awaiting_payment','pending_review','paid','refund_required','refunded','void']).safeParse(req.query.status);
   if(!status.success)throw new HttpError(422,'Trạng thái thanh toán không hợp lệ');
   where+=' AND p.status=?';
   params.push(status.data);
@@ -107,9 +107,10 @@ router.get('/',asyncRoute(async(req,res)=>{
  const items=await rows<PaymentRow>(`${select} WHERE ${where}
   ORDER BY p.created_at DESC,p.id DESC LIMIT ? OFFSET ?`,[...params,limit,(page-1)*limit]);
  // Summary always covers this customer's full history rather than only the selected page/filter.
- const [summary]=await rows<{total:number;unpaid:number;pending_review:number;paid:number;refund_required:number;refunded:number;paid_amount:string}>(`
+ const [summary]=await rows<{total:number;unpaid:number;awaiting_payment:number;pending_review:number;paid:number;refund_required:number;refunded:number;paid_amount:string}>(`
   SELECT COUNT(*)::int AS total,
   COUNT(*) FILTER (WHERE p.status='unpaid')::int AS unpaid,
+  COUNT(*) FILTER (WHERE p.status='awaiting_payment')::int AS awaiting_payment,
   COUNT(*) FILTER (WHERE p.status='pending_review')::int AS pending_review,
   COUNT(*) FILTER (WHERE p.status='paid')::int AS paid,
   COUNT(*) FILTER (WHERE p.status='refund_required')::int AS refund_required,
@@ -141,9 +142,9 @@ router.patch('/:id/method',asyncRoute(async(req,res)=>{
    WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p`,[id,orgId(req)],db);
   if(!locked)throw new HttpError(404,'Không tìm thấy thanh toán');
   if(locked.customer_id!==req.user!.id)throw new HttpError(403,'Không có quyền chỉnh sửa thanh toán này');
-  if(locked.status!=='unpaid'||locked.appointment_status==='cancelled')throw new HttpError(409,'Không thể đổi phương thức cho thanh toán đã xử lý');
-  await exec('UPDATE payments SET method=?,customer_note=NULL,bank_name_snapshot=?,bank_account_snapshot=?,bank_owner_snapshot=? WHERE id=?',[
-   method,recipient?.name??null,recipient?.account??null,recipient?.owner??null,locked.id
+  if(!['unpaid','awaiting_payment'].includes(locked.status)||locked.appointment_status==='cancelled')throw new HttpError(409,'Không thể đổi phương thức cho thanh toán đã xử lý');
+  await exec('UPDATE payments SET method=?,status=?,customer_note=NULL,bank_name_snapshot=?,bank_account_snapshot=?,bank_owner_snapshot=? WHERE id=?',[
+   method,method==='bank_transfer'?'awaiting_payment':'unpaid',recipient?.name??null,recipient?.account??null,recipient?.owner??null,locked.id
   ],db);
  });
  res.json({message:'Đã cập nhật phương thức thanh toán'});
@@ -159,7 +160,7 @@ router.post('/:id/transfer-notice',asyncRoute(async(req,res)=>{
    WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p`,[id,orgId(req)],db);
   if(!p)throw new HttpError(404,'Không tìm thấy thanh toán');
   if(p.customer_id!==req.user!.id)throw new HttpError(403,'Không có quyền xác nhận thanh toán này');
-  if(p.status!=='unpaid'||p.method!=='bank_transfer'||p.appointment_status==='cancelled')
+  if(p.status!=='awaiting_payment'||p.method!=='bank_transfer'||p.appointment_status==='cancelled')
    throw new HttpError(409,'Chỉ có thể thông báo chuyển khoản cho lịch chưa thanh toán');
   await exec("UPDATE payments SET status='pending_review',customer_note=? WHERE id=?",[note||null,p.id],db);
  });
@@ -204,7 +205,7 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
   }else if(action==='reject_transfer'){
    if(p.method!=='bank_transfer'||p.status!=='pending_review')throw new HttpError(409,'Chỉ có thể từ chối chuyển khoản đang chờ đối soát');
    if(!note)throw new HttpError(422,'Vui lòng nhập lý do từ chối đối soát');
-   status=p.appointment_status==='cancelled'?'void':'unpaid';
+   status=p.appointment_status==='cancelled'?'void':'awaiting_payment';
   }else{
    if(p.status!=='refund_required')throw new HttpError(409,'Chưa có khoản cần hoàn tiền');
    if(!note)throw new HttpError(422,'Cần ghi lại bằng chứng/ghi chú hoàn tiền');

@@ -78,3 +78,5 @@
 .pc-staff-reconcile .pc-payment-note input:focus-visible{outline:3px solid #9ac5ac;outline-offset:2px}
 .pc-staff-reconcile-foot{color:#74877a;font-size:10px;line-height:1.75;margin:13px 0 0}
 @media(max-width:720px){.pc-profile-bank-section{margin-top:19px;padding-top:20px}.pc-staff-reconcile{padding:12px}}
+
+.pc-staff-pay-tag--awaiting_payment{color:#916c31;background:#fff1cd;border-color:#e9d49d}

@@ -4,7 +4,7 @@ import {toast} from 'react-hot-toast';
 import {Banknote,CheckCircle2,ClipboardCheck,Copy,CreditCard,Landmark,ShieldCheck} from 'lucide-react';
 import {api,errorMessage,json,money} from '../lib/api';
 
-export type PaymentStatus='unpaid'|'pending_review'|'paid'|'refund_required'|'refunded'|'void';
+export type PaymentStatus='unpaid'|'awaiting_payment'|'pending_review'|'paid'|'refund_required'|'refunded'|'void';
 export type Payment={
  id:number;appointment_id:number;amount:number;currency:'VND';method:'cash'|'bank_transfer';
  status:PaymentStatus;payment_reference:string;customer_note:string|null;admin_note:string|null;
@@ -13,7 +13,7 @@ export type Payment={
 };
 export type PaymentConfig={methods:string[];bank:{name:string;account:string;owner:string}|null;provider:'manual';automatic_confirmation:false};
 const labels:Record<PaymentStatus,string>={
- unpaid:'Chưa thanh toán',pending_review:'Chờ đối soát',
+ unpaid:'Chưa thanh toán',awaiting_payment:'Chờ thanh toán',pending_review:'Chờ đối soát',
  paid:'Đã thanh toán',refund_required:'Cần hoàn tiền',refunded:'Đã hoàn tiền',void:'Đã hủy thanh toán'
 };
 export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmentId:number;admin?:boolean;staff?:boolean}){
@@ -29,7 +29,7 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
  if(payment.error||!p)return <div className="pc-payment-error" role="alert">Không thể tải trạng thái thanh toán. Vui lòng thử lại.</div>;
  const availableBank=config.data?.bank;
  const bank=p.bank_name_snapshot&&p.bank_account_snapshot&&p.bank_owner_snapshot?{name:p.bank_name_snapshot,account:p.bank_account_snapshot,owner:p.bank_owner_snapshot}:null;
- const unpaid=p.status==='unpaid'&&p.appointment_status!=='cancelled';
+ const unpaid=['unpaid','awaiting_payment'].includes(p.status)&&p.appointment_status!=='cancelled';
  const working=method.isPending||notice.isPending||reconcile.isPending;
  return <section className="pc-payment-panel" aria-label="Thanh toán">
   <header className="pc-payment-heading"><span className="pc-payment-symbol"><CreditCard size={19}/></span><div><span className="pc-payment-overline">PAWCARE / THANH TOÁN</span><strong>Chi tiết thanh toán</strong></div><span className={`pc-payment-status pc-payment-status--${p.status}`}>{labels[p.status]}</span></header>
@@ -40,8 +40,8 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
    <button type="button" disabled={working} aria-pressed={p.method==='cash'} onClick={()=>method.mutate('cash')}><Banknote size={17}/> Tại cửa hàng</button>
    <button type="button" disabled={working||!availableBank} aria-pressed={p.method==='bank_transfer'} onClick={()=>method.mutate('bank_transfer')} title={!availableBank?'Cửa hàng đang tạm ngừng nhận chuyển khoản mới':undefined}><Landmark size={17}/> Chuyển khoản</button>
   </div>}
-  {!admin&&!staff&&p.method==='bank_transfer'&&unpaid&&!bank&&<p className="pc-payment-warning">Lịch này chưa có bản lưu tài khoản ngân hàng tại thời điểm đặt lịch. Vui lòng liên hệ cửa hàng xác nhận số tài khoản trước khi chuyển tiền.</p>}
-  {!admin&&!staff&&p.method==='bank_transfer'&&unpaid&&bank&&<div className="pc-payment-bank">
+  {!admin&&!staff&&p.method==='bank_transfer'&&p.status==='awaiting_payment'&&!bank&&<p className="pc-payment-warning">Lịch này chưa có bản lưu tài khoản ngân hàng tại thời điểm đặt lịch. Vui lòng liên hệ cửa hàng xác nhận số tài khoản trước khi chuyển tiền.</p>}
+  {!admin&&!staff&&p.method==='bank_transfer'&&p.status==='awaiting_payment'&&bank&&<div className="pc-payment-bank">
    <span className="pc-payment-overline">TÀI KHOẢN NHẬN TIỀN ĐÃ GẮN VỚI LỊCH HẸN</span>
    <p><strong>{bank.name}</strong><span>{bank.account}</span><small>{bank.owner}</small></p>
    <div className="pc-payment-bank-note">Nếu ngân hàng của cửa hàng vừa được thay đổi, hãy xác nhận lại trước khi chuyển. Nội dung đề xuất: <strong>{p.payment_reference}</strong>. Vui lòng kiểm tra người thụ hưởng trước khi chuyển.</div>
