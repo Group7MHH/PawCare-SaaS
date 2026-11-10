@@ -7,7 +7,7 @@ const router=Router();router.use(requireAuth);
 router.get('/customers',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
  const org=orgId(req),{page,limit}=pageParams(req);const q=`%${String(req.query.search||'').slice(0,90)}%`;
  const condition=req.user!.role==='staff'
-  ? "FROM users u WHERE u.role='customer' AND EXISTS(SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=? AND a.staff_id=?) AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.phone ILIKE ?)"
+  ? "FROM users u WHERE u.role='customer' AND EXISTS(SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=? AND a.staff_id=? AND a.status IN ('confirmed','in_progress','completed')) AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.phone ILIKE ?)"
   : "FROM users u WHERE u.role='customer' AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.phone ILIKE ?)";
  const scope=req.user!.role==='staff'?[org,req.user!.id]:[];
  const [{total}]=await rows<any>(`SELECT COUNT(*) AS total ${condition}`,[...scope,q,q,q]);
@@ -20,9 +20,9 @@ router.get('/customers',requireRole('admin','staff'),asyncRoute(async(req,res)=>
 router.get('/customers/:id',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id),org=orgId(req);
  const [customer]=await rows<any>(`SELECT u.id,u.full_name,u.email,u.phone,u.address,u.created_at FROM users u
-  WHERE u.id=? AND u.role='customer' ${req.user!.role==='staff'?"AND EXISTS (SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=? AND a.staff_id=?)":""}`,[id,...(req.user!.role==='staff'?[org,req.user!.id]:[])]);
+  WHERE u.id=? AND u.role='customer' ${req.user!.role==='staff'?"AND EXISTS (SELECT 1 FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=? AND a.staff_id=? AND a.status IN ('confirmed','in_progress','completed'))":""}`,[id,...(req.user!.role==='staff'?[org,req.user!.id]:[])]);
  if(!customer)throw new HttpError(404,'Không tìm thấy khách hàng tại cửa hàng này');
- const pets=await rows(`SELECT p.* FROM pets p WHERE p.owner_id=? ${req.user!.role==='staff'?"AND EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=? AND a.staff_id=?)":""}`,[id,...(req.user!.role==='staff'?[org,req.user!.id]:[])]);res.json({customer,pets});
+ const pets=await rows(`SELECT p.* FROM pets p WHERE p.owner_id=? ${req.user!.role==='staff'?"AND EXISTS (SELECT 1 FROM appointments a WHERE a.pet_id=p.id AND a.organization_id=? AND a.staff_id=? AND a.status IN ('confirmed','in_progress','completed'))":""}`,[id,...(req.user!.role==='staff'?[org,req.user!.id]:[])]);res.json({customer,pets});
 }));
 router.get('/dashboard',asyncRoute(async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
