@@ -18,9 +18,10 @@ test('service hero uses shared banner without duplicate framed box',()=>{
  assert.match(page,/api<\{items:Service\[\]\}>\('\/services'\)/);
  assert.match(page,/<ServiceCards services=\{services\.data\?\.items\|\|\[\]\}/);
 });
-test('customer overview reuses shared page title',()=>{
+test('customer overview uses unique notebook cover while other pages retain shared hero',()=>{
  const page=read('frontend/src/pages/Overview.tsx');
- assert.match(page,/<PageTitle eyebrow="TỔNG QUAN CÁ NHÂN"/);
+ assert.match(page,/className="nb-customer-cover/);
+ assert.match(page,/nb-pet-album/);
  assert.match(page,/api<Stats>\('\/dashboard'\)/);
 });
 test('shared hero respects small screens and reduced motion',()=>{
