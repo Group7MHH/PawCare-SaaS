@@ -29,6 +29,8 @@ export function NotebookStory(){
 }
 const serviceArtwork=(text:string)=>{
  const label=text.toLocaleLowerCase('vi-VN');
+ if(/cắt móng|chăm sóc móng|móng chân|móng vuốt|nail/.test(label))return 'nails';
+ if(/mắt|mũi|tai|ear|eye|hygiene/.test(label))return 'hygiene';
  if(/răng|nha khoa|dental/.test(label))return 'dental';
  if(/tắm|vệ sinh|bath/.test(label))return 'bath';
  if(/cắt|tỉa|spa|làm đẹp|groom/.test(label))return 'groom';

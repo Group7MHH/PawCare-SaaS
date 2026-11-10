@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 320" role="img" aria-label="Dung dịch vệ sinh mắt mũi tai và khăn lau"><defs><linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffaf0"/><stop offset="1" stop-color="#eee2cc"/></linearGradient><linearGradient id="sage" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d7e8dc"/><stop offset="1" stop-color="#a3c2b3"/></linearGradient></defs><rect x="10" y="10" width="400" height="300" rx="30" fill="url(#paper)"/><rect x="20" y="20" width="380" height="280" rx="24" fill="none" stroke="#d9c9b3" stroke-width="2"/><circle cx="215" cy="160" r="118" fill="url(#sage)" opacity=".45"/><path d="M64 270h292" stroke="#d0bda5" stroke-width="4" stroke-linecap="round"/><g transform="translate(0 0)">
+<rect x="112" y="92" width="86" height="155" rx="20" fill="#fffaf0" stroke="#648e93" stroke-width="7"/>
+<rect x="127" y="77" width="55" height="26" rx="7" fill="#648e93"/>
+<path d="M152 77V56h29" stroke="#486e83" stroke-width="7" fill="none" stroke-linecap="round"/>
+<rect x="127" y="151" width="57" height="55" rx="11" fill="#d6e8de" stroke="#a6c9b9" stroke-width="2"/>
+<path d="M155 164v28m-14-14h28" stroke="#5d9780" stroke-width="6" stroke-linecap="round"/>
+<path d="m161 53 20-2" stroke="#486e83" stroke-width="7" stroke-linecap="round"/>
+</g><g transform="rotate(12 267 173)">
+<rect x="215" y="124" width="109" height="104" rx="17" fill="#fffdf7" stroke="#b9a08b" stroke-width="6"/>
+<path d="M234 143h72m-72 17h58m-58 17h44" stroke="#d5c2ac" stroke-width="7" stroke-linecap="round"/>
+<path d="M245 200q22-15 42 1" stroke="#7fa9a4" stroke-width="7" fill="none" stroke-linecap="round"/>
+</g><circle cx="308" cy="98" r="13" fill="#fffaf0" stroke="#7ca9af" stroke-width="4"/><circle cx="326" cy="122" r="8" fill="#fffaf0" stroke="#7ca9af" stroke-width="3"/><circle cx="283" cy="76" r="9" fill="#fffaf0" stroke="#7ca9af" stroke-width="3"/></svg>
