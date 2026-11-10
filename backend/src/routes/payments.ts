@@ -109,7 +109,10 @@ router.get('/',asyncRoute(async(req,res)=>{
   COALESCE(SUM(p.amount) FILTER (WHERE p.status='paid'),0)::text AS paid_amount
   FROM payments p WHERE ${scope}`,scopeParams);
  res.setHeader('Cache-Control','no-store');
- res.json({items,total:count.total,page,limit,summary});
+ const publicItems=req.user!.role==='customer'
+  ?items.map(p=>({...p,admin_note:null,bank_transaction_reference:undefined}))
+  :items;
+ res.json({items:publicItems,total:count.total,page,limit,summary});
 }));
 router.get('/:id',asyncRoute(async(req,res)=>{
  const p=await loadPayment(idParam(req.params.id),orgId(req),pool);
