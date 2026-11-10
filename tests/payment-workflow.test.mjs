@@ -23,7 +23,9 @@ test('manual bank notice cannot mark paid, Admin must reconcile before success',
  const notice=route.slice(route.indexOf("router.post('/:id/transfer-notice'"),route.indexOf("router.post('/:id/reconcile'"));
  assert.ok(notice.includes("status='pending_review'"));
  assert.ok(!notice.includes("status='paid'"));
- assert.ok(route.includes("requireRole('admin')"));
+ assert.ok(route.includes("requireRole('admin','staff')"));
+ assert.ok(route.includes("action!=='confirm_paid'"));
+ assert.ok(route.includes("p.staff_id!==req.user!.id"));
  assert.ok(route.includes("if(action==='confirm_paid')"));
  assert.ok(route.includes("p.status==='pending_review'"));
  assert.ok(route.includes("'refund_required'"));

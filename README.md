@@ -66,3 +66,12 @@ Migration `009_manual_payments.sql` creates the payment ledger and safely backfi
 PawCare's large illustrations now use local SVGs depicting **care journals, stethoscopes, checklists, bath/spa tools, vaccination, dental care and operations reporting**, rather than dog/cat portraits or emoji. Navigation icons remain purposeful and accessible. Existing animal names/species are still shown as customer-owned data.
 
 **Accounting safety:** permanent deletion of an account or service containing paid, pending-review or refund-related transactions is blocked so that accepted money and refund obligations are not silently erased. Admin must resolve such records using an appropriate retention/archival policy before any final deletion.
+
+## Admin bank settings in Profile and Staff transfer reconciliation (v2)
+
+- **Admin → Thông tin cá nhân** contains the bank recipient editor. The former `/admin/payment-settings` URL redirects to `/profile`; no separate bank menu item is shown. Only Admin can update recipient details. The saved bank details in Neon override Render environment defaults.
+- **Customer → Thanh toán** reports a bank transfer as `pending_review`, never as an automatic success.
+- **Staff → Lịch được giao → Chi tiết lịch** allows the Staff actually assigned to an accepted booking to confirm **only** a pending bank transfer after viewing the real bank statement. Staff must enter a bank transaction reference (at least six characters) and a verification note (at least ten characters). The backend checks Staff's assigned booking, payment method/status and appointment status, locks both booking and payment, stores the reviewer and audit entry, and prevents reuse of the same bank transaction reference within the store.
+- Staff **cannot** reject a transfer, confirm a refund, edit the bank recipient, confirm cash or settle someone else's booking. Admin retains those rights. Paid/refunded/cancelled transfers cannot be re-confirmed.
+- The server does **not** access bank accounts or verify funds automatically. Do not grant the Staff reconciliation capability unless Staff have an authorized way to view trustworthy bank records. An image or screenshot from a customer is not proof that funds have arrived.
+- `011_staff_payment_reconciliation.sql` adds a nullable bank transaction reference and an organization-scoped unique index. Existing payments remain unchanged. Back up Neon and validate the migration on a test database before production deployment.

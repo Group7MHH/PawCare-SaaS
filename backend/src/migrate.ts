@@ -9,7 +9,7 @@ export async function migrate(){
     // Safe when several replicas start together.
     await client.query('SELECT pg_advisory_xact_lock($1, $2)', [42371, 0]);
     await client.query('CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())');
-    for(const file of ['001_postgres_schema.sql','002_default_services.sql','003_owner_multitenant.sql','004_single_store.sql','005_completed_revenue.sql','006_multi_service_appointments.sql','007_staff_assignment.sql','008_staff_self_service_queue.sql','009_manual_payments.sql','010_payment_bank_settings.sql']){
+    for(const file of ['001_postgres_schema.sql','002_default_services.sql','003_owner_multitenant.sql','004_single_store.sql','005_completed_revenue.sql','006_multi_service_appointments.sql','007_staff_assignment.sql','008_staff_self_service_queue.sql','009_manual_payments.sql','010_payment_bank_settings.sql','011_staff_payment_reconciliation.sql']){
       const existing=await client.query('SELECT version FROM schema_migrations WHERE version=$1',[file]);
       if(existing.rowCount)continue;
       await client.query(readFileSync(resolve(process.cwd(),'../database',file),'utf8'));
