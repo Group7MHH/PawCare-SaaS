@@ -13,10 +13,8 @@ type PageHeroProps={
  visual?:HeroVisual;
 };
 
-/** A single hero pattern across customer, staff and admin screens.
- * Decorative shapes and icon are CSS/SVG only — no mock statistics,
- * separate illustration box or extra page functionality.
- */
+/** Tiêu đề trang dùng chung: thẻ "trang sổ" với vạch màu bên trái và icon trên nền kẻ dòng.
+ * Thuần trình bày, không có số liệu giả. */
 export function PageHero({
  eyebrow,title,description,action,tone='mint',visual='paw'
 }:PageHeroProps){
@@ -36,11 +34,8 @@ export function PageHero({
    {action&&<div className="pc-shared-hero-actions">{action}</div>}
   </div>
   <div className="pc-shared-hero-visual" aria-hidden="true">
-   <span className="pc-hero-orbit pc-hero-orbit--outer"/>
-   <span className="pc-hero-orbit pc-hero-orbit--inner"/>
-   <Artwork className="pc-hero-main-icon" size={92} strokeWidth={1.35}/>
-   <span className="pc-hero-spark pc-hero-spark--one"/>
-   <span className="pc-hero-spark pc-hero-spark--two"/>
+   <span className="pc-hero-ruled"/>
+   <span className="pc-hero-badge"><Artwork className="pc-hero-main-icon" size={34} strokeWidth={1.6}/></span>
   </div>
  </header>;
 }

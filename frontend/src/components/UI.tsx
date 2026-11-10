@@ -1,5 +1,6 @@
 import type {ReactNode} from 'react';
-import {X,Inbox,LoaderCircle,ArrowRight,Search} from 'lucide-react';
+import {useEffect} from 'react';
+import {X,Inbox,LoaderCircle,ArrowRight,Search,CircleAlert} from 'lucide-react';
 import {statusClass,statusName} from '../lib/api';
 import {PageHero,type HeroTone,type HeroVisual} from './PageHero';
 export function PageTitle({eyebrow,title,description,action}:{eyebrow?:string;title:string;description?:string;action?:ReactNode}){
@@ -16,9 +17,12 @@ export function Panel({title,sub,action,children,className=''}:{title?:string;su
 export function Badge({status}:{status:string}){return <span className={`badge ${statusClass[status]||'gray'}`}><span className="badge-dot"/>{statusName[status]||status}</span>;}
 export function Metric({icon,title,value,foot,tone='teal'}:{icon:ReactNode;title:string;value:ReactNode;foot?:string;tone?:string}){return <div className="metric"><div className={`metric-icon ${tone}`}>{icon}</div><div className="metric-label">{title}</div><div className="metric-value">{value}</div>{foot&&<div className="metric-foot">{foot}</div>}</div>;}
 export function Empty({title='Chưa có dữ liệu',description='Dữ liệu sẽ hiển thị tại đây khi được thêm.',action}:{title?:string;description?:string;action?:ReactNode}){return <div className="empty"><div className="empty-icon"><Inbox size={26}/></div><strong>{title}</strong><p>{description}</p>{action}</div>;}
-export function Loading(){return <div className="loading"><LoaderCircle size={24} className="spin"/> Đang tải dữ liệu...</div>;}
-export function ErrorNotice({message}:{message:string}){return <div className="error-box">{message}</div>;}
-export function Modal({title,children,onClose,wide=false}:{title:string;children:ReactNode;onClose:()=>void;wide?:boolean}){return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}} role="presentation"><div className={`modal ${wide?'modal-wide':''}`} role="dialog" aria-modal="true" aria-label={title}><div className="modal-head"><h2>{title}</h2><button className="icon-button" type="button" onClick={onClose} aria-label="Đóng"><X size={20}/></button></div>{children}</div></div>;}
+export function Loading(){return <div className="loading" role="status" aria-live="polite"><LoaderCircle size={22} className="spin"/> Đang tải dữ liệu...</div>;}
+export function ErrorNotice({message}:{message:string}){return <div className="error-box" role="alert"><CircleAlert size={18}/><span>{message}</span></div>;}
+export function Modal({title,children,onClose,wide=false}:{title:string;children:ReactNode;onClose:()=>void;wide?:boolean}){
+ useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose();};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);},[onClose]);
+ return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}} role="presentation"><div className={`modal ${wide?'modal-wide':''}`} role="dialog" aria-modal="true" aria-label={title}><div className="modal-head"><h2>{title}</h2><button className="icon-button" type="button" onClick={onClose} aria-label="Đóng"><X size={20}/></button></div>{children}</div></div>;
+}
 export function Field({label,children,hint}:{label:string;children:ReactNode;hint?:string}){return <label className="field"><span>{label}</span>{children}{hint&&<small>{hint}</small>}</label>;}
 export function SearchBox({value,onChange,placeholder='Tìm kiếm...'}:{value:string;onChange:(v:string)=>void;placeholder?:string}){return <div className="search-box"><Search size={17}/><input aria-label="Tìm kiếm" placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)}/></div>;}
 export function LinkButton({children,onClick}:{children:ReactNode;onClick:()=>void}){return <button className="text-link" onClick={onClick}>{children}<ArrowRight size={15}/></button>;}
