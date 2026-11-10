@@ -1,10 +1,15 @@
 import {Router} from 'express';
 import {z} from 'zod';
 import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
 import {exec,rows} from '../lib/db.js';
 import {asyncRoute,HttpError,parse} from '../lib/http.js';
 import {createSession,clearSession,revokeSession,requireAuth} from '../lib/auth.js';
 const router=Router();
+const loginLimit=rateLimit({windowMs:15*60*1000,limit:12,standardHeaders:'draft-7',legacyHeaders:false,message:{message:'Đăng nhập quá nhiều lần. Vui lòng thử lại sau.'}});
+const registerLimit=rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:'draft-7',legacyHeaders:false,message:{message:'Vui lòng thử đăng ký lại sau.'}});
+router.use('/login',loginLimit);
+router.use('/register',registerLimit);
 const credentials=z.object({email:z.string().email().max(190).transform(v=>v.toLowerCase().trim()),password:z.string().min(8).max(100)});
 const registration=credentials.extend({full_name:z.string().trim().min(2).max(120),phone:z.string().max(25).optional()});
 async function startingOrganization(){
