@@ -9,6 +9,7 @@ export type Payment={
  id:number;appointment_id:number;amount:number;currency:'VND';method:'cash'|'bank_transfer';
  status:PaymentStatus;payment_reference:string;customer_note:string|null;admin_note:string|null;
  paid_at:string|null;created_at:string;appointment_status:string;service_name:string;pet_name:string;
+ bank_name_snapshot:string|null;bank_account_snapshot:string|null;bank_owner_snapshot:string|null;
 };
 export type PaymentConfig={methods:string[];bank:{name:string;account:string;owner:string}|null;provider:'manual';automatic_confirmation:false};
 const labels:Record<PaymentStatus,string>={
@@ -26,7 +27,9 @@ export function PaymentPanel({appointmentId,admin=false}:{appointmentId:number;a
  const p=payment.data?.payment;
  if(payment.isLoading)return <div className="pc-payment-loading" role="status">Đang tải thông tin thanh toán...</div>;
  if(payment.error||!p)return <div className="pc-payment-error" role="alert">Không thể tải trạng thái thanh toán. Vui lòng thử lại.</div>;
- const bank=config.data?.bank,unpaid=p.status==='unpaid'&&p.appointment_status!=='cancelled';
+ const availableBank=config.data?.bank;
+ const bank=p.bank_name_snapshot&&p.bank_account_snapshot&&p.bank_owner_snapshot?{name:p.bank_name_snapshot,account:p.bank_account_snapshot,owner:p.bank_owner_snapshot}:null;
+ const unpaid=p.status==='unpaid'&&p.appointment_status!=='cancelled';
  const working=method.isPending||notice.isPending||reconcile.isPending;
  return <section className="pc-payment-panel" aria-label="Thanh toán">
   <header className="pc-payment-heading"><span className="pc-payment-symbol"><CreditCard size={19}/></span><div><span className="pc-payment-overline">PAWCARE / THANH TOÁN</span><strong>Chi tiết thanh toán</strong></div><span className={`pc-payment-status pc-payment-status--${p.status}`}>{labels[p.status]}</span></header>
@@ -35,12 +38,13 @@ export function PaymentPanel({appointmentId,admin=false}:{appointmentId:number;a
   <div className="pc-payment-method"><Banknote size={16}/><span>Phương thức: <strong>{p.method==='cash'?'Thanh toán tại cửa hàng':'Chuyển khoản ngân hàng'}</strong></span></div>
   {!admin&&unpaid&&<div className="pc-payment-choices" role="group" aria-label="Phương thức thanh toán">
    <button type="button" disabled={working} aria-pressed={p.method==='cash'} onClick={()=>method.mutate('cash')}><Banknote size={17}/> Tại cửa hàng</button>
-   <button type="button" disabled={working||!bank} aria-pressed={p.method==='bank_transfer'} onClick={()=>method.mutate('bank_transfer')} title={!bank?'Chưa cấu hình tài khoản ngân hàng':undefined}><Landmark size={17}/> Chuyển khoản</button>
+   <button type="button" disabled={working||!availableBank} aria-pressed={p.method==='bank_transfer'} onClick={()=>method.mutate('bank_transfer')} title={!availableBank?'Cửa hàng đang tạm ngừng nhận chuyển khoản mới':undefined}><Landmark size={17}/> Chuyển khoản</button>
   </div>}
+  {!admin&&p.method==='bank_transfer'&&unpaid&&!bank&&<p className="pc-payment-warning">Lịch này chưa có bản lưu tài khoản ngân hàng tại thời điểm đặt lịch. Vui lòng liên hệ cửa hàng xác nhận số tài khoản trước khi chuyển tiền.</p>}
   {!admin&&p.method==='bank_transfer'&&unpaid&&bank&&<div className="pc-payment-bank">
-   <span className="pc-payment-overline">THÔNG TIN CHUYỂN KHOẢN</span>
+   <span className="pc-payment-overline">TÀI KHOẢN NHẬN TIỀN ĐÃ GẮN VỚI LỊCH HẸN</span>
    <p><strong>{bank.name}</strong><span>{bank.account}</span><small>{bank.owner}</small></p>
-   <div className="pc-payment-bank-note">Nội dung đề xuất: <strong>{p.payment_reference}</strong>. Vui lòng kiểm tra người thụ hưởng trước khi chuyển.</div>
+   <div className="pc-payment-bank-note">Nếu ngân hàng của cửa hàng vừa được thay đổi, hãy xác nhận lại trước khi chuyển. Nội dung đề xuất: <strong>{p.payment_reference}</strong>. Vui lòng kiểm tra người thụ hưởng trước khi chuyển.</div>
    <label className="pc-payment-note">Ghi chú giao dịch (không bắt buộc)<textarea maxLength={300} rows={2} value={note} onChange={e=>setNote(e.target.value)} placeholder="Ví dụ: thời gian hoặc tên người chuyển"/></label>
    <button className="button button-primary" type="button" disabled={working} onClick={()=>notice.mutate()}><ClipboardCheck size={16}/> Tôi đã chuyển khoản</button>
    <small>Nút này chỉ gửi thông báo. Thanh toán chỉ thành công sau khi Admin đối soát thực tế.</small>

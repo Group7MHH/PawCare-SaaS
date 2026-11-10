@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {Link} from 'react-router-dom';
 import {ArrowRight,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,Clock3,Landmark,ReceiptText,Search,ShieldCheck,WalletCards,X} from 'lucide-react';
@@ -37,13 +37,13 @@ export function CustomerPayments(){
  const [debounced,setDebounced]=useState('');
  const [page,setPage]=useState(1);
  const [selectedId,setSelectedId]=useState<number|null>(null);
+ const detailRef=useRef<HTMLElement|null>(null);
  useEffect(()=>{
   if(selectedId===null)return;
-  const previous=document.body.style.overflow;
+  detailRef.current?.scrollIntoView({behavior:'smooth',block:'start'});
   const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')setSelectedId(null);};
-  document.body.style.overflow='hidden';
   window.addEventListener('keydown',onKey);
-  return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',onKey);};
+  return()=>window.removeEventListener('keydown',onKey);
  },[selectedId]);
  useEffect(()=>{
   const timer=window.setTimeout(()=>{setDebounced(search.trim());setPage(1);},280);
@@ -56,7 +56,7 @@ export function CustomerPayments(){
  });
  const all=query.data?.items??[];
  // Keep the detail panel open when a mutation changes the transaction's status or filter.
- const selected=useMemo(()=>all.find(p=>p.appointment_id===selectedId),[all,selectedId]);
+ const selected=all.find(p=>p.appointment_id===selectedId);
  const summary=query.data?.summary;
  const pages=Math.max(1,Math.ceil((query.data?.total??0)/size));
  const select=(p:Payment)=>setSelectedId(p.appointment_id);
@@ -111,12 +111,13 @@ export function CustomerPayments(){
    <div className="pc-wallet-list-foot"><span>Trang {page}/{pages} · {query.data?.total??0} giao dịch</span><div className="pc-wallet-pager"><button type="button" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} aria-label="Trang thanh toán trước"><ChevronLeft size={18}/></button><button type="button" onClick={()=>setPage(p=>Math.min(pages,p+1))} disabled={page>=pages} aria-label="Trang thanh toán sau"><ChevronRight size={18}/></button></div></div>
   </section>
   <footer className="pc-wallet-bottom"><ShieldCheck size={19}/><span>Chỉ Admin xác nhận giao dịch đã nhận tiền. Nếu bạn đã chuyển khoản nhưng trạng thái chưa cập nhật, hãy mở giao dịch và gửi thông báo chuyển khoản.</span></footer>
-  {active&&<div className="pc-wallet-detail-backdrop" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setSelectedId(null);}}>
-    <div className="pc-wallet-detail" role="dialog" aria-modal="true" aria-label="Chi tiết giao dịch thanh toán">
-     <div className="pc-wallet-detail-head"><div><span className="pc-wallet-overline">PAYMENT / DETAIL</span><h2>Chi tiết giao dịch</h2><p>{selected?.payment_reference??'Thông tin thanh toán'}</p></div><button type="button" className="pc-wallet-detail-close" aria-label="Đóng chi tiết thanh toán" onClick={()=>setSelectedId(null)}><X size={20}/></button></div>
-     <PaymentPanel key={selectedId} appointmentId={selectedId}/>
-     <Link to="/my-appointments" className="pc-wallet-appointment-link">Xem các lịch hẹn <ArrowRight size={16}/></Link>
-    </div>
-   </div>}
+  {active&&<section ref={detailRef} className="pc-wallet-inline-detail" aria-label="Chi tiết thanh toán đã chọn">
+   <header className="pc-wallet-inline-head">
+    <div><span className="pc-wallet-overline">CHI TIẾT GIAO DỊCH</span><h2>Thanh toán lịch #{String(selectedId).padStart(4,'0')}</h2><p>{selected?.payment_reference??'Xem hướng dẫn chuyển khoản và tình trạng đối soát tại đây.'}</p></div>
+    <button type="button" className="pc-wallet-inline-close" onClick={()=>setSelectedId(null)} aria-label="Đóng chi tiết thanh toán"><X size={19}/> Đóng</button>
+   </header>
+   <PaymentPanel key={selectedId} appointmentId={selectedId}/>
+   <Link to="/my-appointments" className="pc-wallet-appointment-link">Xem lịch hẹn của tôi <ArrowRight size={16}/></Link>
+  </section>}
  </div>;
 }
