@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {PetAvatar} from '../components/PetAvatar';
+import {PaymentPanel} from '../components/PaymentPanel';
 import {useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
 import {Link} from 'react-router-dom';
 import {CalendarPlus,CalendarDays,Clock3,ChevronLeft,ChevronRight} from 'lucide-react';
@@ -13,7 +14,7 @@ export function MyAppointments(){const [status,setStatus]=useState('all'),[page,
 <div className="summary-list"><div><span>Khách hàng</span><strong>{selected.customer_name}</strong></div><div><span>Thời gian</span><strong>{dateTime(selected.starts_at)}</strong></div><div><span>Nhân viên</span><strong>{selected.staff_name||'Đang chờ Staff nhận'}</strong></div><div><span>Thời lượng</span><strong>{selected.duration_minutes_snapshot ?? selected.duration_minutes ?? Math.round((new Date(selected.ends_at).getTime()-new Date(selected.starts_at).getTime())/60000)} phút</strong></div></div>
 {selected.notes&&<div className="pc-detail-note"><strong>Lưu ý khi đặt lịch</strong><p>{selected.notes}</p></div>}
 {selected.care_result&&<div className="pc-detail-note"><strong>Kết quả chăm sóc</strong><p>{selected.care_result}</p></div>}
-<div className="pc-detail-total"><span>Chi phí dịch vụ</span><strong>{money(selected.price_snapshot)}</strong></div>
+<div className="pc-detail-total"><span>Chi phí dịch vụ</span><strong>{money(selected.price_snapshot)}</strong></div><PaymentPanel key={selected.id} appointmentId={selected.id}/>
 {['pending','confirmed'].includes(selected.status)&&<button type="button" className="button button-outline-danger pc-detail-cancel" disabled={cancel.isPending} onClick={()=>{if(confirm('Bạn chắc chắn muốn hủy lịch hẹn?'))cancel.mutate(selected.id);}}>Hủy lịch hẹn</button>}</>
 :<div className="pc-detail-empty"><CalendarDays size={26}/><strong>Hành trình chăm sóc</strong><span>Chọn một mã lịch hẹn để xem dịch vụ, thời gian và trạng thái.</span></div>}</Panel></aside></div></>;
 }

@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" aria-hidden="true">
-<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9e9e4"/><stop offset="1" stop-color="#b6cbd0"/></linearGradient><linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#85949b"/><stop offset="1" stop-color="#526a73"/></linearGradient></defs>
-<circle cx="90" cy="90" r="88" fill="url(#bg)"/><path d="M20 163q23-38 70-38 47 0 70 38" fill="#f6f0e6"/><path d="M42 72 38 26q22 4 39 22a76 76 0 0 1 27 0q16-18 38-22l-6 47c10 38-6 72-45 75-45 1-62-31-49-76Z" fill="url(#fur)" stroke="#50656e" stroke-width="3.3" stroke-linejoin="round"/>
-<path d="m48 39 20 15-20 13ZM132 39 113 55l19 12Z" fill="#eebcb0"/><path d="M75 55q15-10 31 0M68 67l-9-9m53 9 10-9" stroke="#b3bcc0" stroke-linecap="round" stroke-width="4"/>
-<path d="M63 85q9-9 20 0m14 0q10-9 20 0" stroke="#233a43" stroke-linecap="round" stroke-width="5" fill="none"/><path d="M69 106q22-14 42 0 12 20-9 34H80q-22-15-11-34Z" fill="#f7ede1"/><path d="m82 110 9 7 9-7Z" fill="#a96872"/><path d="M91 117v9m0 0q-7 7-15 0m15 0q8 7 15 0" stroke="#596771" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-<path d="M71 119 34 114m36 12-37 2m77-9 36-5m-35 12 36 2" stroke="#607b7f" stroke-width="2.3" stroke-linecap="round"/><ellipse cx="59" cy="112" rx="6" ry="4" fill="#edb1aa" opacity=".7"/><ellipse cx="120" cy="112" rx="6" ry="4" fill="#edb1aa" opacity=".7"/>
-<path d="M75 147q15 9 31 0l-4 11-22 0Z" fill="#b47a58"/><circle cx="91" cy="157" r="6" fill="#edbf78"/>
-</svg>

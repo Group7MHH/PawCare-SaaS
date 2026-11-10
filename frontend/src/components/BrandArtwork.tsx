@@ -1,41 +1,31 @@
-/**
- * PawCare artwork system.
- * Detailed pet scenes are local ink-and-wash editorial WebP assets; functional UI ornaments remain SVG.
- * No large-scale artificial SVG pet faces; illustrations must be recognizable at card size.
+/** PawCare Care Journal artwork: medical, grooming and administration motifs only.
+ * No animal portrait or stock pet artwork is rendered by this component.
+ * The role-specific pieces are lightweight local SVG with consistent ink strokes.
  */
 const base='/illustrations/';
-type Format='svg'|'webp';
-type ArtworkProps={file:string;format?:Format;className?:string;size?:number;alt?:string;priority?:boolean};
-function Artwork({file,format='svg',className='',size,alt='',priority=false}:ArtworkProps){
- return <img
-  src={`${base}${file}.${format}`}
-  className={className}
-  width={size}
-  height={size}
-  alt={alt}
-  loading={priority?'eager':'lazy'}
-  decoding="async"
-  draggable={false}
- />;
+type ArtworkProps={file:string;className?:string;size?:number;alt?:string;priority?:boolean};
+function Artwork({file,className='',size,alt='',priority=false}:ArtworkProps){
+ return <img src={`${base}${file}.svg`} className={className} width={size} height={size}
+  alt={alt} loading={priority?'eager':'lazy'} decoding="async" draggable={false}/>;
 }
 export function PawcareMark({size=24}:{size?:number}){
  return <Artwork file="pawcare-mark" className="pc-brand-mark" size={size}/>;
 }
-export function PetPortrait({species,size=64}:{species?:string|null;size?:number}){
- const file=species==='dog'?'avatar-dog':species==='cat'?'avatar-cat':'avatar-other';
- return <Artwork file={file} format={species==='dog'||species==='cat'?'webp':'svg'} className="pc-pet-portrait" size={size}/>;
+/** A general-purpose care-file seal, never a species portrait. */
+export function PetPortrait({size=64}:{species?:string|null;size?:number}){
+ return <Artwork file="care-record" className="pc-pet-portrait" size={size}/>;
 }
 export function CompanionCover(){
- return <Artwork file="companion-hero" format="webp" className="pc-cover-svg" priority/>;
+ return <Artwork file="care-overview" className="pc-cover-svg" priority/>;
 }
 export function StaffCareDesk(){
- return <Artwork file="staff-care-photo" format="webp" className="pc-care-svg"/>;
+ return <Artwork file="care-workspace" className="pc-care-svg"/>;
 }
 export function AdminLedger(){
- return <Artwork file="admin-office-photo" format="webp" className="pc-ledger-svg"/>;
+ return <Artwork file="care-analytics" className="pc-ledger-svg"/>;
 }
 export function NotebookStory(){
- return <Artwork file="sidebar-story" format="webp" className="pc-notebook-story"/>;
+ return <Artwork file="care-notebook" className="pc-notebook-story"/>;
 }
 const serviceArtwork=(text:string)=>{
  const label=text.toLocaleLowerCase('vi-VN');
@@ -47,5 +37,5 @@ const serviceArtwork=(text:string)=>{
  return 'general';
 };
 export function ServiceArtwork({label}:{label:string}){
- return <Artwork file={`service-${serviceArtwork(label)}`} format="webp" className="pc-service-svg"/>;
+ return <Artwork file={`care-${serviceArtwork(label)}`} className="pc-service-svg"/>;
 }

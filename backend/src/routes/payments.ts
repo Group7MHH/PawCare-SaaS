@@ -1,0 +1,125 @@
+import {Router} from 'express';
+import {z} from 'zod';
+import {pool,rows,exec,transaction,type DB} from '../lib/db.js';
+import {asyncRoute,HttpError,idParam,parse} from '../lib/http.js';
+import {orgId,requireAuth,requireOrganization,requireRole} from '../lib/auth.js';
+
+export type PaymentStatus='unpaid'|'pending_review'|'paid'|'refund_required'|'refunded'|'void';
+type PaymentRow={
+ id:number;organization_id:number;appointment_id:number;customer_id:number;
+ amount:number;currency:string;method:'cash'|'bank_transfer';status:PaymentStatus;
+ payment_reference:string;customer_note:string|null;admin_note:string|null;
+ paid_at:string|null;reviewed_at:string|null;reviewed_by:number|null;
+ appointment_status:string;service_name:string;pet_name:string;customer_name:string;
+};
+const router=Router();
+router.use(requireAuth,requireOrganization);
+const bank=()=>{
+ const name=(process.env.PAYMENT_BANK_NAME||'').trim();
+ const account=(process.env.PAYMENT_BANK_ACCOUNT||'').trim();
+ const owner=(process.env.PAYMENT_BANK_OWNER||'').trim();
+ return name&&account&&owner?{name,account,owner}:null;
+};
+const select=`SELECT p.*,a.status AS appointment_status,s.name AS service_name,
+ pet.name AS pet_name,u.full_name AS customer_name
+ FROM payments p
+ JOIN appointments a ON a.id=p.appointment_id
+ JOIN services s ON s.id=a.service_id
+ JOIN pets pet ON pet.id=a.pet_id
+ JOIN users u ON u.id=p.customer_id`;
+async function loadPayment(id:number,org:number,db:DB){
+ const [payment]=await rows<PaymentRow>(`${select} WHERE p.appointment_id=? AND p.organization_id=?`,[id,org],db);
+ if(!payment)throw new HttpError(404,'Không tìm thấy thông tin thanh toán cho lịch hẹn');
+ return payment;
+}
+function allowed(p:PaymentRow,user:{id:number;role:string}){
+ if(user.role!=='admin'&&p.customer_id!==user.id)
+  throw new HttpError(403,'Bạn không có quyền xem thanh toán này');
+}
+router.get('/config',asyncRoute(async(_req,res)=>{
+ res.json({methods:['cash',...(bank()?['bank_transfer']:[])],bank:bank(),provider:'manual',automatic_confirmation:false});
+}));
+router.get('/',asyncRoute(async(req,res)=>{
+ const params:any[]=[orgId(req)];
+ let where='p.organization_id=?';
+ if(req.user!.role!=='admin'){where+=' AND p.customer_id=?';params.push(req.user!.id);}
+ if(req.query.status && String(req.query.status)!=='all'){
+  const status=z.enum(['unpaid','pending_review','paid','refund_required','refunded','void']).safeParse(req.query.status);
+  if(!status.success)throw new HttpError(422,'Trạng thái thanh toán không hợp lệ');
+  where+=' AND p.status=?';params.push(status.data);
+ }
+ const items=await rows<PaymentRow>(`${select} WHERE ${where} ORDER BY p.created_at DESC LIMIT 200`,params);
+ res.json({items});
+}));
+router.get('/:id',asyncRoute(async(req,res)=>{
+ const p=await loadPayment(idParam(req.params.id),orgId(req),pool);
+ allowed(p,req.user!);
+ res.json({payment:p});
+}));
+router.patch('/:id/method',asyncRoute(async(req,res)=>{
+ if(req.user!.role!=='customer')throw new HttpError(403,'Chỉ khách hàng chọn phương thức thanh toán');
+ const method=parse(z.object({method:z.enum(['cash','bank_transfer'])}).strict(),req.body).method;
+ if(method==='bank_transfer'&&!bank())throw new HttpError(409,'Cửa hàng chưa cấu hình thông tin chuyển khoản');
+ const id=idParam(req.params.id);
+ await transaction(async db=>{
+  const [locked]=await rows<PaymentRow>(`SELECT p.*,a.status AS appointment_status
+   FROM payments p JOIN appointments a ON a.id=p.appointment_id
+   WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p`,[id,orgId(req)],db);
+  if(!locked)throw new HttpError(404,'Không tìm thấy thanh toán');
+  if(locked.customer_id!==req.user!.id)throw new HttpError(403,'Không có quyền chỉnh sửa thanh toán này');
+  if(locked.status!=='unpaid'||locked.appointment_status==='cancelled')throw new HttpError(409,'Không thể đổi phương thức cho thanh toán đã xử lý');
+  await exec('UPDATE payments SET method=?,customer_note=NULL WHERE id=?',[method,locked.id],db);
+ });
+ res.json({message:'Đã cập nhật phương thức thanh toán'});
+}));
+router.post('/:id/transfer-notice',asyncRoute(async(req,res)=>{
+ if(req.user!.role!=='customer')throw new HttpError(403,'Chỉ khách hàng được gửi xác nhận chuyển khoản');
+ if(!bank())throw new HttpError(409,'Cửa hàng chưa cấu hình chuyển khoản');
+ const {note}=parse(z.object({note:z.string().trim().max(300).optional()}).strict(),req.body);
+ const id=idParam(req.params.id);
+ await transaction(async db=>{
+  const [p]=await rows<PaymentRow>(`SELECT p.*,a.status AS appointment_status
+   FROM payments p JOIN appointments a ON a.id=p.appointment_id
+   WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p`,[id,orgId(req)],db);
+  if(!p)throw new HttpError(404,'Không tìm thấy thanh toán');
+  if(p.customer_id!==req.user!.id)throw new HttpError(403,'Không có quyền xác nhận thanh toán này');
+  if(p.status!=='unpaid'||p.method!=='bank_transfer'||p.appointment_status==='cancelled')
+   throw new HttpError(409,'Chỉ có thể thông báo chuyển khoản cho lịch chưa thanh toán');
+  await exec("UPDATE payments SET status='pending_review',customer_note=? WHERE id=?",[note||null,p.id],db);
+ });
+ res.json({message:'Đã gửi thông báo. Thanh toán đang chờ Admin đối soát, chưa được xác nhận thành công.'});
+}));
+router.post('/:id/reconcile',requireRole('admin'),asyncRoute(async(req,res)=>{
+ const id=idParam(req.params.id);
+ const {action,note}=parse(z.object({
+  action:z.enum(['confirm_paid','reject_transfer','confirm_refund']),
+  note:z.string().trim().max(500).optional()
+ }).strict(),req.body);
+ await transaction(async db=>{
+  const [p]=await rows<PaymentRow>(`SELECT p.*,a.status AS appointment_status
+   FROM payments p JOIN appointments a ON a.id=p.appointment_id
+   WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p`,[id,orgId(req)],db);
+  if(!p)throw new HttpError(404,'Không tìm thấy thanh toán');
+  let status:PaymentStatus=p.status;
+  if(action==='confirm_paid'){
+   if(p.appointment_status==='cancelled' && p.status!=='pending_review')throw new HttpError(409,'Lịch đã hủy, không thể ghi nhận thanh toán mới');
+   if(p.method==='cash' && p.status==='unpaid')status='paid';
+   else if(p.method==='bank_transfer'&&p.status==='pending_review')status=p.appointment_status==='cancelled'?'refund_required':'paid';
+   else throw new HttpError(409,'Trạng thái hoặc phương thức thanh toán không phù hợp');
+  }else if(action==='reject_transfer'){
+   if(p.method!=='bank_transfer'||p.status!=='pending_review')throw new HttpError(409,'Chỉ có thể từ chối chuyển khoản đang chờ đối soát');
+   if(!note)throw new HttpError(422,'Vui lòng nhập lý do từ chối đối soát');
+   status=p.appointment_status==='cancelled'?'void':'unpaid';
+  }else{
+   if(p.status!=='refund_required')throw new HttpError(409,'Chưa có khoản cần hoàn tiền');
+   if(!note)throw new HttpError(422,'Cần ghi lại bằng chứng/ghi chú hoàn tiền');
+   status='refunded';
+  }
+  await exec("UPDATE payments SET status=?,admin_note=?,reviewed_by=?,reviewed_at=now(),paid_at=CASE WHEN ?='paid' THEN now() ELSE paid_at END WHERE id=?",[status,note||null,req.user!.id,status,p.id],db);
+  await exec('INSERT INTO role_audit_logs(actor_id,organization_id,action,details) VALUES(?,?,?,?::jsonb)',[
+   req.user!.id,orgId(req),'payment.'+action,JSON.stringify({appointment_id:id,payment_id:p.id,from:p.status,to:status,method:p.method,amount:p.amount})
+  ],db);
+ });
+ res.json({message:action==='confirm_paid'?'Đã xác nhận nhận tiền':action==='reject_transfer'?'Đã từ chối đối soát và hoàn về trạng thái chưa thanh toán':'Đã ghi nhận hoàn tiền'});
+}));
+export default router;

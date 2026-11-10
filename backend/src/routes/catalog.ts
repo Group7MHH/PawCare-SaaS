@@ -54,6 +54,11 @@ router.post('/services/:id/permanent-delete',requireRole('admin'),asyncRoute(asy
   if(payload.confirmation_name!==service.name)throw new HttpError(422,'Tên dịch vụ xác nhận không chính xác');
   const [count]=await rows<{total:number}>('SELECT COUNT(*)::int AS total FROM appointments WHERE id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?) AND organization_id=?',[id,orgId(req)],db);
   if(count.total!==payload.expected_appointments)throw new HttpError(409,'Số lịch hẹn đã thay đổi. Hãy tải lại thông tin và xác nhận lần nữa');
+  // Financial receipts are never silently erased when a paid booking is hard-deleted.
+  const [financial]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total FROM payments
+   WHERE appointment_id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?)
+   AND organization_id=? AND status IN ('paid','refund_required','refunded','pending_review')`,[id,orgId(req)],db);
+  if(financial.total>0)throw new HttpError(409,'Dịch vụ có giao dịch cần lưu giữ hoặc đối soát. Không thể xóa vĩnh viễn lịch hẹn có chứng từ thanh toán.');
   // Keep pet care notes/results; they no longer point to deleted appointments.
   await exec('UPDATE care_records SET appointment_id=NULL WHERE appointment_id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?)',[id],db);
   const removed=await exec('DELETE FROM appointments WHERE id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?) AND organization_id=?',[id,orgId(req)],db);

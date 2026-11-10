@@ -12,7 +12,8 @@ const bookingSchema=z.object({
  staff_id:z.coerce.number().int().positive().nullable().optional(),
  starts_at:z.string().datetime({offset:true}).or(z.string().datetime()),
  notes:z.string().max(1000).nullable().optional(),
- customer_id:z.coerce.number().int().positive().optional()
+ customer_id:z.coerce.number().int().positive().optional(),
+ payment_method:z.enum(['cash','bank_transfer']).default('cash')
 }).refine(d=>!!(d.service_id||d.service_ids?.length),{message:'Vui lòng chọn ít nhất một dịch vụ'});
 type BookableService={id:number;name:string;price:number;duration_minutes:number};
 async function getSelectedServices(org:number,ids:number[],db:DB=pool):Promise<BookableService[]>{
@@ -119,6 +120,7 @@ async function hasBookingCapacity(db:DB,org:number,start:string,end:string){
 }
 router.post('/',asyncRoute(async(req,res)=>{
  const d=parse(bookingSchema,req.body);
+ if(d.payment_method==='bank_transfer'&&!(process.env.PAYMENT_BANK_NAME&&process.env.PAYMENT_BANK_ACCOUNT&&process.env.PAYMENT_BANK_OWNER))throw new HttpError(409,'Cửa hàng chưa cấu hình chuyển khoản');
  if(req.user!.role==='staff')throw new HttpError(403,'Staff không được tự tạo lịch thay khách');
  if(isPrivileged(req)&&!d.customer_id)throw new HttpError(422,'Cần chọn khách hàng khi tạo lịch thay khách');
  const customerId=isPrivileged(req)?d.customer_id!:req.user!.id;
@@ -151,6 +153,10 @@ router.post('/',asyncRoute(async(req,res)=>{
     await exec('INSERT INTO appointment_services(appointment_id,service_id,position,price_snapshot,duration_minutes_snapshot) VALUES(?,?,?,?,?)',
       [created.insertId,service.id,position,service.price,service.duration_minutes],db);
   }
+  // Payment and booking are committed atomically. No user-provided amount is trusted.
+  await exec("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,payment_reference) VALUES(?,?,?,?,?,?)",[
+    orgId(req),created.insertId,customerId,totalPrice,d.payment_method,'PC'+String(created.insertId).padStart(8,'0')
+  ],db);
   return created;
  });
  res.status(201).json({id:result.insertId,message:'Đã đặt lịch, Staff sẽ chủ động tiếp nhận mà không cần Admin duyệt'});
@@ -191,6 +197,7 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
      d.staff_id===null && current.status==='pending'?true:current.needs_admin_attention;
    const assignmentNote=attention?'Chưa phân công nhân viên; Admin cần điều phối':null;
    await exec("UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=?,needs_admin_attention=?,assignment_note=?,completed_at=CASE WHEN ?='completed' AND status<>'completed' THEN now() ELSE completed_at END WHERE id=? AND organization_id=?",[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result??current.care_result??null,attention,assignmentNote,d.status||current.status,id,orgId(req)],db);
+   if(d.status==='cancelled')await exec("UPDATE payments SET status=CASE WHEN status='paid' THEN 'refund_required' WHEN status='refunded' THEN 'refunded' WHEN status='refund_required' THEN 'refund_required' WHEN status='pending_review' THEN 'pending_review' ELSE 'void' END WHERE appointment_id=? AND organization_id=?",[id,orgId(req)],db);
    if(d.status==='completed' && current.status!=='completed'){
      await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id)
        VALUES(?,?,?,'Kết quả chăm sóc','grooming',(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?)`,
@@ -205,6 +212,8 @@ router.delete('/:id',asyncRoute(async(req,res)=>{
   const [locked]=await rows<any>('SELECT status FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
   if(!locked || !canTransition(locked.status,'cancelled',req.user!.role))throw new HttpError(409,'Không thể hủy lịch ở trạng thái này');
   await exec("UPDATE appointments SET status='cancelled' WHERE id=? AND organization_id=?",[id,orgId(req)],db);
+  // Cancelling a paid booking creates a manual refund obligation; never auto-refund.
+  await exec("UPDATE payments SET status=CASE WHEN status='paid' THEN 'refund_required' WHEN status IN ('refund_required','refunded','pending_review') THEN status ELSE 'void' END WHERE appointment_id=? AND organization_id=?",[id,orgId(req)],db);
  });
  res.json({message:'Đã hủy lịch hẹn'});
 }));

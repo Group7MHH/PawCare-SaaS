@@ -115,6 +115,11 @@ router.delete('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
      data.expected_care_records!==impact.care_records){
    throw new HttpError(409,'Dữ liệu tài khoản đã thay đổi. Hãy xem lại danh sách dữ liệu sẽ bị xóa');
   }
+  // Do not silently destroy settled or disputed financial records during account deletion.
+  const [billing]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total FROM payments p JOIN appointments a ON a.id=p.appointment_id
+    WHERE (a.customer_id=? OR a.staff_id=? OR a.pet_id IN (SELECT id FROM pets WHERE owner_id=?))
+      AND p.status IN ('paid','pending_review','refund_required','refunded')`,[target,target,target],db);
+  if(billing.total>0)throw new HttpError(409,'Tài khoản có giao dịch đã thanh toán, đang đối soát hoặc cần lưu chứng từ. Không thể xóa vĩnh viễn hồ sơ tài chính.');
   // care_records reference both pets and appointments without ON DELETE CASCADE.
   // Remove those plus records authored by the deleted user before appointments.
   await exec(`DELETE FROM care_records
