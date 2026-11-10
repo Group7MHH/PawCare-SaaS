@@ -25,6 +25,7 @@ import './pages.css';
 import './notebook.css';
 import './care-polish.css';
 import './payment-care.css';
+import './customer-payments.css';
 const queryClient=new QueryClient({defaultOptions:{queries:{staleTime:30_000,retry:1}}});
 function Protected(){const {user,loading}=useAuth();const location=useLocation();if(loading)return <Loading/>;if(!user)return <Navigate to="/login" state={{from:location}} replace/>;return <Layout/>;}
 function RolePage({children,admin=false}:{children:React.ReactNode;admin?:boolean}){const {user}=useAuth();return user&&(admin?user.role!=='customer':user.role==='customer')?<>{children}</>:<Navigate to={user?.role==='customer'?'/overview':'/admin/dashboard'} replace/>;}

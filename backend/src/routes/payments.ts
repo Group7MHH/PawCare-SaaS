@@ -1,7 +1,7 @@
 import {Router} from 'express';
 import {z} from 'zod';
 import {pool,rows,exec,transaction,type DB} from '../lib/db.js';
-import {asyncRoute,HttpError,idParam,parse} from '../lib/http.js';
+import {asyncRoute,HttpError,idParam,pageParams,parse} from '../lib/http.js';
 import {orgId,requireAuth,requireOrganization,requireRole} from '../lib/auth.js';
 
 export type PaymentStatus='unpaid'|'pending_review'|'paid'|'refund_required'|'refunded'|'void';
@@ -40,16 +40,46 @@ router.get('/config',asyncRoute(async(_req,res)=>{
  res.json({methods:['cash',...(bank()?['bank_transfer']:[])],bank:bank(),provider:'manual',automatic_confirmation:false});
 }));
 router.get('/',asyncRoute(async(req,res)=>{
- const params:any[]=[orgId(req)];
- let where='p.organization_id=?';
- if(req.user!.role!=='admin'){where+=' AND p.customer_id=?';params.push(req.user!.id);}
- if(req.query.status && String(req.query.status)!=='all'){
+ // Paginate server-side: a customer can view their full payment history, not only the latest 200.
+ const {page,limit}=pageParams(req);
+ const scopeParams:(string|number)[]=[orgId(req)];
+ let scope='p.organization_id=?';
+ if(req.user!.role!=='admin'){
+  scope+=' AND p.customer_id=?';
+  scopeParams.push(req.user!.id);
+ }
+ const params=[...scopeParams];
+ let where=scope;
+ if(req.query.status&&String(req.query.status)!=='all'){
   const status=z.enum(['unpaid','pending_review','paid','refund_required','refunded','void']).safeParse(req.query.status);
   if(!status.success)throw new HttpError(422,'Trạng thái thanh toán không hợp lệ');
-  where+=' AND p.status=?';params.push(status.data);
+  where+=' AND p.status=?';
+  params.push(status.data);
  }
- const items=await rows<PaymentRow>(`${select} WHERE ${where} ORDER BY p.created_at DESC LIMIT 200`,params);
- res.json({items});
+ const search=String(req.query.search||'').trim().slice(0,80);
+ if(search){
+  where+=' AND (p.payment_reference ILIKE ? OR pet.name ILIKE ? OR s.name ILIKE ?)';
+  const pattern='%'+search+'%';
+  params.push(pattern,pattern,pattern);
+ }
+ const fromTable=`FROM payments p JOIN appointments a ON a.id=p.appointment_id
+  JOIN services s ON s.id=a.service_id
+  JOIN pets pet ON pet.id=a.pet_id`;
+ const [count]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total ${fromTable} WHERE ${where}`,params);
+ const items=await rows<PaymentRow>(`${select} WHERE ${where}
+  ORDER BY p.created_at DESC,p.id DESC LIMIT ? OFFSET ?`,[...params,limit,(page-1)*limit]);
+ // Summary always covers this customer's full history rather than only the selected page/filter.
+ const [summary]=await rows<{total:number;unpaid:number;pending_review:number;paid:number;refund_required:number;refunded:number;paid_amount:string}>(`
+  SELECT COUNT(*)::int AS total,
+  COUNT(*) FILTER (WHERE p.status='unpaid')::int AS unpaid,
+  COUNT(*) FILTER (WHERE p.status='pending_review')::int AS pending_review,
+  COUNT(*) FILTER (WHERE p.status='paid')::int AS paid,
+  COUNT(*) FILTER (WHERE p.status='refund_required')::int AS refund_required,
+  COUNT(*) FILTER (WHERE p.status='refunded')::int AS refunded,
+  COALESCE(SUM(p.amount) FILTER (WHERE p.status='paid'),0)::text AS paid_amount
+  FROM payments p WHERE ${scope}`,scopeParams);
+ res.setHeader('Cache-Control','no-store');
+ res.json({items,total:count.total,page,limit,summary});
 }));
 router.get('/:id',asyncRoute(async(req,res)=>{
  const p=await loadPayment(idParam(req.params.id),orgId(req),pool);
