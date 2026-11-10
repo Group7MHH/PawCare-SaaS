@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {Link} from 'react-router-dom';
-import {ArrowRight,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,ClipboardList,Clock3,Landmark,ReceiptText,Search,ShieldCheck,WalletCards,X} from 'lucide-react';
+import {ArrowRight,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,Clock3,Landmark,ReceiptText,Search,ShieldCheck,WalletCards,X} from 'lucide-react';
 import {api,dateTime,errorMessage,money} from '../lib/api';
 import {type Payment,PaymentPanel, type PaymentStatus} from '../components/PaymentPanel';
 import {PageTitle,Loading,ErrorNotice,Empty} from '../components/UI';
