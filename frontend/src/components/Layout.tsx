@@ -1,8 +1,9 @@
 import {NavLink,Outlet,useLocation} from 'react-router-dom';
-import {LayoutDashboard,PawPrint,CalendarPlus,CalendarDays,Users,Scissors,UserRound,LogOut,Menu,X,ChevronRight,Bell,UserCog,ShieldCheck,BookHeart,PanelLeftClose,PanelLeftOpen,Bookmark,ArrowUpRight,type LucideIcon} from 'lucide-react';
+import {LayoutDashboard,PawPrint,CalendarPlus,CalendarDays,Users,Scissors,UserRound,LogOut,Menu,X,ChevronRight,Bell,UserCog,ShieldCheck,BookHeart,PanelLeftClose,PanelLeftOpen,ArrowUpRight,type LucideIcon} from 'lucide-react';
 import {useEffect,useState} from 'react';
 import {useAuth} from '../lib/auth';
 import {toast} from 'react-hot-toast';
+import {PawcareMark,NotebookStory} from './BrandArtwork';
 
 type NavItem={to:string;title:string;icon:LucideIcon};
 const customerLinks:NavItem[]=[{to:'/overview',title:'Tổng quan',icon:LayoutDashboard},{to:'/pets',title:'Thú cưng của tôi',icon:PawPrint},{to:'/services',title:'Dịch vụ',icon:Scissors},{to:'/book',title:'Đặt lịch chăm sóc',icon:CalendarPlus},{to:'/my-appointments',title:'Lịch hẹn của tôi',icon:CalendarDays}];
@@ -39,11 +40,11 @@ export function Layout(){
   <aside id="pawcare-notebook-sidebar" className={`sb nb-sidebar ${open?'sidebar-open':''}`} aria-label="Thanh điều hướng PawCare">
    <div className="nb-spine" aria-hidden="true"><i/><i/><i/><i/><i/></div>
    <div className="sb-brand nb-brand">
-    <div className="sb-mark nb-logo"><PawPrint size={23} fill="currentColor"/></div>
+    <div className="sb-mark nb-logo"><PawcareMark size={27}/></div>
     <div className="nb-brand-words"><b>PawCare</b><small>THE PET CARE JOURNAL</small></div>
     <button type="button" className="icon-button mobile-only sb-close" onClick={()=>setOpen(false)} aria-label="Đóng menu"><X size={21}/></button>
    </div>
-   <div className="nb-book-identity"><BookHeart size={16}/><span>{roleLabel[user.role]}</span><span className="nb-book-identity-mark" aria-hidden="true">✳</span></div>
+   <div className="nb-book-identity"><BookHeart size={16}/><span>{roleLabel[user.role]}</span><span className="nb-book-identity-mark" aria-hidden="true"><PawcareMark size={20}/></span></div>
    <nav className="sb-nav nb-nav" aria-label="Điều hướng chính">
     <div className="sb-label nb-nav-heading">MỤC LỤC <span>01 / 02</span></div>
     {links.map(({to,title,icon:Icon},index)=><NavLink key={to} to={to} className={linkClass} title={collapsed?title:undefined} aria-label={title}>
@@ -54,12 +55,12 @@ export function Layout(){
     <div className="sb-label sb-gap nb-nav-heading">TÀI KHOẢN <span>02 / 02</span></div>
     <NavLink to="/profile" className={linkClass} title={collapsed?'Thông tin cá nhân':undefined} aria-label="Thông tin cá nhân"><span className="nb-link-icon"><UserRound size={19}/></span><span className="nb-link-text">Thông tin cá nhân</span><span className="nb-link-index" aria-hidden="true"><ChevronRight size={15}/></span></NavLink>
    </nav>
-   <div className="nb-sidebar-stamp" aria-hidden="true"><Bookmark size={17}/><span>CHĂM SÓC TỪ NHỮNG ĐIỀU NHỎ NHẤT</span></div>
+   <div className="nb-sidebar-stamp nb-sidebar-illustration" aria-hidden="true"><NotebookStory/><span>CHĂM SÓC TỪ NHỮNG ĐIỀU NHỎ NHẤT</span></div>
    <div className="sb-foot nb-foot">
     <button type="button" className="nb-collapse-toggle" onClick={()=>setCollapsed(c=>!c)} aria-label={collapsed?'Mở rộng thanh điều hướng':'Thu gọn thanh điều hướng'} aria-expanded={!collapsed} aria-controls="pawcare-notebook-sidebar" title={collapsed?'Mở rộng sidebar':'Thu gọn sidebar'}>{collapsed?<PanelLeftOpen size={18}/>:<PanelLeftClose size={18}/>}<span>Thu gọn sổ</span></button>
     <button type="button" className="sb-user" title="Đăng xuất" aria-label={`Đăng xuất tài khoản ${user.full_name}`} onClick={()=>{setOpen(false);logout().catch(()=>toast.error('Không thể đăng xuất'));}}><span className="avatar nb-user-avatar">{initial}</span><span className="who"><strong>{user.full_name}</strong><small>{roleName[user.role]}</small></span><span className="out"><LogOut size={17}/></span></button>
    </div>
-   <div className="nb-edge-tab" aria-hidden="true"><Bookmark size={14} fill="currentColor"/><span>{roleTab[user.role]}</span></div>
+   <div className="nb-edge-tab" aria-hidden="true"><PawcareMark size={15}/><span>{roleTab[user.role]}</span></div>
   </aside>
   {open&&<button type="button" className="sb-scrim mobile-only" onClick={()=>setOpen(false)} aria-label="Đóng menu"/>}
   <div className="main-area nb-main-area">
@@ -68,7 +69,7 @@ export function Layout(){
     <div className="tb-right nb-toolbar-actions"><span className="tb-date">{new Date().toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span><span className="tb-sep"/><span className="nb-toolbar-role">{roleTab[user.role]}</span><button type="button" className="tb-btn" aria-label="Thông báo" title="Thông báo" onClick={()=>toast('Thông báo mới sẽ được hiển thị tại đây')}><Bell size={18}/></button><NavLink to="/profile" className="tb-profile" aria-label="Mở hồ sơ tài khoản"><span className="avatar">{initial}</span><span className="n">{user.full_name}</span><ArrowUpRight size={14}/></NavLink></div>
    </header>
    <main id="main-content" className="page-content nb-page-content"><Outlet/></main>
-   <footer className="footer nb-footer"><span>© {new Date().getFullYear()} PawCare <span aria-hidden="true">✳</span> Chăm sóc từ những điều nhỏ nhất</span><span>Pet Care Journal · 01</span></footer>
+   <footer className="footer nb-footer"><span>© {new Date().getFullYear()} PawCare <span className="nb-footer-mark" aria-hidden="true"><PawcareMark size={14}/></span> Chăm sóc từ những điều nhỏ nhất</span><span>Pet Care Journal · 01</span></footer>
   </div>
  </div>;
 }
