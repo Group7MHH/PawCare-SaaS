@@ -18,7 +18,6 @@ export const json=(method:string,data?:unknown):RequestInit=>({method,body:data=
 export const money=(n:number)=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(Number(n||0));
 export const dateTime=(iso:string)=>new Date(iso).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Ho_Chi_Minh'});
 export const dateOnly=(value:string|null|undefined)=>value?String(value).slice(0,10).split('-').reverse().join('/'): '—';
-export const petIcon=(type:string)=>type==='dog'?'🐕':type==='cat'?'🐈':'🐾';
 export const speciesName=(type:string)=>({dog:'Chó',cat:'Mèo',other:'Khác'}[type]||type);
 export const statusName:Record<string,string>={pending:'Chờ Staff tiếp nhận',confirmed:'Đã xác nhận',in_progress:'Đang thực hiện',completed:'Hoàn thành',cancelled:'Đã hủy'};
 export const statusClass:Record<string,string>={pending:'amber',confirmed:'teal',in_progress:'blue',completed:'green',cancelled:'red'};
