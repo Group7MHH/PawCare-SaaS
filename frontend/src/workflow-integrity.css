@@ -7,3 +7,12 @@
 .nb-app .pc-finance-ledger>span:last-child strong{color:#946b4f}
 @media(max-width:1020px){.nb-app .pc-finance-ledger{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:470px){.nb-app .pc-finance-ledger{gap:7px}.nb-app .pc-finance-ledger>span{padding:10px 8px}.nb-app .pc-finance-ledger strong{font-size:12px}}
+
+/* Final demo: readable sidebar labels, finance filter and non-truncated navigation. */
+.nb-app .nb-nav-link .nb-link-index{display:none}
+.nb-app .nb-nav-link{align-items:center;gap:9px;padding-right:9px;white-space:normal}
+.nb-app .nb-nav-link .nb-link-text{min-width:0;flex:1;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:break-word;line-height:1.35}
+.pc-payment-filter-label{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.pc-payment-filter{min-width:160px;max-width:100%;padding:9px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
+.pc-payment-filter:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media(max-width:720px){.pc-payment-filter-label{width:100%;justify-content:space-between}.pc-payment-filter{flex:1;min-width:0;max-width:300px}}

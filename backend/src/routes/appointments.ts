@@ -64,13 +64,18 @@ router.get('/',asyncRoute(async(req,res)=>{
   }else{clauses.push('a.staff_id=?');params.push(req.user!.id);}
  }
  if(req.query.status&&req.query.status!=='all'){clauses.push('a.status=?');params.push(String(req.query.status));}
+ if(req.user!.role==='admin' && req.query.payment_status && req.query.payment_status!=='all'){
+  const paymentFilter=z.enum(['unpaid','awaiting_payment','pending_review','paid','refund_required','refunded','void']).safeParse(req.query.payment_status);
+  if(!paymentFilter.success)throw new HttpError(422,'Trạng thái thanh toán không hợp lệ');
+  clauses.push('pay.status=?');params.push(paymentFilter.data);
+ }
  if(req.query.needs_attention==='true' && req.user!.role==='admin'){
   clauses.push("(a.needs_admin_attention=TRUE OR (a.status='pending' AND a.starts_at <= now() + interval '2 hours') OR (a.status='confirmed' AND a.starts_at < now()))");
  }
  if(req.query.search){clauses.push('(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?)');params.push(...Array(3).fill(`%${String(req.query.search).slice(0,80)}%`));}
  const where=clauses.length?' WHERE '+clauses.join(' AND '):'';
- const [{total}]=await rows<any>(`SELECT COUNT(*) AS total FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id ${where}`,params);
- const items=await rows<any>(`${appointmentSelect}${where} ORDER BY a.starts_at DESC LIMIT ? OFFSET ?`,[...params,limit,(page-1)*limit]);
+ const [{total}]=await rows<any>(`SELECT COUNT(*) AS total FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id LEFT JOIN payments pay ON pay.appointment_id=a.id ${where}`,params);
+ const items=await rows<any>(`${appointmentSelect}${where} ORDER BY a.starts_at DESC,a.id DESC LIMIT ? OFFSET ?`,[...params,limit,(page-1)*limit]);
  res.json({items:items.map(mapAppointment),total,page,limit});
 }));
 router.get('/availability',asyncRoute(async(req,res)=>{

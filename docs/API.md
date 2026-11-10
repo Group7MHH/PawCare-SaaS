@@ -26,7 +26,7 @@ Register creates a Customer. Admin promotes or demotes Staff through account man
 | GET | `/services/:id/delete-preview` | Admin previews permanent deletion impact |
 | POST | `/services/:id/permanent-delete` | Admin permanently deletes if financial retention checks permit |
 | GET | `/appointments/availability` | Check combined service/staff capacity |
-| GET, POST | `/appointments` | List scoped to role; Customer books |
+| GET, POST | `/appointments` | List scoped to role; Customer books. Admin may filter with `payment_status=unpaid/pending_review/paid/...` |
 | GET, PATCH, DELETE | `/appointments/:id` | View, update or cancel subject to permissions |
 | POST | `/appointments/:id/accept`, `/appointments/:id/decline` | Staff accepts or returns a pending/confirmed assignment |
 | GET | `/customers`, `/customers/:id` | Admin or Staff scoped to assigned customers |

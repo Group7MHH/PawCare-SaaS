@@ -43,7 +43,7 @@ router.get('/accounts',asyncRoute(async(req,res)=>{
  const q='%'+search.replace(/[\\%_]/g,'\\$&')+'%';
  const filter="WHERE (full_name ILIKE ? ESCAPE '\\' OR email ILIKE ? ESCAPE '\\')";
  const [count]=await rows<{total:number}>(`SELECT COUNT(*) AS total FROM users ${filter}`,[q,q]);
- const items=await rows<AccountRow>(`SELECT id,full_name,email,phone,address,role,is_active,created_at FROM users ${filter} ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`,[q,q,limit,(page-1)*limit]);
+ const items=await rows<AccountRow>(`SELECT id,full_name,email,phone,address,role,is_active,created_at FROM users ${filter} ORDER BY CASE role WHEN 'admin' THEN 0 WHEN 'staff' THEN 1 ELSE 2 END, LOWER(REGEXP_REPLACE(full_name,'[0-9]+$','')), NULLIF(SUBSTRING(full_name FROM '[0-9]+$'),'')::numeric NULLS LAST, LOWER(full_name),id ASC LIMIT ? OFFSET ?`,[q,q,limit,(page-1)*limit]);
  res.setHeader('Cache-Control','no-store');
  res.json({items,total:Number(count.total),page,limit});
 }));
