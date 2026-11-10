@@ -11,7 +11,7 @@ PawCare is a cloud-hosted pet-care management application for **one store**, wit
 
 ## Roles
 - Admin: services, direct Staff role management, exceptional assignments, customers, payments and revenue.
-- Staff: only assigned appointments and their customer/pet details; record care results.
+- Staff: accept/return assigned appointments, perform care, record results, and view payment status only. No receipt confirmation or refunds.
 - Customer: own pets, own bookings, cancellation before work begins.
 
 ## Development
@@ -43,7 +43,7 @@ npm.cmd run test
 node --test tests/*.test.mjs
 ```
 
-The original project was MVP; a hosted card/payment gateway, messaging, password recovery and production-grade end-to-end validation are still out of scope. PawCare now includes manual cash/transfer payment status tracking with assigned Staff or Admin confirmation; this does not automatically process money.
+The original project was MVP; a hosted card/payment gateway, messaging, password recovery and production-grade end-to-end validation are still out of scope. PawCare now includes manual cash/transfer payment status tracking with Admin-only confirmation; this does not automatically process money.
 
 ## UI and booking improvements
 The interface uses locally stored care-themed SVG artwork (`frontend/public/illustrations/care-*.svg`) with no dog/cat portrait artwork; services select relevant medical, bath, grooming, vaccination or dental icons from the service name/category. One appointment supports multiple services, totals are calculated from authoritative service prices/durations, and the server checks a contiguous slot for the full duration under a PostgreSQL transaction. Existing single-service appointments are backfilled by migration 006. Permanently deleting a service removes all bookings that include it, including multi-service bookings, following the store's existing deletion policy.
@@ -52,12 +52,12 @@ The interface uses locally stored care-themed SVG artwork (`frontend/public/illu
 
 PawCare supports **cash at store** and **manual bank transfer** (only if Admin configured a recipient in **Profile**). Booking creates one payment record using the backend-calculated amount; payment state is independent of booking completion.
 
-1. **Cash:** Starts `unpaid`. Once money is physically received at the counter, the **assigned Staff** (after accepting the appointment) or **Admin** chooses **Xác nhận đã nhận tiền mặt**. Status becomes `paid`. No customer self-confirmation.
-2. **Bank transfer:** Starts `awaiting_payment`. Customer sees the saved receiving account and chooses **Tôi đã chuyển khoản**, changing status to `pending_review`. Assigned Staff or Admin can choose **Xác nhận chuyển khoản (Demo)** to mark `paid`. This is a simulation only: PawCare **does not check actual bank balances**.
-3. Staff may confirm only their own accepted `confirmed`, `in_progress`, or `completed` appointment. Admin may confirm pending payments, reject a transfer with a reason, and record a refund with a reason. Neither Staff nor Customer can refund/reject.
+1. **Cash:** Starts `unpaid`. Once money is physically received at the counter, **Admin** chooses **Xác nhận đã nhận tiền mặt**. Status becomes `paid`. No customer self-confirmation.
+2. **Bank transfer:** Starts `awaiting_payment`. Customer sees the saved receiving account and chooses **Tôi đã chuyển khoản**, changing status to `pending_review`. Admin can choose **Xác nhận chuyển khoản (Demo)** to mark `paid`. This is a simulation only: PawCare **does not check actual bank balances**.
+3. Staff only views the payment status on accepted appointments assigned to them, and focuses on care work. Admin alone confirms cash/bank demo transfers, rejects bank transfer notices and records refunds. Customer cannot self-confirm.
 4. API locks the appointment and payment within the same transaction, rejects duplicate confirmation, and records reviewer, time, method, old/new status and action in `role_audit_logs`.
 5. Cancelled unpaid payments become `void`; already-paid cancelled payments become `refund_required`. Admin records `refunded` after handling a refund. A claimed transfer for a cancelled appointment remains in `pending_review`: Admin either rejects it as `void` or simulates receipt as `refund_required` (never `paid`) before refunding.
-6. Staff payment list and totals are scoped to accepted appointments assigned to that Staff; Customers see only their own transactions, Admin sees the store ledger. This is a **demo ledger**, not a payment gateway or bank verification. Do not present demo bank confirmations as proof that money arrived.
+6. Payment history lists are limited to Customer's own transactions or Admin's store-wide ledger. Staff sees only payment status/details on assigned accepted appointments, not the ledger or reconciliation actions. This is a **demo ledger**, not a payment gateway or bank verification. Do not present demo bank confirmations as proof that money arrived.
 
 Migrations 009–013 contain the historical manual payment schema/state. They remain required for existing and fresh database migrations.
 
@@ -71,5 +71,5 @@ PawCare's large illustrations now use local SVGs depicting **care journals, stet
 
 Admin configures the receiving bank in **Profile**. Current configured bank details are stored in Neon, and each transfer booking preserves a snapshot of the account details at booking time.
 
-**Demo constraint:** Staff and Admin clicking bank confirmation does not connect to or verify the bank. Do not use this demo flow for real payments without verification.
+**Demo constraint:** Admin clicking bank confirmation does not connect to or verify the bank. Do not use this demo flow for real payments without verification.
 

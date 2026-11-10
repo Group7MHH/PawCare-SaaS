@@ -77,17 +77,13 @@ router.put('/admin-bank',requireRole('admin'),bankChangeLimit,asyncRoute(async(r
  });
  res.json({message:'Đã lưu thông tin tài khoản nhận chuyển khoản'});
 }));
-router.get('/',asyncRoute(async(req,res)=>{
- // Paginate server-side: a customer can view their full payment history, not only the latest 200.
+router.get('/',requireRole('customer','admin'),asyncRoute(async(req,res)=>{
+ // Customer and Admin have paginated ledgers; Staff sees only status on assigned booking details.
  const {page,limit}=pageParams(req);
  const scopeParams:(string|number)[]=[orgId(req)];
  let scope='p.organization_id=?';
  if(req.user!.role==='customer'){
   scope+=' AND p.customer_id=?';
-  scopeParams.push(req.user!.id);
- }else if(req.user!.role==='staff'){
-  // Match the detail endpoint: Staff only sees payments on accepted bookings assigned to them.
-  scope+=" AND a.staff_id=? AND a.status IN ('confirmed','in_progress','completed')";
   scopeParams.push(req.user!.id);
  }
  const params=[...scopeParams];
@@ -110,7 +106,7 @@ router.get('/',asyncRoute(async(req,res)=>{
  const [count]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total ${fromTable} WHERE ${where}`,params);
  const items=await rows<PaymentRow>(`${select} WHERE ${where}
   ORDER BY p.created_at DESC,p.id DESC LIMIT ? OFFSET ?`,[...params,limit,(page-1)*limit]);
- // Summary always covers this customer's full history rather than only the selected page/filter.
+ // Summary covers the authorized ledger, not just the selected page or filter.
  const [summary]=await rows<{total:number;unpaid:number;awaiting_payment:number;pending_review:number;paid:number;refund_required:number;refunded:number;paid_amount:string}>(`
   SELECT COUNT(*)::int AS total,
   COUNT(*) FILTER (WHERE p.status='unpaid')::int AS unpaid,
@@ -131,8 +127,8 @@ router.get('/:id',asyncRoute(async(req,res)=>{
  const p=await loadPayment(idParam(req.params.id),orgId(req),pool);
  allowed(p,req.user!);
  res.setHeader('Cache-Control','no-store');
- // Internal reconciliation notes are never exposed to customers.
- res.json({payment:req.user!.role==='customer'?{...p,admin_note:null,bank_transaction_reference:undefined}:p});
+ // Internal reconciliation notes are visible to Admin only.
+ res.json({payment:req.user!.role==='admin'?p:{...p,admin_note:null,bank_transaction_reference:undefined}});
 }));
 router.patch('/:id/method',asyncRoute(async(req,res)=>{
  if(req.user!.role!=='customer')throw new HttpError(403,'Chỉ khách hàng chọn phương thức thanh toán');
@@ -168,9 +164,9 @@ router.post('/:id/transfer-notice',asyncRoute(async(req,res)=>{
    throw new HttpError(409,'Chỉ có thể thông báo chuyển khoản cho lịch chưa thanh toán');
   await exec("UPDATE payments SET status='pending_review',customer_note=? WHERE id=?",[note||null,p.id],db);
  });
- res.json({message:'Đã gửi thông báo. Thanh toán đang chờ nhân viên phụ trách hoặc Admin đối soát.'});
+ res.json({message:'Đã gửi thông báo. Thanh toán đang chờ Admin xác nhận trong bản demo.'});
 }));
-router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
+router.post('/:id/reconcile',requireRole('admin'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
  const {action,note}=parse(z.object({
   action:z.enum(['confirm_paid','reject_transfer','confirm_refund']),
@@ -185,18 +181,6 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
    FROM payments p JOIN appointments a ON a.id=p.appointment_id
    WHERE p.appointment_id=? AND p.organization_id=? FOR UPDATE OF p,a`,[id,orgId(req)],db);
   if(!p)throw new HttpError(404,'Không tìm thấy thanh toán');
-  const staffReviewer=req.user!.role==='staff';
-  if(staffReviewer){
-   // Delegated cashier capability is restricted to assigned, accepted bookings.
-   if(p.staff_id!==req.user!.id)throw new HttpError(403,'Chỉ Staff phụ trách lịch mới có thể đối soát');
-   if(action!=='confirm_paid')throw new HttpError(403,'Staff không thể từ chối giao dịch hoặc xác nhận hoàn tiền');
-   const cashAwaitingCollection=p.method==='cash'&&p.status==='unpaid';
-   const bankAwaitingReview=p.method==='bank_transfer'&&p.status==='pending_review';
-   if(!cashAwaitingCollection&&!bankAwaitingReview)
-    throw new HttpError(409,'Staff chỉ được xác nhận tiền mặt chưa thu hoặc chuyển khoản đang chờ xác nhận');
-   if(!['confirmed','in_progress','completed'].includes(p.appointment_status))
-    throw new HttpError(409,'Lịch chưa được nhận hoặc đã hủy, vui lòng chuyển Admin xử lý');
-  }
   let status:PaymentStatus=p.status;
   if(action==='confirm_paid'){
    if(p.appointment_status==='cancelled' && p.status!=='pending_review')throw new HttpError(409,'Lịch đã hủy, không thể ghi nhận thanh toán mới');
@@ -221,7 +205,7 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
    status,reviewerNote,req.user!.id,status,p.id
   ],db);
   await exec('INSERT INTO role_audit_logs(actor_id,organization_id,action,details) VALUES(?,?,?,?::jsonb)',[
-   req.user!.id,orgId(req),staffReviewer?'payment.staff_confirm_paid':'payment.'+action,
+   req.user!.id,orgId(req),'payment.'+action,
    JSON.stringify({appointment_id:id,payment_id:p.id,from:p.status,to:status,method:p.method,amount:p.amount,actor_role:req.user!.role,demo_confirmation:demoBankConfirmation,bank_verified:false})
   ],db);
  });

@@ -69,14 +69,6 @@
 .pc-profile-bank-title h2{font:800 clamp(21px,2.6vw,28px)/1.24 'Bricolage Grotesque','Be Vietnam Pro',sans-serif;color:#274657;letter-spacing:-.045em;margin:0}
 .pc-profile-bank-title p{color:#829087;font-size:12px;line-height:1.7;margin:0}
 .pc-profile-bank-section .pc-bank-layout{margin-top:8px}
-.pc-staff-reconcile{border:1px solid #c4ddcf;background:#f0f7f1;padding:16px;border-radius:12px;margin-top:13px}
-.pc-staff-reconcile-head{display:flex;gap:11px;align-items:flex-start;color:#4d866c}
-.pc-staff-reconcile-head>div{display:flex;flex-direction:column;gap:6px}
-.pc-staff-reconcile-head strong{font-size:12px;color:#2f5e51}
-.pc-staff-reconcile-head small{font-size:10px;line-height:1.7;color:#71877b}
-.pc-staff-reconcile .pc-payment-note input{border:1px solid #cddcd1;background:#fffdf9;border-radius:9px;padding:10px 12px;color:#2c4d51;font:12px 'Be Vietnam Pro',sans-serif;outline:none}
-.pc-staff-reconcile .pc-payment-note input:focus-visible{outline:3px solid #9ac5ac;outline-offset:2px}
-.pc-staff-reconcile-foot{color:#74877a;font-size:10px;line-height:1.75;margin:13px 0 0}
-@media(max-width:720px){.pc-profile-bank-section{margin-top:19px;padding-top:20px}.pc-staff-reconcile{padding:12px}}
+@media(max-width:720px){.pc-profile-bank-section{margin-top:19px;padding-top:20px}}
 
 .pc-staff-pay-tag--awaiting_payment{color:#916c31;background:#fff1cd;border-color:#e9d49d}

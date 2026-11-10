@@ -52,13 +52,14 @@ Example booking:
 | Method | Endpoint | Role / action |
 |---|---|---|
 | GET | `/payments/config` | Signed in; available methods and bank recipient |
-| GET | `/payments`, `/payments/:id` | Role-scoped payment history/details |
+| GET | `/payments` | Customer's own history or Admin's store ledger; Staff has no list access |
+| GET | `/payments/:id` | Customer's own, accepted assigned Staff read-only, or Admin details |
 | PATCH | `/payments/:id/method` | Customer changes an unprocessed method |
 | POST | `/payments/:id/transfer-notice` | Customer announces sending a bank transfer |
-| POST | `/payments/:id/reconcile` | Assigned Staff or Admin confirms; only Admin rejects/refunds |
+| POST | `/payments/:id/reconcile` | Admin only: confirm cash/bank demo, reject bank, record refund |
 | GET, PUT | `/payments/admin-bank` | Admin configures recipient, requires password when changing |
 
-Cash: `unpaid` → assigned Staff/Admin confirms actual cash received → `paid`. Bank: `awaiting_payment` → Customer notice → `pending_review` → Staff/Admin demo confirmation → `paid`. There is **no actual bank verification**. Paid cancelled bookings become `refund_required` and only Admin records `refunded`; other unpaid cancellations become `void`, while pending review remains for resolution. Duplicate confirmations are rejected. The actor and status change are logged.
+Cash: `unpaid` → Admin confirms actual cash received → `paid`. Bank: `awaiting_payment` → Customer notice → `pending_review` → Admin demo confirmation → `paid`. There is **no actual bank verification**. Paid cancelled bookings become `refund_required` and only Admin records `refunded`; other unpaid cancellations become `void`, while pending review remains for resolution. Duplicate confirmations are rejected. Staff only sees the payment status for assigned accepted bookings and never performs payment actions. The actor and status change are logged.
 
 ## Administration
 
