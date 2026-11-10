@@ -21,7 +21,7 @@ test('admin can never read or reverse an existing password hash',()=>{
  assert.match(routes,/bcrypt\.hash\(temporaryPassword,12\)/);
  assert.doesNotMatch(routes,/res\.json\([^\n]*password_hash/);
 });
-test('password reset invalidates prior sessions and keeps secret out of audit',()=>{
+test('password reset invalidates sessions and keeps secrets out of audit',()=>{
  const route=read('backend/src/routes/accounts.ts');
  assert.match(route,/DELETE FROM sessions WHERE user_id=\?/);
  assert.match(route,/account\.password\.reset/);
@@ -31,18 +31,17 @@ test('password reset invalidates prior sessions and keeps secret out of audit',(
  assert.match(route,/account\.role==='admin'/);
  assert.match(route,/temporary_password:temporaryPassword/);
 });
-test('frontend route and navigation are admin-only',()=>{
- const main=read('frontend/src/main.tsx');
- const layout=read('frontend/src/components/Layout.tsx');
- const page=read('frontend/src/pages/Accounts.tsx');
+test('redesigned navigation still hides account tools from non-admin roles',()=>{
+ const main=read('frontend/src/main.tsx'),layout=read('frontend/src/components/Layout.tsx'),page=read('frontend/src/pages/Accounts.tsx');
  assert.match(main,/path="\/admin\/accounts" element=\{<AdminOnly><Accounts\/><\/AdminOnly>\}/);
- assert.ok(layout.includes("user.role==='admin'?["));
+ assert.match(layout,/user\.role==='admin'/);
+ assert.match(layout,/adminOnlyLinks/);
  assert.ok(layout.includes("to:'/admin/accounts'"));
  assert.ok(page.includes("'/accounts/'+selected!.id+'/reset-password'"));
  assert.ok(page.includes('Mật khẩu cũ không thể xem lại'));
  assert.ok(page.includes('Chỉ hiển thị lần này'));
 });
-test('existing three-role authentication remains intact',()=>{
+test('three-role authentication remains unchanged',()=>{
  const auth=read('backend/src/routes/auth.ts');
  assert.match(auth,/bcrypt\.compare\(d\.password,u\.password_hash\)/);
  assert.match(auth,/router\.patch\('\/password'/);
