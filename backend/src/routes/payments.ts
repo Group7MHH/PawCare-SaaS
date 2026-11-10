@@ -168,10 +168,9 @@ router.post('/:id/transfer-notice',asyncRoute(async(req,res)=>{
 }));
 router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
- const {action,note,verification_reference}=parse(z.object({
+ const {action,note}=parse(z.object({
   action:z.enum(['confirm_paid','reject_transfer','confirm_refund']),
-  note:z.string().trim().max(500).optional(),
-  verification_reference:z.string().trim().max(80).optional()
+  note:z.string().trim().max(500).optional()
  }).strict(),req.body);
  await transaction(async db=>{
   // Acquire booking row first, consistently with cancellation and rescheduling.
@@ -191,10 +190,6 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
     throw new HttpError(409,'Staff chỉ có thể xác nhận chuyển khoản đang chờ đối soát');
    if(!['confirmed','in_progress','completed'].includes(p.appointment_status))
     throw new HttpError(409,'Lịch chưa được nhận hoặc đã hủy, vui lòng chuyển Admin xử lý');
-   if(!verification_reference||verification_reference.length<6)
-    throw new HttpError(422,'Cần mã giao dịch ngân hàng đã đối chiếu (từ 6 ký tự)');
-   if(!note||note.length<10)
-    throw new HttpError(422,'Cần ghi chú đã kiểm tra tiền thực nhận (ít nhất 10 ký tự)');
   }
   let status:PaymentStatus=p.status;
   if(action==='confirm_paid'){
@@ -211,22 +206,19 @@ router.post('/:id/reconcile',requireRole('admin','staff'),asyncRoute(async(req,r
    if(!note)throw new HttpError(422,'Cần ghi lại bằng chứng/ghi chú hoàn tiền');
    status='refunded';
   }
-  if(action==='confirm_paid'&&p.method==='bank_transfer'&&p.status==='pending_review'&&req.user!.role==='admin'){
-  if(!verification_reference||verification_reference.length<6)throw new HttpError(422,'Admin cần nhập mã giao dịch đã kiểm tra trên sao kê (từ 6 ký tự)');
-  if(!note||note.length<10)throw new HttpError(422,'Admin cần ghi chú xác minh tiền thực nhận (ít nhất 10 ký tự)');
- }
- // The reviewer and reference are stored separately; keep notes within VARCHAR(500).
- const reviewerNote=note||null;
-  await exec("UPDATE payments SET status=?,admin_note=?,reviewed_by=?,reviewed_at=now(),paid_at=CASE WHEN ?='paid' THEN now() ELSE paid_at END,bank_transaction_reference=CASE WHEN ? IS NOT NULL THEN ? ELSE bank_transaction_reference END WHERE id=?",[
-   status,reviewerNote,req.user!.id,status,
-    action==='confirm_paid'&&p.method==='bank_transfer'?verification_reference:null,
-    action==='confirm_paid'&&p.method==='bank_transfer'?verification_reference:null,p.id
+  // Demo workflow: actor confirmation is recorded, but bank receipt is NOT verified.
+  const demoBankConfirmation=action==='confirm_paid'&&p.method==='bank_transfer';
+  const reviewerNote=demoBankConfirmation
+   ?'Xác nhận mô phỏng trong bản demo; PawCare không xác minh giao dịch ngân hàng.'
+   :note||null;
+  await exec("UPDATE payments SET status=?,admin_note=?,reviewed_by=?,reviewed_at=now(),paid_at=CASE WHEN ?='paid' THEN now() ELSE paid_at END WHERE id=?",[
+   status,reviewerNote,req.user!.id,status,p.id
   ],db);
   await exec('INSERT INTO role_audit_logs(actor_id,organization_id,action,details) VALUES(?,?,?,?::jsonb)',[
    req.user!.id,orgId(req),staffReviewer?'payment.staff_confirm_paid':'payment.'+action,
-   JSON.stringify({appointment_id:id,payment_id:p.id,from:p.status,to:status,method:p.method,amount:p.amount,actor_role:req.user!.role,...(action==='confirm_paid'&&p.method==='bank_transfer'?{bank_transaction_reference:verification_reference}: {})})
+   JSON.stringify({appointment_id:id,payment_id:p.id,from:p.status,to:status,method:p.method,amount:p.amount,actor_role:req.user!.role,demo_confirmation:demoBankConfirmation,bank_verified:false})
   ],db);
  });
- res.json({message:action==='confirm_paid'?'Đã xác nhận nhận tiền':action==='reject_transfer'?'Đã từ chối đối soát và hoàn về trạng thái chưa thanh toán':'Đã ghi nhận hoàn tiền'});
+ res.json({message:action==='confirm_paid'?'Đã xác nhận thanh toán trong bản demo':action==='reject_transfer'?'Đã từ chối đối soát và hoàn về trạng thái chờ thanh toán':'Đã ghi nhận hoàn tiền'});
 }));
 export default router;
