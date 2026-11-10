@@ -177,7 +177,7 @@ router.post('/',asyncRoute(async(req,res)=>{
 }));
 router.patch('/:id',asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
- const schema=z.object({status:z.enum(['pending','confirmed','in_progress','completed','cancelled']).optional(),staff_id:z.coerce.number().int().positive().nullable().optional(),starts_at:z.string().datetime({offset:true}).or(z.string().datetime()).optional(),notes:z.string().max(1000).nullable().optional(),care_result:z.string().trim().min(2).max(3000).optional()});
+ const schema=z.object({status:z.enum(['pending','confirmed','in_progress','completed','cancelled']).optional(),staff_id:z.coerce.number().int().positive().nullable().optional(),starts_at:z.string().datetime({offset:true}).or(z.string().datetime()).optional(),notes:z.string().max(1000).nullable().optional(),care_result:z.string().trim().max(3000).optional()});
  const d=parse(schema,req.body);if(!Object.keys(d).length)throw new HttpError(422,'Thiếu dữ liệu');
  const current=await accessible(id,req);
  if(req.user!.role==='customer' && d.status && d.status!=='cancelled' && d.status!==current.status)throw new HttpError(403,'Khách hàng chỉ được hủy lịch');
@@ -191,7 +191,9 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
  if(['completed','cancelled'].includes(current.status))throw new HttpError(409,'Lịch đã kết thúc hoặc hủy');
  if(d.staff_id){const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE",[d.staff_id,orgId(req)]);if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');}
  if(d.care_result!==undefined && req.user!.role!=='staff')throw new HttpError(403,'Chỉ Staff được ghi kết quả chăm sóc');
- if(d.status==='completed'&&req.user!.role==='staff'&&!d.care_result&&!current.care_result)throw new HttpError(422,'Vui lòng ghi kết quả chăm sóc trước khi hoàn thành');
+ if(d.status==='completed'&&req.user!.role==='staff'&&
+    (d.care_result===undefined?String(current.care_result||'').trim():d.care_result).length<2)
+   throw new HttpError(422,'Vui lòng ghi kết quả chăm sóc (ít nhất 2 ký tự) trước khi hoàn thành');
  const start=d.starts_at?new Date(d.starts_at):new Date(isoUTC(current.starts_at));
  if(d.starts_at){if(req.user!.role==='customer')throw new HttpError(403,'Không có quyền đổi thời gian');validateBookingTime(start,Math.round((new Date(isoUTC(current.ends_at)).getTime()-new Date(isoUTC(current.starts_at)).getTime())/60000));}
  const originalDuration=Math.round((new Date(isoUTC(current.ends_at)).getTime()-new Date(isoUTC(current.starts_at)).getTime())/60000);
@@ -220,7 +222,7 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
    const attention=(d.status==='confirmed'||d.staff_id!==undefined && staffId!==null)?false:
      d.staff_id===null && current.status==='pending'?true:current.needs_admin_attention;
    const assignmentNote=attention?'Chưa phân công nhân viên; Admin cần điều phối':null;
-   await exec("UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=?,needs_admin_attention=?,assignment_note=?,completed_at=CASE WHEN ?='completed' AND status<>'completed' THEN now() ELSE completed_at END WHERE id=? AND organization_id=?",[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result??current.care_result??null,attention,assignmentNote,d.status||current.status,id,orgId(req)],db);
+   await exec("UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=?,needs_admin_attention=?,assignment_note=?,completed_at=CASE WHEN ?='completed' AND status<>'completed' THEN now() ELSE completed_at END WHERE id=? AND organization_id=?",[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result?.trim()||current.care_result||null,attention,assignmentNote,d.status||current.status,id,orgId(req)],db);
    if(d.status==='cancelled')await exec("UPDATE payments SET status=CASE WHEN status='paid' THEN 'refund_required' WHEN status='refunded' THEN 'refunded' WHEN status='refund_required' THEN 'refund_required' WHEN status='pending_review' THEN 'pending_review' ELSE 'void' END WHERE appointment_id=? AND organization_id=?",[id,orgId(req)],db);
    if(d.status==='completed' && current.status!=='completed'){
      await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id)
