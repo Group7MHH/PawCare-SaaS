@@ -29,7 +29,7 @@ export function AuthPage({mode}:{mode:'login'|'register'}){
   <div className="auth-form-area"><div className="auth-card">
    <div className="au-mbrand"><span className="sb-mark"><PawPrint size={20} fill="currentColor"/></span>PawCare</div>
    <span className="eyebrow">{isLogin?'Đăng nhập':'Tạo tài khoản'}</span>
-   <h2>{isLogin?'Chào mừng bạn quay lại':'Bắt đầu cuốn sổ của bé'}</h2>
+   <h2>{isLogin?'Chào mừng Phương Anh quay lại':'Bắt đầu cuốn sổ của bé'}</h2>
    <p>{isLogin?'Đăng nhập để tiếp tục quản lý lịch chăm sóc.':'Tạo tài khoản để lưu hồ sơ và đặt lịch cho thú cưng.'}</p>
    <form onSubmit={submit} className="form-stack">
     {!isLogin&&<label className="field"><span>Họ và tên</span><input autoComplete="name" required minLength={2} placeholder="Nguyễn Văn A" value={form.full_name} onChange={e=>setForm({...form,full_name:e.target.value})}/></label>}
