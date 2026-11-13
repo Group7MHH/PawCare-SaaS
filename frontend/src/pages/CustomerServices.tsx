@@ -10,7 +10,7 @@ import {PageHero} from '../components/PageHero';
 export function CustomerServices(){
  const services=useQuery({queryKey:['services'],queryFn:()=>api<{items:Service[]}>('/services')});
  return <div className="pc-services-landing">
-  <PageHero eyebrow="DỊCH VỤ PAWCARE" title="Chăm sóc chu đáo, trọn vẹn từng khoảnh khắc." description="Khám phá những dịch vụ phù hợp với bé cưng. Xem giá minh bạch và đặt lịch trực tiếp trên PawCare." tone="sage" visual="service" action={<><a className="button button-primary" href="#danh-muc">Khám phá dịch vụ <ArrowRight size={17}/></a><Link className="button button-secondary" to="/book">Đặt lịch chăm sóc</Link></>}/>
+  <PageHero eyebrow="DỊCH VỤ" title="Chăm sóc chu đáo, trọn vẹn từng khoảnh khắc." description="Khám phá những dịch vụ phù hợp với bé cưng. Xem giá minh bạch và đặt lịch trực tiếp trên PawCare." tone="sage" visual="service" action={<><a className="button button-primary" href="#danh-muc">Khám phá dịch vụ <ArrowRight size={17}/></a><Link className="button button-secondary" to="/book">Đặt lịch chăm sóc</Link></>}/>
   <div className="pc-service-process" aria-label="Các bước đặt lịch">
    <span><b>01</b> Chọn dịch vụ</span><span><b>02</b> Chọn ngày và giờ</span><span><b>03</b> Xác nhận lịch hẹn</span>
   </div>
