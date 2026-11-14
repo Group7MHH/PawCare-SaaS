@@ -66,7 +66,7 @@ export function Layout(){
     <div className="tb-right nb-toolbar-actions"><span className="tb-date">{new Date().toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span><span className="tb-sep"/><span className="nb-toolbar-role">{roleTab[user.role]}</span><button type="button" className="tb-btn" aria-label="Thông báo" title="Thông báo" onClick={()=>toast('Thông báo mới sẽ được hiển thị tại đây')}><Bell size={18}/></button><NavLink to="/profile" className="tb-profile" aria-label="Mở hồ sơ tài khoản"><span className="avatar">{initial}</span><span className="n">{user.full_name}</span><ArrowUpRight size={14}/></NavLink></div>
    </header>
    <main id="main-content" className="page-content nb-page-content"><Outlet/></main>
-   <footer className="footer nb-footer"><span>© {new Date().getFullYear()} PawCare <span className="nb-footer-mark" aria-hidden="true"><PawcareMark size={14}/></span> Chăm sóc từ những điều nhỏ nhất</span><span>Pet Care Journal · 01</span></footer>
+   <footer className="footer nb-footer"><span>© {new Date().getFullYear()} PawCare <span className="nb-footer-mark" aria-hidden="true"><PawcareMark size={14}/></span> Chăm sóc từ những điều nhỏ nhất</span></footer>
   </div>
  </div>;
 }
