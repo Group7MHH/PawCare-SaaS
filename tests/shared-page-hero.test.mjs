@@ -13,7 +13,7 @@ test('page heading delegates to same accessible hero component',()=>{
 });
 test('service hero uses shared banner without duplicate framed box',()=>{
  const page=read('frontend/src/pages/CustomerServices.tsx');
- assert.match(page,/<PageHero eyebrow="DỊCH VỤ PAWCARE"/);
+ assert.match(page,/<PageHero eyebrow="DỊCH VỤ"/);
  assert.doesNotMatch(page,/pc-service-hero-aside/);
  assert.match(page,/api<\{items:Service\[\]\}>\('\/services'\)/);
  assert.match(page,/<ServiceCards services=\{services\.data\?\.items\|\|\[\]\}/);
