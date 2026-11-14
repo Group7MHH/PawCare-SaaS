@@ -1,5 +1,5 @@
 import {NavLink,Outlet,useLocation} from 'react-router-dom';
-import {LayoutDashboard,PawPrint,CalendarPlus,CalendarDays,Users,Scissors,UserRound,LogOut,Menu,X,ChevronRight,Bell,UserCog,ShieldCheck,BookHeart,PanelLeftClose,PanelLeftOpen,ArrowUpRight,CreditCard,type LucideIcon} from 'lucide-react';
+import {LayoutDashboard,PawPrint,CalendarPlus,CalendarDays,Users,Scissors,UserRound,LogOut,Menu,ChevronRight,Bell,UserCog,ShieldCheck,BookHeart,PanelLeftClose,PanelLeftOpen,ArrowUpRight,CreditCard,type LucideIcon} from 'lucide-react';
 import {useEffect,useState} from 'react';
 import {useAuth} from '../lib/auth';
 import {toast} from 'react-hot-toast';
@@ -38,11 +38,9 @@ export function Layout(){
  return <div className={`app-layout nb-app nb-role-${user.role} ${collapsed?'nb-collapsed':''}`}>
   <a className="nb-skip-link" href="#main-content">Bỏ qua menu, tới nội dung chính</a>
   <aside id="pawcare-notebook-sidebar" className={`sb nb-sidebar ${open?'sidebar-open':''}`} aria-label="Thanh điều hướng PawCare">
-   <div className="nb-spine" aria-hidden="true"><i/><i/><i/><i/><i/></div>
    <div className="sb-brand nb-brand">
     <div className="sb-mark nb-logo"><PawcareMark size={27}/></div>
     <div className="nb-brand-words"><b>PawCare</b><small>THE PET CARE JOURNAL</small></div>
-    <button type="button" className="icon-button mobile-only sb-close" onClick={()=>setOpen(false)} aria-label="Đóng menu"><X size={21}/></button>
    </div>
    <div className="nb-book-identity"><BookHeart size={16}/><span>{roleLabel[user.role]}</span><span className="nb-book-identity-mark" aria-hidden="true"><PawcareMark size={20}/></span></div>
    <nav className="sb-nav nb-nav" aria-label="Điều hướng chính">
@@ -60,7 +58,6 @@ export function Layout(){
     <button type="button" className="nb-collapse-toggle" onClick={()=>setCollapsed(c=>!c)} aria-label={collapsed?'Mở rộng thanh điều hướng':'Thu gọn thanh điều hướng'} aria-expanded={!collapsed} aria-controls="pawcare-notebook-sidebar" title={collapsed?'Mở rộng sidebar':'Thu gọn sidebar'}>{collapsed?<PanelLeftOpen size={18}/>:<PanelLeftClose size={18}/>}<span>Thu gọn sổ</span></button>
     <button type="button" className="sb-user" title="Đăng xuất" aria-label={`Đăng xuất tài khoản ${user.full_name}`} onClick={()=>{setOpen(false);logout().catch(()=>toast.error('Không thể đăng xuất'));}}><span className="avatar nb-user-avatar">{initial}</span><span className="who"><strong>{user.full_name}</strong><small>{roleName[user.role]}</small></span><span className="out"><LogOut size={17}/></span></button>
    </div>
-   <div className="nb-edge-tab" aria-hidden="true"><PawcareMark size={15}/><span>{roleTab[user.role]}</span></div>
   </aside>
   {open&&<button type="button" className="sb-scrim mobile-only" onClick={()=>setOpen(false)} aria-label="Đóng menu"/>}
   <div className="main-area nb-main-area">
