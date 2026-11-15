@@ -25,6 +25,7 @@ app.set('trust proxy', 1);
 app.use(helmet({contentSecurityPolicy:{directives:{
  'style-src':["'self'","'unsafe-inline'",'https://fonts.googleapis.com'],
  'font-src':["'self'",'https://fonts.gstatic.com','data:'],
+  'img-src':["'self'",'data:','https://img.vietqr.io'],
  'upgrade-insecure-requests':process.env.NODE_ENV==='production'?[]:null
 }}}));
 const appOrigin=process.env.APP_ORIGIN || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';

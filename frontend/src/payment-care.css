@@ -67,3 +67,11 @@
 @media(prefers-reduced-motion:reduce){.pc-payment-panel,.nb-cover-illustration .pc-cover-svg{animation:none!important}.pc-payment-choices button,.pc-checkout-methods button,.pc-payment-ref button,.pc-service-svg{transition:none!important;transform:none!important}}
 
 .pc-payment-status--awaiting_payment{color:#916c31;background:#fff1cd;border-color:#e9d49d}
+
+/* VietQR: bank-transfer scan card, with manual transfer instructions kept below. */
+.pc-payment-qr{display:flex;flex-direction:column;align-items:center;gap:9px;margin:13px 0 16px;padding:17px 13px;text-align:center;border-radius:12px;border:1px solid #c8d8ce;background:#fffdfa}
+.pc-payment-qr>strong{font-size:14px;color:#294b58}
+.pc-payment-qr img{display:block;max-width:100%;height:auto;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #e9ece9}
+.pc-payment-qr>span{color:#315e58;font-size:12px;overflow-wrap:anywhere}
+.pc-payment-qr>span strong{font-weight:750;color:#203c4a}
+.pc-payment-qr>small{max-width:430px;font-size:11px;line-height:1.6;color:#62746e}
