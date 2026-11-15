@@ -57,12 +57,7 @@ router.get('/',asyncRoute(async(req,res)=>{
  const {page,limit}=pageParams(req),clauses:string[]=[];const params:unknown[]=[];
  clauses.push('a.organization_id=?');params.push(orgId(req));
  if(req.user!.role==='customer'){clauses.push('a.customer_id=?');params.push(req.user!.id);}
- if(req.user!.role==='staff'){
-  if(req.query.pool==='true'){
-   clauses.push("a.staff_id IS NULL", "a.status='pending'",'a.starts_at>now()');
-   clauses.push('NOT EXISTS(SELECT 1 FROM appointment_staff_declines d WHERE d.appointment_id=a.id AND d.staff_id=?)');params.push(req.user!.id);
-  }else{clauses.push('a.staff_id=?');params.push(req.user!.id);}
- }
+ if(req.user!.role==='staff'){clauses.push('a.staff_id=?');params.push(req.user!.id);}
  if(req.query.status&&req.query.status!=='all'){clauses.push('a.status=?');params.push(String(req.query.status));}
  if(req.user!.role==='admin' && req.query.payment_status && req.query.payment_status!=='all'){
   const paymentFilter=z.enum(['unpaid','awaiting_payment','pending_review','paid','refund_required','refunded','void']).safeParse(req.query.payment_status);
@@ -70,7 +65,7 @@ router.get('/',asyncRoute(async(req,res)=>{
   clauses.push('pay.status=?');params.push(paymentFilter.data);
  }
  if(req.query.needs_attention==='true' && req.user!.role==='admin'){
-  clauses.push("(a.needs_admin_attention=TRUE OR (a.status='pending' AND a.starts_at <= now() + interval '2 hours') OR (a.status='confirmed' AND a.starts_at < now()))");
+  clauses.push("(a.needs_admin_attention=TRUE OR (a.status='pending' AND a.staff_id IS NULL) OR (a.status='pending' AND a.starts_at <= now() + interval '2 hours') OR (a.status='confirmed' AND a.starts_at < now()))");
  }
  if(req.query.search){clauses.push('(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?)');params.push(...Array(3).fill(`%${String(req.query.search).slice(0,80)}%`));}
  const where=clauses.length?' WHERE '+clauses.join(' AND '):'';
@@ -144,6 +139,7 @@ router.post('/',asyncRoute(async(req,res)=>{
  if(!pet||pet.owner_id!==customerId)throw new HttpError(422,'Thú cưng không thuộc khách hàng đã chọn');
  const ids=d.service_ids??(d.service_id?[d.service_id]:[]);
  const start=new Date(d.starts_at);
+ if(d.staff_id!==undefined&&req.user!.role!=='admin')throw new HttpError(403,'Chỉ Admin được phân công nhân viên');
  if(d.staff_id){
   const [staff]=await rows<any>("SELECT u.id FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.user_id=? AND m.organization_id=? AND m.role='staff' AND m.is_active=TRUE AND u.role='staff' AND u.is_active=TRUE",[d.staff_id,orgId(req)]);
   if(!staff)throw new HttpError(422,'Nhân viên không khả dụng');
@@ -157,16 +153,15 @@ router.post('/',asyncRoute(async(req,res)=>{
   const totalPrice=services.reduce((sum,service)=>sum+Number(service.price),0);
   validateBookingTime(start,totalDuration);
   const st=sqlUTC(start),en=sqlUTC(new Date(start.getTime()+totalDuration*60000));
-  // All new bookings reserve capacity first; Staff voluntarily claim pool bookings.
-  // A preferred Staff member receives a targeted pending request instead.
+  // New Customer bookings reserve store capacity; Admin chooses a Staff member later.
   await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
-  const preferredStaff=d.staff_id??null;
+  const preferredStaff=req.user!.role==='admin'?(d.staff_id??null):null;
   if(preferredStaff)await lockStaff(db,[preferredStaff]);
   if(!await hasBookingCapacity(db,orgId(req),st,en))
    throw new HttpError(409,'Khung giờ đã hết công suất. Vui lòng chọn giờ khác');
   if(preferredStaff)await verifyAvailability(db,preferredStaff,st,en);
-  const created=await exec('INSERT INTO appointments(organization_id,customer_id,pet_id,service_id,staff_id,starts_at,ends_at,price_snapshot,notes,duration_minutes_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?)',
-    [orgId(req),customerId,d.pet_id,services[0].id,preferredStaff,st,en,totalPrice,d.notes||null,totalDuration],db);
+  const created=await exec('INSERT INTO appointments(organization_id,customer_id,pet_id,service_id,staff_id,starts_at,ends_at,price_snapshot,notes,duration_minutes_snapshot,needs_admin_attention,assignment_note) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+    [orgId(req),customerId,d.pet_id,services[0].id,preferredStaff,st,en,totalPrice,d.notes||null,totalDuration,!preferredStaff,!preferredStaff?'Chờ Admin phân công nhân viên':null],db);
   for(const [position,service] of services.entries()){
     await exec('INSERT INTO appointment_services(appointment_id,service_id,position,price_snapshot,duration_minutes_snapshot,name_snapshot) VALUES(?,?,?,?,?,?)',
       [created.insertId,service.id,position,service.price,service.duration_minutes,service.name],db);
@@ -178,7 +173,7 @@ router.post('/',asyncRoute(async(req,res)=>{
   ],db);
   return created;
  });
- res.status(201).json({id:result.insertId,message:'Đã đặt lịch, Staff sẽ chủ động tiếp nhận mà không cần Admin duyệt'});
+ res.status(201).json({id:result.insertId,message:'Đã đặt lịch, chờ Admin phân công nhân viên'});
 }));
 router.patch('/:id',asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
@@ -224,9 +219,8 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
     const declined=await rows<any>('SELECT 1 FROM appointment_staff_declines WHERE appointment_id=? AND staff_id=?',[id,d.staff_id],db);
     if(declined.length)throw new HttpError(409,'Nhân viên đã từ chối lịch này; hãy chọn người khác');
    }
-   const attention=(d.status==='confirmed'||d.staff_id!==undefined && staffId!==null)?false:
-     d.staff_id===null && current.status==='pending'?true:current.needs_admin_attention;
-   const assignmentNote=attention?'Chưa phân công nhân viên; Admin cần điều phối':null;
+   const attention=staffId===null&&fresh.status==='pending'&&d.status!=='cancelled';
+   const assignmentNote=attention?'Chờ Admin phân công nhân viên':null;
    await exec("UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=?,needs_admin_attention=?,assignment_note=?,completed_at=CASE WHEN ?='completed' AND status<>'completed' THEN now() ELSE completed_at END WHERE id=? AND organization_id=?",[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result?.trim()||current.care_result||null,attention,assignmentNote,d.status||current.status,id,orgId(req)],db);
    if(d.status==='cancelled')await exec("UPDATE payments SET status=CASE WHEN status='paid' THEN 'refund_required' WHEN status='refunded' THEN 'refunded' WHEN status='refund_required' THEN 'refund_required' WHEN status='pending_review' THEN 'pending_review' ELSE 'void' END WHERE appointment_id=? AND organization_id=?",[id,orgId(req)],db);
    if(d.status==='completed' && current.status!=='completed'){
