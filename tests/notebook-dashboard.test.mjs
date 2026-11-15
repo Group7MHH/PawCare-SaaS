@@ -17,16 +17,14 @@ test('Customer dashboard renders real pets and appointments rather than fabricat
  assert.match(page,/Không phải nhắc lịch y tế cá nhân/);
  assert.doesNotMatch(page,/mũi tiêm cần nhắc lại|ngày tiêm giả|khách hàng mẫu/);
 });
-test('Staff dashboard accepts from the real appointment API and invalidates caches',()=>{
+test('Staff dashboard shows only work assigned by Admin',()=>{
  const page=read('frontend/src/pages/StaffDashboard.tsx');
- assert.ok(page.includes('/appointments?pool=true&limit=5'));
  assert.ok(page.includes('/appointments?limit=50'));
- assert.ok(page.includes('`/appointments/${id}/accept`'));
- assert.ok(page.includes("json('POST',{})"));
- assert.ok(page.includes("queryKey:['staff-pool']"));
  assert.ok(page.includes("queryKey:['staff-work']"));
- assert.ok(page.includes('disabled={accept.isPending}'));
+ assert.ok(page.includes('Lịch Admin đã giao'));
  assert.ok(page.includes('nb-staff-schedule'));
+ assert.ok(!page.includes('/appointments?pool=true'));
+ assert.ok(!page.includes("queryKey:['staff-pool']"));
 });
 test('Admin operations uses actual dashboard, status, series, and exception data',()=>{
  const page=read('frontend/src/pages/AdminDashboard.tsx');
