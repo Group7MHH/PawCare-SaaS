@@ -83,5 +83,5 @@ test('payment changes are only executed by Admin and Staff has read-only access'
  assert.ok(!ui.includes("pc-staff-reconcile"));
  assert.ok(ui.includes("{admin&&<div className=\"pc-payment-reconcile\">"));
  assert.ok(appointment.includes('appointmentId={selected.id} staff'));
- assert.ok(appointment.includes('chỉ Admin được xác nhận và hoàn tiền'));
+ assert.ok(appointment.includes('Chỉ Admin được xác nhận và hoàn tiền.'));
 });
