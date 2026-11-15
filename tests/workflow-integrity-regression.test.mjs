@@ -43,7 +43,7 @@ test('dashboard distinguishes cash collected from completed services; next booki
  assert.ok(backend.includes("SUM(p.amount) FILTER(WHERE p.status='paid')"));
  assert.ok(backend.includes('collected:finance.collected'));
  assert.ok(admin.includes('stats.collected'));
- assert.ok(admin.includes('stats.refund_required'));
+ assert.ok(!admin.includes('stats.refund_required'));
  assert.ok(backend.includes('ORDER BY CASE WHEN a.status=\'in_progress\' THEN 0 ELSE 1 END,a.starts_at ASC LIMIT 1'));
  assert.ok(overview.includes('dashboard?.next||null'));
 });
@@ -61,7 +61,7 @@ test('overdue bookings are visibly flagged for Admin, without silently cancellin
  const appointments=read('backend/src/routes/appointments.ts');
  const screen=read('frontend/src/pages/AdminAppointments.tsx');
  assert.ok(appointments.includes('is_overdue:overdue'));
- assert.ok(appointments.includes("a.status='confirmed' AND a.starts_at < now()"));
+ assert.ok(appointments.includes("a.status IN ('pending','confirmed') AND a.starts_at < now()"));
  assert.ok(screen.includes('a.is_overdue'));
  assert.ok(screen.includes('selected.is_overdue'));
  assert.ok(!appointments.includes('autoCancelOverdue'));
