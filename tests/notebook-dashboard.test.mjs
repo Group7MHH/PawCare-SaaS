@@ -28,7 +28,7 @@ test('Staff dashboard shows only work assigned by Admin',()=>{
 });
 test('Admin operations uses actual dashboard, status, series, and exception data',()=>{
  const page=read('frontend/src/pages/AdminDashboard.tsx');
- for(const token of ["api<Stats>('/dashboard')",'/appointments?needs_attention=true','stats.revenue','stats.appointments','stats.customers','stats.pets','series?.find','recentCompleted','statuses?.filter'])assert.ok(page.includes(token),token);
+ for(const token of ["api<Stats>('/dashboard')",'/appointments?overdue=true','stats.revenue','stats.appointments','stats.customers','stats.pets','series?.find','recentCompleted','statuses?.filter'])assert.ok(page.includes(token),token);
  assert.ok(page.includes('nb-revenue-graph'));
  assert.ok(page.includes('nb-admin-appointment'));
  assert.doesNotMatch(page,/doanh thu giả|chỉ số mẫu/);
