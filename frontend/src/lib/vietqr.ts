@@ -17,7 +17,14 @@ const bankBins:Record<string,string>={
  SACOMBANK:'970403',STB:'970403',SAI GON THUONG TIN:'970403',
  HDBANK:'970437',HDB:'970437',PHAT TRIEN THANH PHO HO CHI MINH:'970437',
  OCB:'970448',PHUONG DONG:'970448',
- SCB:'970429',SAI GON:'970429'
+ SCB:'970429',SAI GON:'970429',
+ SHB:'970443',SAI GON HA NOI:'970443',
+ MSB:'970426',HANG HAI:'970426',
+ VIB:'970441',QUOC TE:'970441',
+ EXIMBANK:'970431',EIB:'970431',XUAT NHAP KHAU:'970431',
+ SEABANK:'970440',DONG NAM A:'970440',
+ ABBANK:'970425',AN BINH:'970425',
+ BACABANK:'970409',BAC A:'970409'
 };
 const compact=(v:string)=>v.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'D').toUpperCase().replace(/[^A-Z0-9]/g,'');
 const map=new Map(Object.entries(bankBins).map(([k,v])=>[compact(k),v]));
@@ -28,7 +35,7 @@ export function resolveVietQrBin(bankName:string):string|null{
  if(recognizedBins.has(key))return key;
  if(map.has(key))return map.get(key)!;
  // Allow "Ngân hàng TMCP MB Bank" and other common user-entered prefixes.
- const noPrefix=key.replace(/^(NGANHANG)?(THUONGMAICOPHAN|TMCP)?/,'');
+ const noPrefix=key.replace(/^NGANHANG/,'').replace(/^(THUONGMAICOPHAN|TMCP)/,'').replace(/^VIETNAM/,'');
  return map.get(noPrefix)??null;
 }
 
