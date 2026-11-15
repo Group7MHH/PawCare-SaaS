@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('migrations preserve existing bookings and create an indexed Staff queue',()=>{
+test('historical Staff queue migration remains available for existing database history',()=>{
  const prior=read('database/007_staff_assignment.sql');
  const queue=read('database/008_staff_self_service_queue.sql');
  const migrator=read('backend/src/migrate.ts');
@@ -14,49 +14,55 @@ test('migrations preserve existing bookings and create an indexed Staff queue',(
  assert.doesNotMatch(queue,/TRUNCATE|DELETE FROM appointments/i);
 });
 
-test('Staff can claim unassigned bookings or a booking targeted to them',()=>{
- const api=read('backend/src/routes/assignment.ts');
- for(const marker of ["router.post('/:id/accept',requireRole('staff')","router.post('/:id/decline',requireRole('staff')","appt.staff_id!==null&&appt.staff_id!==staffId","await transaction(async db=>","await lockStaff(db,[staffId])","status='confirmed'","staff_id=?"])
-  assert.ok(api.includes(marker),marker);
- assert.match(api,/AND a?\.?staff_id=\?/);
- assert.match(api,/staff_id=\? AND id<>\?/);
- assert.match(api,/appointment_staff_declines WHERE appointment_id=\?/);
+test('only Admin-assigned pending appointments can be accepted by Staff',()=>{
+ const route=read('backend/src/routes/assignment.ts');
+ assert.ok(route.includes("router.post('/:id/accept',requireRole('staff')"));
+ assert.ok(route.includes("if(appt.staff_id!==staffId)throw new HttpError(403"));
+ assert.ok(route.includes("if(appt.status!=='pending')"));
+ assert.ok(route.includes("await lockStaff(db,[staffId])"));
+ assert.ok(route.includes("status='confirmed'"));
+ assert.ok(route.includes("appointment_staff_declines WHERE appointment_id=?"));
 });
 
-test('Staff returns a booking to the pool rather than canceling it',()=>{
- const api=read('backend/src/routes/assignment.ts');
- assert.match(api,/pg_advisory_xact_lock/);
- assert.match(api,/INSERT INTO appointment_staff_declines/);
- assert.match(api,/NOT EXISTS\(SELECT 1 FROM appointment_staff_declines/);
- assert.match(api,/staff_id=NULL,status='pending'/);
- assert.match(api,/needs_admin_attention=\?/);
- assert.doesNotMatch(api,/status='cancelled'/);
+test('Staff decline sends appointment back to Admin for reassignment',()=>{
+ const route=read('backend/src/routes/assignment.ts');
+ assert.ok(route.includes("router.post('/:id/decline',requireRole('staff')"));
+ assert.ok(route.includes("INSERT INTO appointment_staff_declines"));
+ assert.ok(route.includes("staff_id=NULL,status='pending'"));
+ assert.ok(route.includes("needs_admin_attention=TRUE"));
+ assert.ok(route.includes("Admin cần phân công lại"));
+ assert.ok(!route.includes("Đã trả lịch về hàng đợi"));
 });
 
-test('booking reserves Staff capacity without automatic assignment',()=>{
+test('Customers cannot choose a Staff member and Staff cannot fetch open queue',()=>{
  const api=read('backend/src/routes/appointments.ts');
+ const booking=read('frontend/src/pages/Booking.tsx');
  const logic=read('backend/src/lib/scheduling.ts');
- assert.match(api,/SELECT pg_advisory_xact_lock/);
- assert.match(api,/hasBookingCapacity\(db,orgId\(req\),st,en\)/);
- assert.match(api,/hasStaffCapacity\(bookings,staff\?\.total/);
- assert.match(api,/preferredStaff=d.staff_id\?\?null/);
- assert.match(api,/INSERT INTO appointment_services/);
- assert.match(api,/if\(req.query.pool==='true'\)/);
- assert.match(api,/appointment_staff_declines d/);
- assert.match(logic,/events.sort/);
+ assert.ok(api.includes("if(d.staff_id!==undefined&&req.user!.role!=='admin')"));
+ assert.ok(api.includes("const preferredStaff=req.user!.role==='admin'?(d.staff_id??null):null"));
+ assert.ok(api.includes("!preferredStaff?'Chờ Admin phân công nhân viên':null"));
+ assert.ok(api.includes("if(req.user!.role==='staff'){clauses.push('a.staff_id=?')"));
+ assert.ok(!api.includes("if(req.query.pool==='true')"));
+ assert.ok(api.includes("hasBookingCapacity(db,orgId(req),st,en)"));
+ assert.ok(logic.includes('events.sort'));
+ assert.ok(!booking.includes('staffId'));
+ assert.ok(!booking.includes('5. Chọn nhân viên'));
+ assert.ok(booking.includes('Chờ Admin phân công'));
 });
 
-test('UI provides open queue and Admin exception handling',()=>{
+test('Admin assigns, Staff accepts or declines without a public open queue',()=>{
  const page=read('frontend/src/pages/AdminAppointments.tsx');
  const staff=read('frontend/src/pages/StaffDashboard.tsx');
  const admin=read('frontend/src/pages/AdminDashboard.tsx');
- assert.match(page,/Lịch chưa có người nhận/);
- assert.match(page,/decision.mutate\('accept'\)/);
- assert.match(page,/decision.mutate\('decline'\)/);
- assert.match(staff,/staff-pool/);
- assert.match(admin,/admin-assignment-exceptions/);
+ assert.ok(page.includes('Admin phân công nhân viên phụ trách'));
+ assert.ok(page.includes("decision.mutate('accept')"));
+ assert.ok(page.includes("decision.mutate('decline')"));
+ assert.ok(!page.includes('Lịch chưa có người nhận'));
+ assert.ok(!staff.includes('/appointments?pool=true'));
+ assert.ok(!staff.includes("queryKey:['staff-pool']"));
+ assert.ok(staff.includes('Lịch Admin đã giao'));
+ assert.ok(admin.includes('admin-assignment-exceptions'));
 });
-
 test('Admin account column uses requested label without misrepresenting account status',()=>{
  const account=read('frontend/src/pages/Accounts.tsx');
  assert.match(account,/Đã khóa<\/span>/);
