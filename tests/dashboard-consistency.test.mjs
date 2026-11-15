@@ -18,7 +18,7 @@ test('Admin filters are mutually exclusive and customer views refetch',()=>{
  const list=read('frontend/src/pages/AdminAppointments.tsx');
  const customer=read('frontend/src/pages/MyAppointments.tsx');
  assert.match(list,/setStatus\(s.v\);setOverdueOnly\(false\)/);
- assert.match(list,/setStatus\('all'\);setAttentionOnly\(false\)/);
+ assert.match(list,/setStatus\('all'\);setOverdueOnly\(false\)/);
  assert.match(list,/qc.invalidateQueries\(\{queryKey:\['dashboard'\]\}\)/);
  assert.match(customer,/refetchInterval:15000/);
 });
