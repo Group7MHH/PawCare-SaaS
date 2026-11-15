@@ -32,7 +32,7 @@ flowchart LR
 3. Admin assigns Staff to each pending booking. Only the assigned Staff may accept it; a declined booking returns to Admin for reassignment. There is no open Staff queue.
 4. Staff starts the service and records the result when completing it. A care record is created for the pet.
 5. From appointment details, Admin can view the pet's profile and care history. Staff can view this information only for an accepted appointment assigned to them. The modal is read-only and uses the existing permission-checked pet API.
-6. Payment state is separate from service completion. Only Admin confirms cash collected or marks bank transfer **as confirmed in demo only** after Customer notification, and handles rejected transfers/refunds. Staff only views payment status for their assigned bookings.
+6. Payment state is separate from service completion. Only Admin confirms cash collected or marks bank transfer **as confirmed in demo only** after Customer notification, and handles rejected transfers. Refund processing is not available in PawCare; bookings already paid or awaiting review cannot be cancelled within the application. Staff only views payment status for their assigned bookings.
 7. Customer can see booking/payment outcomes; Admin sees store-wide reports.
 
 ## Permission summary
