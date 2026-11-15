@@ -3,7 +3,7 @@
 PawCare is a cloud-hosted pet-care management application for **one store**, with three roles: **Admin, Staff, Customer**. Frontend React/Vite, backend Express/TypeScript, PostgreSQL on Neon, deployed as one Node Web Service on Render. No Docker required.
 
 ## Workflow
-1. Customer registers, manages pets, selects **one or multiple services** (up to 8), checks the full combined time availability and books in a single appointment.
+1. Customer registers, manages pets, selects **one or multiple services** (no fixed eight-service cap; combined duration must fit within 600 minutes and opening hours), checks the full combined time availability and books in a single appointment.
 2. The server reserves a **capacity slot** for the full combined duration; appointments begin in `pending` and Staff can proactively accept requests (or targeted Staff may accept/decline). Selected services and price/duration snapshots are stored in `appointment_services`, while the parent appointment stores the combined price and duration.
 3. Staff accepts appointments from the pool; Admin only handles assignment exceptions and can reassign when needed.
 4. Assigned Staff starts work (`in_progress`), records the result, then completes it.
