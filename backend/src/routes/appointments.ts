@@ -9,7 +9,7 @@ const router=Router();router.use(requireAuth,requireOrganization);
 const bookingSchema=z.object({
  pet_id:z.coerce.number().int().positive(),
  service_id:z.coerce.number().int().positive().optional(), // legacy single-service client
- service_ids:z.array(z.number().int().positive()).min(1).max(8).optional(),
+ service_ids:z.array(z.number().int().positive()).min(1).optional(),
  staff_id:z.coerce.number().int().positive().nullable().optional(),
  starts_at:z.string().datetime({offset:true}).or(z.string().datetime()),
  notes:z.string().max(1000).nullable().optional(),
@@ -18,8 +18,8 @@ const bookingSchema=z.object({
 }).refine(d=>!!(d.service_id||d.service_ids?.length),{message:'Vui lòng chọn ít nhất một dịch vụ'});
 type BookableService={id:number;name:string;price:number;duration_minutes:number};
 async function getSelectedServices(org:number,ids:number[],db:DB=pool):Promise<BookableService[]>{
- if(!ids.length||ids.length>8||new Set(ids).size!==ids.length||ids.some(id=>!Number.isSafeInteger(id)||id<=0))
-   throw new HttpError(422,'Vui lòng chọn từ 1 đến 8 dịch vụ khác nhau');
+ if(!ids.length||new Set(ids).size!==ids.length||ids.some(id=>!Number.isSafeInteger(id)||id<=0))
+   throw new HttpError(422,'Vui lòng chọn ít nhất một dịch vụ hợp lệ, không trùng lặp');
  const result=await rows<BookableService>('SELECT id,name,price,duration_minutes FROM services WHERE organization_id=? AND is_active=TRUE AND id=ANY(?::int[]) FOR SHARE',[org,ids],db);
  if(result.length!==ids.length)throw new HttpError(422,'Có dịch vụ đã ngừng cung cấp hoặc không tồn tại');
  const byId=new Map(result.map(item=>[item.id,item]));
@@ -82,7 +82,7 @@ router.get('/availability',asyncRoute(async(req,res)=>{
  const input=parse(z.object({
   date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   service_id:z.coerce.number().int().positive().optional(),
-  service_ids:z.string().regex(/^\d+(,\d+){0,7}$/).optional(),
+  service_ids:z.string().max(2048).regex(/^\d+(,\d+)*$/).optional(),
   staff_id:z.coerce.number().int().positive().optional()
  }),req.query);
  const ids=input.service_ids?input.service_ids.split(',').map(Number):input.service_id?[input.service_id]:[];
