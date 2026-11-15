@@ -7,7 +7,7 @@ import {AppointmentPetProfile} from '../components/AppointmentPetProfile';
 import {api,dateTime,errorMessage,json,money,type Appointment,type Staff} from '../lib/api';
 import {useAuth} from '../lib/auth';
 import {PageTitle,Panel,Badge,TableWrap,Loading,Empty,ErrorNotice,Modal,Field,SearchBox} from '../components/UI';
-const states=[{v:'pending',t:'Chờ nhân viên nhận'},{v:'confirmed',t:'Đã xác nhận'},{v:'in_progress',t:'Đang thực hiện'},{v:'completed',t:'Hoàn thành'},{v:'cancelled',t:'Đã hủy'}];
+const states=[{v:'pending',t:'Đang chờ nhân viên nhận'},{v:'confirmed',t:'Đã xác nhận'},{v:'in_progress',t:'Đang thực hiện'},{v:'completed',t:'Hoàn thành'},{v:'cancelled',t:'Đã hủy'}];
 const adminChoices:Record<string,string[]>={pending:['pending','confirmed','cancelled'],confirmed:['confirmed','cancelled'],in_progress:['in_progress','cancelled'],completed:['completed'],cancelled:['cancelled']};
 const paymentLabels:Record<string,string>={unpaid:'Chưa thanh toán',awaiting_payment:'Chờ thanh toán',pending_review:'Chờ đối soát',paid:'Đã thanh toán',refund_required:'Cần hoàn tiền',refunded:'Đã hoàn tiền',void:'Đã hủy thanh toán'};
 const paymentFilters=[{v:'all',t:'Tất cả'},{v:'unpaid',t:'Chưa thu'},{v:'awaiting_payment',t:'Chờ chuyển khoản'},{v:'pending_review',t:'Chờ đối soát'},{v:'paid',t:'Đã thanh toán'},{v:'refund_required',t:'Cần hoàn tiền'},{v:'refunded',t:'Đã hoàn'},{v:'void',t:'Đã hủy'}];
