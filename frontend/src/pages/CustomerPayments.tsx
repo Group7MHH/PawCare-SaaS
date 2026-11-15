@@ -27,8 +27,6 @@ const filters:{key:StatusFilter;label:string}[]=[
  {key:'awaiting_payment',label:'Chờ thanh toán'},
  {key:'pending_review',label:'Chờ đối soát'},
  {key:'paid',label:'Đã thanh toán'},
- {key:'refund_required',label:'Cần hoàn tiền'},
- {key:'refunded',label:'Đã hoàn tiền'},
  {key:'void',label:'Đã hủy'}
 ];
 const size=12;

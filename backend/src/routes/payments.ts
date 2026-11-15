@@ -175,7 +175,7 @@ router.post('/:id/transfer-notice',asyncRoute(async(req,res)=>{
 router.post('/:id/reconcile',requireRole('admin'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
  const {action,note}=parse(z.object({
-  action:z.enum(['confirm_paid','reject_transfer','confirm_refund']),
+  action:z.enum(['confirm_paid','reject_transfer']),
   note:z.string().trim().max(500).optional()
  }).strict(),req.body);
  await transaction(async db=>{
@@ -189,18 +189,15 @@ router.post('/:id/reconcile',requireRole('admin'),asyncRoute(async(req,res)=>{
   if(!p)throw new HttpError(404,'Không tìm thấy thanh toán');
   let status:PaymentStatus=p.status;
   if(action==='confirm_paid'){
-   if(p.appointment_status==='cancelled' && p.status!=='pending_review')throw new HttpError(409,'Lịch đã hủy, không thể ghi nhận thanh toán mới');
+   if(p.appointment_status==='cancelled')throw new HttpError(409,'Lịch đã hủy; không thể xác nhận thanh toán');
    if(p.method==='cash' && p.status==='unpaid')status='paid';
-   else if(p.method==='bank_transfer'&&p.status==='pending_review')status=p.appointment_status==='cancelled'?'refund_required':'paid';
+   else if(p.method==='bank_transfer'&&p.status==='pending_review')status='paid';
    else throw new HttpError(409,'Trạng thái hoặc phương thức thanh toán không phù hợp');
   }else if(action==='reject_transfer'){
    if(p.method!=='bank_transfer'||p.status!=='pending_review')throw new HttpError(409,'Chỉ có thể từ chối chuyển khoản đang chờ đối soát');
    if(!note)throw new HttpError(422,'Vui lòng nhập lý do từ chối đối soát');
    status=p.appointment_status==='cancelled'?'void':'awaiting_payment';
-  }else{
-   if(p.status!=='refund_required')throw new HttpError(409,'Chưa có khoản cần hoàn tiền');
-   if(!note)throw new HttpError(422,'Cần ghi lại bằng chứng/ghi chú hoàn tiền');
-   status='refunded';
+
   }
   // Demo workflow: actor confirmation is recorded, but bank receipt is NOT verified.
   const demoBankConfirmation=action==='confirm_paid'&&p.method==='bank_transfer';
@@ -215,6 +212,6 @@ router.post('/:id/reconcile',requireRole('admin'),asyncRoute(async(req,res)=>{
    JSON.stringify({appointment_id:id,payment_id:p.id,from:p.status,to:status,method:p.method,amount:p.amount,actor_role:req.user!.role,demo_confirmation:demoBankConfirmation,bank_verified:false})
   ],db);
  });
- res.json({message:action==='confirm_paid'?'Đã xác nhận thanh toán trong bản demo':action==='reject_transfer'?'Đã từ chối đối soát và hoàn về trạng thái chờ thanh toán':'Đã ghi nhận hoàn tiền'});
+ res.json({message:action==='confirm_paid'?'Đã xác nhận thanh toán trong bản demo':'Đã xử lý từ chối đối soát'});
 }));
 export default router;

@@ -67,6 +67,10 @@ router.get('/',asyncRoute(async(req,res)=>{
  if(req.query.needs_attention==='true' && req.user!.role==='admin'){
   clauses.push("(a.needs_admin_attention=TRUE OR (a.status='pending' AND a.staff_id IS NULL) OR (a.status='pending' AND a.starts_at <= now() + interval '2 hours') OR (a.status='confirmed' AND a.starts_at < now()))");
  }
+ // Match mapAppointment.is_overdue exactly: only appointments that haven't started.
+ if(req.query.overdue==='true' && req.user!.role==='admin'){
+  clauses.push("(a.status IN ('pending','confirmed') AND a.starts_at < now())");
+ }
  if(req.query.search){clauses.push('(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?)');params.push(...Array(3).fill(`%${String(req.query.search).slice(0,80)}%`));}
  const where=clauses.length?' WHERE '+clauses.join(' AND '):'';
  const [{total}]=await rows<any>(`SELECT COUNT(*) AS total FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id LEFT JOIN payments pay ON pay.appointment_id=a.id ${where}`,params);
@@ -222,7 +226,13 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
    const attention=staffId===null&&fresh.status==='pending'&&d.status!=='cancelled';
    const assignmentNote=attention?'Chờ Admin phân công nhân viên':null;
    await exec("UPDATE appointments SET status=?,staff_id=?,starts_at=?,ends_at=?,notes=?,care_result=?,needs_admin_attention=?,assignment_note=?,completed_at=CASE WHEN ?='completed' AND status<>'completed' THEN now() ELSE completed_at END WHERE id=? AND organization_id=?",[d.status||current.status,staffId,st,en,d.notes===undefined?current.notes:d.notes,d.care_result?.trim()||current.care_result||null,attention,assignmentNote,d.status||current.status,id,orgId(req)],db);
-   if(d.status==='cancelled')await exec("UPDATE payments SET status=CASE WHEN status='paid' THEN 'refund_required' WHEN status='refunded' THEN 'refunded' WHEN status='refund_required' THEN 'refund_required' WHEN status='pending_review' THEN 'pending_review' ELSE 'void' END WHERE appointment_id=? AND organization_id=?",[id,orgId(req)],db);
+   if(d.status==='cancelled'){
+    // Preserve financial history: without in-app refunds, never cancel a paid/noticed booking.
+    const [payment]=await rows<{status:string}>('SELECT status FROM payments WHERE appointment_id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
+    if(payment&&!['unpaid','awaiting_payment','void'].includes(payment.status))
+     throw new HttpError(409,'Lịch có giao dịch đã thanh toán hoặc chờ đối soát. Không thể hủy khi hệ thống không hỗ trợ hoàn tiền');
+    await exec("UPDATE payments SET status='void' WHERE appointment_id=? AND organization_id=? AND status IN ('unpaid','awaiting_payment')",[id,orgId(req)],db);
+   }
    if(d.status==='completed' && current.status!=='completed'){
      await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id)
        VALUES(?,?,?,'Kết quả chăm sóc','grooming',(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?)`,
@@ -236,9 +246,12 @@ router.delete('/:id',asyncRoute(async(req,res)=>{
   const a=await accessible(id,req,db);
   const [locked]=await rows<any>('SELECT status FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
   if(!locked || !canTransition(locked.status,'cancelled',req.user!.role))throw new HttpError(409,'Không thể hủy lịch ở trạng thái này');
+  // Lock appointment then payment, matching payment reconciliation lock order.
+  const [payment]=await rows<{status:string}>('SELECT status FROM payments WHERE appointment_id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
+  if(payment&&!['unpaid','awaiting_payment','void'].includes(payment.status))
+   throw new HttpError(409,'Lịch có giao dịch đã thanh toán hoặc chờ đối soát. Không thể hủy khi hệ thống không hỗ trợ hoàn tiền');
   await exec("UPDATE appointments SET status='cancelled' WHERE id=? AND organization_id=?",[id,orgId(req)],db);
-  // Cancelling a paid booking creates a manual refund obligation; never auto-refund.
-  await exec("UPDATE payments SET status=CASE WHEN status='paid' THEN 'refund_required' WHEN status IN ('refund_required','refunded','pending_review') THEN status ELSE 'void' END WHERE appointment_id=? AND organization_id=?",[id,orgId(req)],db);
+  await exec("UPDATE payments SET status='void' WHERE appointment_id=? AND organization_id=? AND status IN ('unpaid','awaiting_payment')",[id,orgId(req)],db);
  });
  res.json({message:'Đã hủy lịch hẹn'});
 }));

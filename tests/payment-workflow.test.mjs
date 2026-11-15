@@ -15,7 +15,7 @@ test('booking creates payment in same DB transaction using server-authoritative 
  assert.ok(route.includes("payment_method:z.enum(['cash','bank_transfer'])"));
  assert.ok(route.includes('totalPrice,d.payment_method'));
  assert.ok(route.includes('created.insertId,customerId,totalPrice'));
- assert.ok(route.includes("'refund_required'"));
+ assert.ok(!route.includes("THEN 'refund_required'"));
  assert.ok(route.includes("'pending_review'"));
 });
 test('manual bank notice cannot mark paid, Admin must reconcile before success',()=>{
@@ -28,7 +28,7 @@ test('manual bank notice cannot mark paid, Admin must reconcile before success',
  assert.ok(!route.includes("payment.staff_confirm_paid"));
  assert.ok(route.includes("if(action==='confirm_paid')"));
  assert.ok(route.includes("p.status==='pending_review'"));
- assert.ok(route.includes("'refund_required'"));
+ assert.ok(!route.includes("confirm_refund"));
  assert.ok(route.includes("role_audit_logs"));
 });
 test('payment is available in booking, customer appointments and Admin dialog',()=>{
@@ -58,15 +58,15 @@ test('cancelled transfer is never marked paid and requires Admin handling',()=>{
  const source=read('backend/src/routes/payments.ts');
  const panel=read('frontend/src/components/PaymentPanel.tsx');
  const bookings=read('backend/src/routes/appointments.ts');
- assert.ok(source.includes("status=p.appointment_status==='cancelled'?'refund_required':'paid'"));
+ assert.ok(source.includes("if(p.appointment_status==='cancelled')throw new HttpError(409"));
  assert.ok(source.includes("status=p.appointment_status==='cancelled'?'void':'awaiting_payment'"));
  assert.ok(source.includes("requireRole('admin')"));
- assert.ok(bookings.includes("WHEN status='paid' THEN 'refund_required'"));
- assert.ok(bookings.includes("WHEN status='pending_review' THEN 'pending_review'"));
+ assert.ok(bookings.includes("if(payment&&!['unpaid','awaiting_payment','void'].includes(payment.status))"));
+ assert.ok(bookings.includes("!['unpaid','awaiting_payment','void'].includes(payment.status)"));
  assert.ok(panel.includes('cancelledTransferAwaitingReview'));
- assert.ok(panel.includes('Ghi nhận cần hoàn tiền (Demo)'));
- assert.ok(panel.includes('nếu chưa nhận tiền, từ chối đối soát'));
- assert.ok(panel.includes("confirm_refund"));
+ assert.ok(!panel.includes('Ghi nhận cần hoàn tiền (Demo)'));
+ assert.ok(panel.includes('Chỉ được từ chối thông báo nếu thực tế chưa nhận tiền'));
+ assert.ok(!panel.includes("confirm_refund"));
 });
 
 test('payment changes are only executed by Admin and Staff has read-only access',()=>{
@@ -83,5 +83,5 @@ test('payment changes are only executed by Admin and Staff has read-only access'
  assert.ok(!ui.includes("pc-staff-reconcile"));
  assert.ok(ui.includes("{admin&&<div className=\"pc-payment-reconcile\">"));
  assert.ok(appointment.includes('appointmentId={selected.id} staff'));
- assert.ok(appointment.includes('Chỉ Admin được xác nhận và hoàn tiền.'));
+ assert.ok(appointment.includes('Chỉ Admin được xác nhận thanh toán.'));
 });

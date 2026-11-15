@@ -61,7 +61,7 @@ test('Admin assigns, Staff accepts or declines without a public open queue',()=>
  assert.ok(!staff.includes('/appointments?pool=true'));
  assert.ok(!staff.includes("queryKey:['staff-pool']"));
  assert.ok(staff.includes('Lịch Admin đã giao'));
- assert.ok(admin.includes('admin-assignment-exceptions'));
+ assert.ok(admin.includes('admin-overdue-appointments'));
 });
 test('Admin account column uses requested label without misrepresenting account status',()=>{
  const account=read('frontend/src/pages/Accounts.tsx');

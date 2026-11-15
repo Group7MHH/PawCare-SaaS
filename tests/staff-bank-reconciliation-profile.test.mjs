@@ -26,7 +26,7 @@ test('Admin-only reconciliation retains locking, audit, and historical bank migr
  assert.ok(db.includes('(organization_id,bank_transaction_reference)'));
  assert.ok(read('backend/src/migrate.ts').includes('011_staff_payment_reconciliation.sql'));
 });
-test('Staff sees payment status without financial actions; Admin retains refunds',()=>{
+test('Staff sees payment status without financial actions; refund operations removed',()=>{
  const appointments=read('frontend/src/pages/AdminAppointments.tsx');
  const payment=read('frontend/src/components/PaymentPanel.tsx');
  assert.ok(appointments.includes("selected.staff_id===user.id&&selected.status!=='pending'"));
@@ -39,6 +39,6 @@ test('Staff sees payment status without financial actions; Admin retains refunds
  assert.ok(payment.includes('Xác nhận chuyển khoản (Demo)'));
  assert.ok(payment.includes('trạng thái thanh toán chỉ được xác nhận trong PawCare'));
  assert.ok(payment.includes('{admin&&<div className="pc-payment-reconcile">'));
- assert.ok(payment.includes("confirm_refund"));
+ assert.ok(!payment.includes("confirm_refund"));
  assert.ok(!read('frontend/src/pages/CustomerPayments.tsx').includes('confirm_paid'));
 });
