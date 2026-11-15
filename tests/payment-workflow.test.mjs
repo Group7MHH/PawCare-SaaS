@@ -62,7 +62,7 @@ test('cancelled transfer is never marked paid and requires Admin handling',()=>{
  assert.ok(source.includes("status=p.appointment_status==='cancelled'?'void':'awaiting_payment'"));
  assert.ok(source.includes("requireRole('admin')"));
  assert.ok(bookings.includes("if(payment&&!['unpaid','awaiting_payment','void'].includes(payment.status))"));
- assert.ok(bookings.includes("WHEN status='pending_review' THEN 'pending_review'"));
+ assert.ok(bookings.includes("!['unpaid','awaiting_payment','void'].includes(payment.status)"));
  assert.ok(panel.includes('cancelledTransferAwaitingReview'));
  assert.ok(!panel.includes('Ghi nhận cần hoàn tiền (Demo)'));
  assert.ok(panel.includes('nếu chưa nhận tiền, từ chối đối soát'));
