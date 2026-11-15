@@ -62,10 +62,11 @@ test('Customer dashboard and pets show live information, not fabricated medical 
  assert.doesNotMatch(overview,/mũi tiêm cần nhắc lại|ngày tiêm giả/);
  assert.match(pets,/filteredRecords=records\.filter/);
 });
-test('Staff queue and Admin exception handling remain connected',()=>{
+test('Admin assignment and Staff workflow remain connected',()=>{
  const staff=read('frontend/src/pages/StaffDashboard.tsx'),admin=read('frontend/src/pages/AdminAppointments.tsx');
- assert.ok(staff.includes('/appointments?pool=true'));
+ assert.ok(staff.includes('/appointments?limit=50'));
  assert.ok(staff.includes('/staff/appointments'));
+ assert.ok(!staff.includes('/appointments?pool=true'));
  assert.ok(admin.includes("'accept'|'decline'"));
  assert.ok(admin.includes('needs_attention='));
  assert.ok(admin.includes('care_result'));
