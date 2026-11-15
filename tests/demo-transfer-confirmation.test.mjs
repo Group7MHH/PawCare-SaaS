@@ -14,7 +14,7 @@ test('demo payment confirmation is exclusively Admin-controlled',()=>{
  assert.ok(reconcile.includes('reviewed_by=?'));
  assert.ok(reconcile.includes('demo_confirmation:demoBankConfirmation'));
  assert.ok(reconcile.includes('bank_verified:false'));
- assert.ok(reconcile.includes("status=p.appointment_status==='cancelled'?'refund_required':'paid'"));
+ assert.ok(reconcile.includes("if(p.appointment_status==='cancelled')throw new HttpError(409"));
 });
 test('customer never self-confirms and demo screen is one clear button',()=>{
  const route=read('backend/src/routes/payments.ts');
@@ -29,12 +29,12 @@ test('customer never self-confirms and demo screen is one clear button',()=>{
  assert.ok(!ui.includes('Mã giao dịch ngân hàng đã đối chiếu'));
  assert.ok(!ui.includes('Bằng chứng/ghi chú xác minh (bắt buộc)'));
 });
-test('Admin keeps refund/reject note requirements and cash confirmation',()=>{
+test('Admin keeps reject note and cash confirmation without refund action',()=>{
  const route=read('backend/src/routes/payments.ts');
  const ui=read('frontend/src/components/PaymentPanel.tsx');
  assert.ok(route.includes("if(!note)throw new HttpError(422,'Vui lòng nhập lý do từ chối đối soát')"));
- assert.ok(route.includes("if(!note)throw new HttpError(422,'Cần ghi lại bằng chứng/ghi chú hoàn tiền')"));
+ assert.ok(!route.includes("action:z.enum(['confirm_paid','reject_transfer','confirm_refund'])"));
  assert.ok(route.includes("if(p.method==='cash' && p.status==='unpaid')status='paid'"));
  assert.ok(ui.includes('Từ chối đối soát'));
- assert.ok(ui.includes('Xác nhận đã hoàn tiền'));
+ assert.ok(!ui.includes('Xác nhận đã hoàn tiền'));
 });
