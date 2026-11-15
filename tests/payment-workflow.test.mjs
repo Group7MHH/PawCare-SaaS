@@ -65,7 +65,7 @@ test('cancelled transfer is never marked paid and requires Admin handling',()=>{
  assert.ok(bookings.includes("!['unpaid','awaiting_payment','void'].includes(payment.status)"));
  assert.ok(panel.includes('cancelledTransferAwaitingReview'));
  assert.ok(!panel.includes('Ghi nhận cần hoàn tiền (Demo)'));
- assert.ok(panel.includes('nếu chưa nhận tiền, từ chối đối soát'));
+ assert.ok(panel.includes('Chỉ được từ chối thông báo nếu thực tế chưa nhận tiền'));
  assert.ok(!panel.includes("confirm_refund"));
 });
 
