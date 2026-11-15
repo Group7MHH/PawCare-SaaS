@@ -50,7 +50,7 @@ test('services use actual API prices and navigate to booking',()=>{
  assert.ok(ui.includes("api<{items:Service[]}>('/services')"));
  assert.match(ui,/<PageHero eyebrow="DỊCH VỤ"/);
  assert.match(ui,/<ServiceCards services=\{services\.data\?\.items\|\|\[\]\}/);
- for(const snippet of ['/book?service_ids=','money(service.price)','service.duration_minutes','selectedIds.length>=maxSelected'])
+ for(const snippet of ['/book?service_ids=','money(service.price)','service.duration_minutes','totalDuration+service.duration_minutes>600'])
   assert.ok(cards.includes(snippet),snippet);
 });
 test('Customer dashboard and pets show live information, not fabricated medical reminders',()=>{

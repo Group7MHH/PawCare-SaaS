@@ -32,7 +32,7 @@ Register creates a Customer. Admin promotes or demotes Staff through account man
 | GET | `/customers`, `/customers/:id` | Admin or Staff scoped to assigned customers |
 | GET | `/dashboard` | Stats for own role |
 
-A booking can select 1–8 distinct services. The backend verifies duration, prices, active Staff capacity and overlapping schedules in a transaction. New bookings begin in `pending`; Staff accepts (→ `confirmed`), begins work (→ `in_progress`), records care result and completes (→ `completed`). Customer may cancel only before work starts. Admin handles reassignment/cancellation exceptions.
+A booking can select one or more distinct active services, as long as the combined duration does not exceed 600 minutes and fits within store opening hours. The backend verifies duration, prices, active Staff capacity and overlapping schedules in a transaction. New bookings begin in `pending`; Staff accepts (→ `confirmed`), begins work (→ `in_progress`), records care result and completes (→ `completed`). Customer may cancel only before work starts. Admin handles reassignment/cancellation exceptions.
 
 Example booking:
 
