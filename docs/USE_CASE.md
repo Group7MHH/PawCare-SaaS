@@ -27,9 +27,9 @@ flowchart LR
 
 ## Main workflow
 
-1. Customer registers, creates a pet and selects one or more services within the duration and opening-hours constraints, day/time, optional preferred Staff and payment method.
+1. Customer registers, creates a pet and selects one or more services within the duration and opening-hours constraints, day/time and payment method; the Customer does not assign Staff.
 2. API checks booking capacity, reserves the time and creates a pending booking plus unpaid/awaiting-payment payment record.
-3. Staff accepts a targeted request or a common-queue booking. A declined booking returns to the queue; Admin handles exceptional cases.
+3. Admin assigns Staff to each pending booking. Only the assigned Staff may accept it; a declined booking returns to Admin for reassignment. There is no open Staff queue.
 4. Staff starts the service and records the result when completing it. A care record is created for the pet.
 5. From appointment details, Admin can view the pet's profile and care history. Staff can view this information only for an accepted appointment assigned to them. The modal is read-only and uses the existing permission-checked pet API.
 6. Payment state is separate from service completion. Only Admin confirms cash collected or marks bank transfer **as confirmed in demo only** after Customer notification, and handles rejected transfers/refunds. Staff only views payment status for their assigned bookings.
@@ -40,7 +40,7 @@ flowchart LR
 | Action | Customer | Staff | Admin |
 |---|---|---|---|
 | Manage own pet and booking | Yes | View assigned records | View and intervene |
-| Accept, start, complete assigned booking | No | Yes | Handle exceptions (not perform Staff completion) |
+| Accept/decline, start, complete Admin-assigned booking | No | Yes | Handle exceptions (not perform Staff completion) |
 | View payment status | Own bookings | Assigned accepted bookings | All bookings |
 | Confirm cash / bank demo payment | No | No | Yes |
 | Reject bank transfer / mark refund | No | No | Yes |

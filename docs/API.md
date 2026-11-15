@@ -28,11 +28,11 @@ Register creates a Customer. Admin promotes or demotes Staff through account man
 | GET | `/appointments/availability` | Check combined service/staff capacity |
 | GET, POST | `/appointments` | List scoped to role; Customer books. Admin may filter with `payment_status=unpaid/pending_review/paid/...` |
 | GET, PATCH, DELETE | `/appointments/:id` | View, update or cancel subject to permissions |
-| POST | `/appointments/:id/accept`, `/appointments/:id/decline` | Staff accepts or returns a pending/confirmed assignment |
+| POST | `/appointments/:id/accept`, `/appointments/:id/decline` | Staff accepts or returns an assignment made by Admin |
 | GET | `/customers`, `/customers/:id` | Admin or Staff scoped to assigned customers |
 | GET | `/dashboard` | Stats for own role |
 
-A booking can select one or more distinct active services, as long as the combined duration does not exceed 600 minutes and fits within store opening hours. The backend verifies duration, prices, active Staff capacity and overlapping schedules in a transaction. New bookings begin in `pending`; Staff accepts (→ `confirmed`), begins work (→ `in_progress`), records care result and completes (→ `completed`). Customer may cancel only before work starts. Admin handles reassignment/cancellation exceptions.
+A booking can select one or more distinct active services, as long as the combined duration does not exceed 600 minutes and fits within store opening hours. The backend verifies duration, prices, active Staff capacity and overlapping schedules in a transaction. New Customer bookings begin in `pending` without a Staff member. Admin assigns an available Staff member, who accepts (→ `confirmed`) or declines (→ back to Admin for reassignment). Staff then begins work (→ `in_progress`), records the care result and completes (→ `completed`). Customer may cancel only before work starts.
 
 Example booking:
 
@@ -40,7 +40,6 @@ Example booking:
 {
   "pet_id": 1,
   "service_ids": [2, 3],
-  "staff_id": null,
   "starts_at": "2026-11-12T02:00:00.000Z",
   "payment_method": "cash",
   "notes": "Chăm sóc nhẹ nhàng"
