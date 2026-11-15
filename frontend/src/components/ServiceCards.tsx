@@ -9,11 +9,10 @@ type Props={
  selectedIds?:number[];
  onToggle?:(id:number)=>void;
  totalDuration?:number;
- maxSelected?:number;
 };
 
 /** Presentational service selector. Categories, prices and descriptions are supplied by API. */
-export function ServiceCards({services,selectedIds=[],onToggle,totalDuration=0,maxSelected=8}:Props){
+export function ServiceCards({services,selectedIds=[],onToggle,totalDuration=0}:Props){
  const [category,setCategory]=useState('all');
  const categories=useMemo(()=>Array.from(new Set(services.map(s=>s.category?.trim()||'Khác'))),[services]);
  const visible=category==='all'?services:services.filter(s=>(s.category?.trim()||'Khác')===category);
@@ -26,7 +25,7 @@ export function ServiceCards({services,selectedIds=[],onToggle,totalDuration=0,m
   <div className="pc-service-card-grid">
    {visible.map((service,index)=>{
     const selected=selectedIds.includes(service.id);
-    const disabled=!!onToggle&&!selected&&(selectedIds.length>=maxSelected||totalDuration+service.duration_minutes>600);
+    const disabled=!!onToggle&&!selected&&(totalDuration+service.duration_minutes>600);
     return <article key={service.id} className={`pc-service-plan ${selected?'selected':''}`}>
      <div className="pc-service-plan-top">
       <span className="pc-service-serial">{String(index+1).padStart(2,'0')} / {service.category||'Dịch vụ'}</span>
