@@ -32,7 +32,6 @@ export function AdminDashboard(){
     <span><small>Đã thu, chưa hoàn</small><strong>{money(stats.collected||0)}</strong></span>
     <span><small>Chưa thanh toán / Chờ thanh toán</small><strong>{money((Number(stats.unpaid)||0)+(Number(stats.awaiting_payment)||0))}</strong></span>
     <span><small>Chờ đối soát</small><strong>{money(stats.pending_review||0)}</strong></span>
-    <span><small>Cần hoàn tiền</small><strong>{money(stats.refund_required||0)}</strong></span>
    </div><RevenueGraph series={series}/><div className="nb-revenue-foot"><span>PAWCARE / FINANCIAL JOURNAL</span><span>Đơn vị: VNĐ</span></div></section>
    <aside className="nb-admin-figures nb-enter"><div className="nb-admin-stat nb-admin-stat-a"><span className="nb-stat-enumeral">01 / 03</span><span className="nb-section-kicker">LỊCH HẸN</span><strong>{stats.appointments||0}</strong><div><span>Tổng lượt đặt</span><ArrowUpRight size={17}/></div></div><div className="nb-admin-stat nb-admin-stat-b"><span className="nb-stat-enumeral">02 / 03</span><span className="nb-section-kicker">KHÁCH HÀNG</span><strong>{stats.customers||0}</strong><div><span>Khách hàng đã đặt lịch</span><ArrowUpRight size={17}/></div></div><div className="nb-admin-stat nb-admin-stat-c"><span className="nb-stat-enumeral">03 / 03</span><span className="nb-section-kicker">THÚ CƯNG</span><strong>{stats.pets||0}</strong><div><span>Hồ sơ đang quản lý</span><ArrowUpRight size={17}/></div></div></aside>
   </div>
