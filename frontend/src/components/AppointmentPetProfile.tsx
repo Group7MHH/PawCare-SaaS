@@ -6,9 +6,9 @@ import {api,dateOnly,errorMessage,speciesName,type Pet,type CareRecord} from '..
 type PetProfileResponse={pet:Pet;records:CareRecord[]};
 
 /** Read-only pet information in an authorized appointment detail. */
-export function AppointmentPetProfile({petId}:{petId:number}){
+export function AppointmentPetProfile({petId,viewerId}:{petId:number;viewerId:number}){
  const profile=useQuery({
-  queryKey:['pet',String(petId)],
+  queryKey:['appointment-pet-profile',viewerId,petId],
   queryFn:()=>api<PetProfileResponse>(`/pets/${petId}`),
   staleTime:0,
   refetchOnMount:'always'
