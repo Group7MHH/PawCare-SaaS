@@ -73,7 +73,7 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
    <div className="pc-payment-actions">
     {(cashNeedsCollection||(bankNeedsConfirmation&&!cancelledTransferAwaitingReview))&&<button type="button" className="button button-primary" disabled={working} onClick={()=>{if(confirm(p.method==='cash'?'Bạn xác nhận cửa hàng đã nhận đủ tiền mặt tại quầy?':'Xác nhận mô phỏng: PawCare không xác minh giao dịch ngân hàng. Đánh dấu đã thanh toán?'))reconcile.mutate('confirm_paid');}}><CheckCircle2 size={16}/>{p.method==='cash'?'Xác nhận đã nhận tiền mặt':'Xác nhận chuyển khoản (Demo)'}</button>}
    </div>
-   {{p.method==='bank_transfer'&&p.status==='pending_review'&&<label className="pc-payment-note">Lý do từ chối đối soát<textarea rows={2} maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder="Nhập lý do từ chối"/></label>}}
+   {p.method==='bank_transfer'&&p.status==='pending_review'&&<label className="pc-payment-note">Lý do từ chối đối soát<textarea rows={2} maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder="Nhập lý do từ chối"/></label>}
    <div className="pc-payment-actions">
     {p.method==='bank_transfer'&&p.status==='pending_review'&&<button className="button button-secondary" type="button" disabled={working||!note.trim()} onClick={()=>reconcile.mutate('reject_transfer')}>Từ chối đối soát</button>}
    </div>
