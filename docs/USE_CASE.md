@@ -31,8 +31,9 @@ flowchart LR
 2. API checks booking capacity, reserves the time and creates a pending booking plus unpaid/awaiting-payment payment record.
 3. Staff accepts a targeted request or a common-queue booking. A declined booking returns to the queue; Admin handles exceptional cases.
 4. Staff starts the service and records the result when completing it. A care record is created for the pet.
-5. Payment state is separate from service completion. Only Admin confirms cash collected or marks bank transfer **as confirmed in demo only** after Customer notification, and handles rejected transfers/refunds. Staff only views payment status for their assigned bookings.
-6. Customer can see booking/payment outcomes; Admin sees store-wide reports.
+5. From appointment details, Admin can view the pet's profile and care history. Staff can view this information only for an accepted appointment assigned to them. The modal is read-only and uses the existing permission-checked pet API.
+6. Payment state is separate from service completion. Only Admin confirms cash collected or marks bank transfer **as confirmed in demo only** after Customer notification, and handles rejected transfers/refunds. Staff only views payment status for their assigned bookings.
+7. Customer can see booking/payment outcomes; Admin sees store-wide reports.
 
 ## Permission summary
 
