@@ -3,6 +3,7 @@ import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {toast} from 'react-hot-toast';
 import {Banknote,CheckCircle2,ClipboardCheck,Copy,CreditCard,Landmark,ShieldCheck} from 'lucide-react';
 import {api,errorMessage,json,money} from '../lib/api';
+import {buildVietQrUrl} from '../lib/vietqr';
 
 export type PaymentStatus='unpaid'|'awaiting_payment'|'pending_review'|'paid'|'refund_required'|'refunded'|'void';
 export type Payment={
@@ -29,6 +30,8 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
  if(payment.error||!p)return <div className="pc-payment-error" role="alert">Không thể tải trạng thái thanh toán. Vui lòng thử lại.</div>;
  const availableBank=config.data?.bank;
  const bank=p.bank_name_snapshot&&p.bank_account_snapshot&&p.bank_owner_snapshot?{name:p.bank_name_snapshot,account:p.bank_account_snapshot,owner:p.bank_owner_snapshot}:null;
+ const vietQrUrl=!admin&&!staff&&p.method==='bank_transfer'&&p.status==='awaiting_payment'&&bank
+  ?buildVietQrUrl(bank,Number(p.amount),p.payment_reference):null;
  const unpaid=['unpaid','awaiting_payment'].includes(p.status)&&p.appointment_status!=='cancelled';
  const cashNeedsCollection=p.method==='cash'&&p.status==='unpaid'&&p.appointment_status!=='cancelled';
  const bankNeedsConfirmation=p.method==='bank_transfer'&&p.status==='pending_review';
@@ -48,6 +51,13 @@ export function PaymentPanel({appointmentId,admin=false,staff=false}:{appointmen
   {!admin&&!staff&&p.method==='bank_transfer'&&p.status==='awaiting_payment'&&bank&&<div className="pc-payment-bank">
    <span className="pc-payment-overline">TÀI KHOẢN NHẬN TIỀN ĐÃ GẮN VỚI LỊCH HẸN</span>
    <p><strong>{bank.name}</strong><span>{bank.account}</span><small>{bank.owner}</small></p>
+   {vietQrUrl?<div className="pc-payment-qr">
+    <strong>Quét QR để chuyển khoản</strong>
+    <img src={vietQrUrl} alt={`Mã VietQR chuyển ${money(p.amount)} đến tài khoản ${bank.account} tại ${bank.name}, nội dung ${p.payment_reference}`} loading="lazy" referrerPolicy="no-referrer" width={240} height={240}/>
+    <span>Số tiền: <strong>{money(p.amount)}</strong></span>
+    <span>Nội dung: <strong>{p.payment_reference}</strong></span>
+    <small>Mã QR được VietQR tạo từ số tài khoản, số tiền và mã giao dịch. Hãy kiểm tra tên người nhận trên ứng dụng ngân hàng trước khi xác nhận. Quét QR không tự xác nhận thanh toán.</small>
+   </div>:<p className="pc-payment-warning">Chưa thể tạo QR cho ngân hàng này. Vui lòng chuyển khoản thủ công bằng số tài khoản và nội dung bên trên.</p>}
    <div className="pc-payment-bank-note">Nếu ngân hàng của cửa hàng vừa được thay đổi, hãy xác nhận lại trước khi chuyển. Nội dung đề xuất: <strong>{p.payment_reference}</strong>. Vui lòng kiểm tra người thụ hưởng trước khi chuyển.</div>
    <label className="pc-payment-note">Ghi chú giao dịch (không bắt buộc)<textarea maxLength={300} rows={2} value={note} onChange={e=>setNote(e.target.value)} placeholder="Ví dụ: thời gian hoặc tên người chuyển"/></label>
    <button className="button button-primary" type="button" disabled={working} onClick={()=>notice.mutate()}><ClipboardCheck size={16}/> Tôi đã chuyển khoản</button>
