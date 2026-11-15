@@ -64,7 +64,7 @@ export function CustomerPayments(){
  const select=(p:Payment)=>setSelectedId(p.appointment_id);
  const active=selectedId!==null;
  return <div className="pc-customer-payments">
-  <PageTitle eyebrow="TÀI CHÍNH CÁ NHÂN" title="Thanh toán của tôi"
+  <PageTitle eyebrow="TÀI CHÍNH CÁ NHÂN" title="Thanh toán"
    description="Theo dõi số tiền, mã giao dịch và tiến độ đối soát mọi lịch chăm sóc tại một nơi."
    action={<Link className="button button-primary" to="/book"><CalendarDays size={16}/> Đặt lịch mới</Link>}/>
   <section className="pc-wallet-intro" aria-label="Tổng quan thanh toán">
