@@ -19,7 +19,7 @@ test('Overdue means pending/confirmed with start in the past, never completed',(
  assert.ok(api.includes("a.status IN ('pending','confirmed') AND a.starts_at < now()"));
  const dash=read('frontend/src/pages/AdminDashboard.tsx');
  assert.ok(dash.includes("/appointments?overdue=true&limit=1"));
- assert.ok(dash.includes("Lịch quá hẹn"));
+ assert.ok(dash.includes("lịch quá hẹn"));
 });
 test('No refund buttons, refund API action, or refunds newly generated on cancellation',()=>{
  const panel=read('frontend/src/components/PaymentPanel.tsx');
