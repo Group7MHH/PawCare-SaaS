@@ -27,7 +27,7 @@ flowchart LR
 
 ## Main workflow
 
-1. Customer registers, creates a pet and selects 1–8 services, day/time, optional preferred Staff and payment method.
+1. Customer registers, creates a pet and selects one or more services within the duration and opening-hours constraints, day/time, optional preferred Staff and payment method.
 2. API checks booking capacity, reserves the time and creates a pending booking plus unpaid/awaiting-payment payment record.
 3. Staff accepts a targeted request or a common-queue booking. A declined booking returns to the queue; Admin handles exceptional cases.
 4. Staff starts the service and records the result when completing it. A care record is created for the pet.
