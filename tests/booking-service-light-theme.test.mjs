@@ -16,5 +16,6 @@ test('booking service selection uses current PawCare design system',()=>{
 test('booking workflow remains multi-service with live availability',()=>{
  for(const value of ['service_ids:serviceIds','totalPrice=selected.reduce','duration=selected.reduce','<ServiceCards','/appointments/availability'])assert.ok(booking.includes(value));
  assert.ok(booking.includes('duration<=600'));
- assert.ok(cards.includes('selectedIds.length>=maxSelected'));
+ assert.ok(cards.includes('totalDuration+service.duration_minutes>600'));
+ assert.ok(!cards.includes('maxSelected'));
 });
