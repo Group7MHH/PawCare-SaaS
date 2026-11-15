@@ -4,14 +4,14 @@ PawCare is a cloud-hosted pet-care management application for **one store**, wit
 
 ## Workflow
 1. Customer registers, manages pets, selects **one or multiple services** (no fixed eight-service cap; combined duration must fit within 600 minutes and opening hours), checks the full combined time availability and books in a single appointment.
-2. The server reserves a **capacity slot** for the full combined duration; appointments begin in `pending` and Staff can proactively accept requests (or targeted Staff may accept/decline). Selected services and price/duration snapshots are stored in `appointment_services`, while the parent appointment stores the combined price and duration.
-3. Staff accepts appointments from the pool; Admin only handles assignment exceptions and can reassign when needed.
+2. The server reserves a **capacity slot** for the full combined duration. Customer bookings begin in `pending` with no Staff assigned and appear in Admin's assignment queue. Selected services and price/duration snapshots are stored in `appointment_services`.
+3. Admin selects an available Staff member for each booking. Assigned Staff accepts it (or declines, returning it to Admin for reassignment); Staff cannot claim unassigned bookings.
 4. Assigned Staff starts work (`in_progress`), records the result, then completes it.
 5. Customer sees appointment history and Admin sees store-wide metrics.
 
 ## Roles
 - Admin: services, direct Staff role management, exceptional assignments, customers, payments and revenue.
-- Staff: accept/return assigned appointments, perform care, record results, and view payment status only. No receipt confirmation or refunds.
+- Staff: accept/decline Admin-assigned appointments, perform care, record results, and view payment status only. No receipt confirmation or refunds.
 - Customer: own pets, own bookings, cancellation before work begins.
 
 ## Development
