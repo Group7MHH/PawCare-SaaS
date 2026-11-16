@@ -77,10 +77,18 @@ router.get('/',asyncRoute(async(req,res)=>{
   clauses.push("(a.needs_admin_attention=TRUE OR (a.status='pending' AND a.staff_id IS NULL) OR (a.status='pending' AND a.starts_at <= now() + interval '2 hours') OR (a.status='confirmed' AND a.starts_at < now()))");
  }
  // Match mapAppointment.is_overdue exactly: only appointments that haven't started.
+ if(req.query.active_work==='true' && req.user!.role==='staff'){
+  clauses.push("a.status IN ('pending','confirmed','in_progress')");
+ }
  if(req.query.overdue==='true' && req.user!.role==='admin'){
   clauses.push("(a.status IN ('pending','confirmed') AND a.starts_at < now())");
  }
- if(req.query.search){clauses.push('(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?)');params.push(...Array(3).fill(`%${String(req.query.search).slice(0,80)}%`));}
+ if(req.query.search){
+  clauses.push(`(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?
+    OR EXISTS (SELECT 1 FROM appointment_services aps JOIN services svc ON svc.id=aps.service_id
+      WHERE aps.appointment_id=a.id AND COALESCE(aps.name_snapshot,svc.name) ILIKE ?))`);
+  params.push(...Array(4).fill(`%${String(req.query.search).slice(0,80)}%`));
+ }
  const sort=appointmentSortSchema.safeParse(req.query.sort??'id_desc');
  if(!sort.success)throw new HttpError(422,'Kiểu sắp xếp lịch hẹn không hợp lệ');
  const orderBy=appointmentOrders[sort.data];
@@ -200,6 +208,10 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
  if(d.status&&!canTransition(current.status,d.status,req.user!.role))throw new HttpError(422,'Chuyển trạng thái không hợp lệ');
  if(req.user!.role==='staff'&&(d.staff_id!==undefined||d.starts_at!==undefined))throw new HttpError(403,'Chỉ quản trị viên được đổi nhân viên hoặc giờ hẹn');
  if(req.user!.role==='admin' && (d.status==='in_progress'||d.status==='completed'))throw new HttpError(403,'Chỉ Staff phụ trách được hoàn thành công việc');
+ if(d.starts_at!==undefined && req.user!.role==='admin' && !['pending','confirmed'].includes(current.status))
+   throw new HttpError(409,'Chỉ được đổi lịch đang chờ hoặc đã xác nhận, không đổi lịch đang chăm sóc.');
+ if(d.starts_at!==undefined && req.user!.role==='admin' && d.status && d.status!==current.status)
+   throw new HttpError(422,'Hãy đổi giờ hẹn và thay đổi trạng thái ở hai thao tác riêng.');
  if(req.user!.role==='customer'){
    if(Object.keys(d).some(k=>k!=='status'&&k!=='notes'))throw new HttpError(403,'Khách hàng chỉ được sửa ghi chú hoặc hủy lịch');
    if(!['pending','confirmed'].includes(current.status))throw new HttpError(409,'Không thể thay đổi lịch này');
