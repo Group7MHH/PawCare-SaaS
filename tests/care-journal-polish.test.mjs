@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('pet care collection retains profile editing and read-only care history navigation',()=>{
  const pets=read('frontend/src/pages/Pets.tsx');
- for(const phrase of ["queryKey:['pets']","api<{items:Pet[]}>('/pets')","setAdding(true)","<PetEditor","'/pets/'+p.id","recordTab==='vaccination'","filteredRecords=records.filter","Lịch sử chăm sóc","Kết quả chăm sóc sẽ hiển thị sau khi nhân viên hoàn thành lịch hẹn."]){
+ for(const phrase of ["queryKey:['pets']","api<{items:Pet[]}>('/pets')","setAdding(true)","<PetEditor","'/pets/'+p.id","recordTab==='all'||r.record_type===recordTab","filteredRecords=records.filter","Lịch sử chăm sóc","Kết quả chăm sóc sẽ hiển thị sau khi nhân viên hoàn thành lịch hẹn."]){
   assert.ok(pets.includes(phrase),phrase);
  }
  assert.ok(pets.includes('pc-record-collection'));
