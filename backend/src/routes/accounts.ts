@@ -109,6 +109,15 @@ router.delete('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
   if(!account)throw new HttpError(404,'Không tìm thấy tài khoản');
   if(account.role==='admin')throw new HttpError(403,'Không được xóa tài khoản Admin');
   if(data.confirmation_email!==account.email)throw new HttpError(400,'Email xác nhận không khớp với tài khoản');
+  if(account.role==='staff'){
+    // Never cascade-delete a customer's assigned appointment or care history.
+    const [dependencies]=await rows<{appointments:number;care_records:number}>(`
+      SELECT (SELECT COUNT(*)::int FROM appointments WHERE staff_id=?) AS appointments,
+             (SELECT COUNT(*)::int FROM care_records WHERE created_by_user_id=?) AS care_records`,
+      [target,target],db);
+    if(dependencies.appointments>0||dependencies.care_records>0)
+      throw new HttpError(409,'Nhân viên có lịch hoặc hồ sơ chăm sóc liên quan. Hãy khóa tài khoản để bảo toàn dữ liệu khách hàng.');
+  }
   const impact=await deletionImpact(target,db);
   if(data.expected_pets!==impact.pets ||
      data.expected_appointments!==impact.appointments ||
@@ -187,6 +196,15 @@ router.patch('/accounts/:id/role',sensitiveLimit,asyncRoute(async(req,res)=>{
   if(account.role==='admin')throw new HttpError(403,'Không được thay đổi quyền Admin');
   if(account.role===data.role)throw new HttpError(409,'Tài khoản đã có quyền này');
   if(!account.is_active)throw new HttpError(409,'Tài khoản đang bị khóa. Vui lòng mở khóa trước khi cấp quyền');
+  if(data.role==='staff'){
+    // Staff-only pages cannot access the Customer's historical bookings.
+    const [history]=await rows<{pets:number;bookings:number}>(`
+      SELECT (SELECT COUNT(*)::int FROM pets WHERE owner_id=?) AS pets,
+             (SELECT COUNT(*)::int FROM appointments WHERE customer_id=?) AS bookings`,
+      [target,target],db);
+    if(history.pets>0||history.bookings>0)
+      throw new HttpError(409,'Tài khoản đang có thú cưng hoặc lịch hẹn của Customer. Hãy dùng tài khoản chưa có lịch sử để cấp quyền Staff.');
+  }
 
   if(data.role==='customer'){
    // Do not strand ongoing bookings without an authorized staff member.
