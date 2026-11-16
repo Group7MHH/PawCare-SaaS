@@ -35,5 +35,7 @@ test('Admin UI previews effects and requires typed email and Admin password',()=
  assert.match(ui,/expected_appointments:deletePreview\.data!\.appointments/);
  assert.match(ui,/admin_password:adminPassword/);
  assert.match(ui,/json\('DELETE'/);
- assert.match(ui,/Nếu xóa Staff/);
+ assert.match(ui,/Không thể xóa nhân viên có lịch hẹn hoặc hồ sơ chăm sóc liên quan/);
+ assert.match(ui,/selected\.role==='staff'/);
+ assert.match(api,/dependencies\.appointments>0\|\|dependencies\.care_records>0/);
 });
