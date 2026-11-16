@@ -57,7 +57,7 @@ test('Staff dashboard customer and pet counts are restricted to assigned appoint
  const source=read('backend/src/routes/management.ts');
  assert.match(source,/const where=staff\?'organization_id=\? AND staff_id=\?':'organization_id=\?'/);
  assert.match(source,/COUNT\(DISTINCT customer_id\) AS value FROM appointments WHERE \$\{where\}`,params/);
- assert.match(source,/COUNT\(DISTINCT pet_id\) AS value FROM appointments WHERE \$\{where\}`,params/);
+ assert.ok(source.includes("SELECT COUNT(DISTINCT pet_id) AS value FROM appointments WHERE organization_id=? AND staff_id=?"));
 });
 
 test('Single-store API no longer exposes unused multi-store selection and legacy Staff creation',()=>{
