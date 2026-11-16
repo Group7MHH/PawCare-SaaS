@@ -22,3 +22,9 @@ test('Admin filters are mutually exclusive and customer views refetch',()=>{
  assert.match(list,/qc.invalidateQueries\(\{queryKey:\['dashboard'\]\}\)/);
  assert.match(customer,/refetchInterval:15000/);
 });
+
+test('Admin dashboard pet count supplies zero SQL bind values; Staff uses its own scope',()=>{
+ const api=read('backend/src/routes/management.ts');
+ assert.ok(api.includes("WHERE u.role='customer'`,staff?[org,id]:[]),"));
+ assert.ok(api.includes("'SELECT COUNT(DISTINCT pet_id) AS value FROM appointments WHERE organization_id=? AND staff_id=?'"));
+});
