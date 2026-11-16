@@ -50,3 +50,20 @@ test('Completed care records use service-aware type, not a fixed grooming type',
  }
  assert.ok(classifier.includes("types.every(type=>type===types[0])"));
 });
+
+test('Service names are snapshotted for new and historical care entries',()=>{
+ const migration=read('database/014_care_record_service_names.sql');
+ const migrator=read('backend/src/migrate.ts');
+ const completion=read('backend/src/routes/appointments.ts');
+ const customer=read('frontend/src/pages/Pets.tsx');
+ const staff=read('frontend/src/components/AppointmentPetProfile.tsx');
+ const types=read('frontend/src/lib/api.ts');
+ assert.ok(migration.includes('ALTER TABLE care_records ADD COLUMN IF NOT EXISTS service_names_snapshot TEXT'));
+ assert.ok(migration.includes('COALESCE(aps.name_snapshot,s.name)'));
+ assert.ok(migrator.includes('014_care_record_service_names.sql'));
+ assert.ok(completion.includes("const bookedServiceNames=selectedServices.map(service=>service.name).join(' + ')"));
+ assert.ok(completion.includes('appointment_id,service_names_snapshot)'));
+ assert.ok(customer.includes('r.service_names_snapshot||r.title'));
+ assert.ok(staff.includes('record.service_names_snapshot||record.title'));
+ assert.ok(types.includes('service_names_snapshot?:string|null'));
+});
