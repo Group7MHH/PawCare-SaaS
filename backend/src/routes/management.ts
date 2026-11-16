@@ -12,9 +12,9 @@ router.get('/customers',requireRole('admin','staff'),asyncRoute(async(req,res)=>
  const scope=req.user!.role==='staff'?[org,req.user!.id]:[];
  const [{total}]=await rows<any>(`SELECT COUNT(*) AS total ${condition}`,[...scope,q,q,q]);
  const items=await rows<any>(`SELECT u.id,u.full_name,u.email,u.phone,u.address,u.is_active,u.created_at,
- (SELECT COUNT(DISTINCT a.pet_id) FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=?) AS pet_count,
+ (SELECT COUNT(*) FROM pets p WHERE p.owner_id=u.id) AS pet_count,
  (SELECT COUNT(*) FROM appointments a WHERE a.customer_id=u.id AND a.organization_id=?) AS appointment_count
- ${condition} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,[org,org,...scope,q,q,q,limit,(page-1)*limit]);
+ ${condition} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,[org,...scope,q,q,q,limit,(page-1)*limit]);
  res.json({items,total,page,limit});
 }));
 router.get('/customers/:id',requireRole('admin','staff'),asyncRoute(async(req,res)=>{
@@ -49,7 +49,10 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
  const where=staff?'organization_id=? AND staff_id=?':'organization_id=?';
  const [[customers],[pets],[totals]]=await Promise.all([
   rows<any>(`SELECT COUNT(DISTINCT customer_id) AS value FROM appointments WHERE ${where}`,params),
-  rows<any>(`SELECT COUNT(DISTINCT pet_id) AS value FROM appointments WHERE ${where}`,params),
+  rows<any>(staff
+   ? 'SELECT COUNT(DISTINCT pet_id) AS value FROM appointments WHERE organization_id=? AND staff_id=?'
+   : `SELECT COUNT(*)::int AS value FROM pets p JOIN users u ON u.id=p.owner_id
+      WHERE u.role='customer'`,params),
   rows<any>(`SELECT COUNT(*)::int AS appointments,COUNT(*) FILTER (WHERE status='completed')::int AS completed,
    COALESCE(SUM(price_snapshot) FILTER (WHERE status='completed'),0) AS revenue
    FROM appointments WHERE ${where}`,params)
