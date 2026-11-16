@@ -18,7 +18,7 @@ export function Catalog(){const {user}=useAuth(),admin=user?.role==='admin';cons
 function ServiceEditor({entry,onClose}:{entry:Service|null;onClose:()=>void}){const qc=useQueryClient();const [form,setForm]=useState<ServiceForm>(entry?{name:entry.name,category:entry.category,description:entry.description||'',duration_minutes:String(entry.duration_minutes),price:String(entry.price),is_active:!!entry.is_active}:emptyService);const save=useMutation({mutationFn:()=>api(entry?`/services/${entry.id}`:'/services',json(entry?'PATCH':'POST',{...form,duration_minutes:Number(form.duration_minutes),price:Number(form.price)})),onSuccess:()=>{qc.invalidateQueries({queryKey:['services']});toast.success('Đã lưu dịch vụ');onClose();},onError:e=>toast.error(errorMessage(e))});return <Modal title={entry?'Chỉnh sửa dịch vụ':'Thêm dịch vụ mới'} onClose={onClose}><form className="form-stack" onSubmit={(e:FormEvent)=>{e.preventDefault();save.mutate();}}><Field label="Tên dịch vụ"><input required minLength={2} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></Field><div className="form-grid"><Field label="Danh mục"><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}><option>Spa</option><option>Chăm sóc</option><option>Sức khỏe</option><option>Khác</option></select></Field><Field label="Thời lượng (phút)"><select value={form.duration_minutes} onChange={e=>setForm({...form,duration_minutes:e.target.value})}>{[30,60,90,120,150,180,240].map(n=><option key={n} value={n}>{n} phút</option>)}</select></Field></div><Field label="Đơn giá (VNĐ)"><input required type="number" min={0} value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></Field><Field label="Mô tả"><textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></Field><label className="checkbox-line"><input type="checkbox" checked={form.is_active} onChange={e=>setForm({...form,is_active:e.target.checked})}/> Đang cung cấp</label><div className="modal-actions"><button type="button" className="button button-secondary" onClick={onClose}>Hủy</button><button disabled={save.isPending} className="button button-primary">Lưu dịch vụ</button></div></form></Modal>;
 }
 
-type ServiceDeletePreview={service_id:number;service_name:string;appointments:number;active_appointments:number;completed_appointments:number;care_records:number};
+type ServiceDeletePreview={service_id:number;service_name:string;appointments:number;active_appointments:number;completed_appointments:number;care_records:number;multi_service_appointments:number};
 function ServiceDeleteDialog({entry,onClose}:{entry:Service;onClose:()=>void}){
  const qc=useQueryClient();
  const [confirmationName,setConfirmationName]=useState('');
@@ -28,13 +28,14 @@ function ServiceDeleteDialog({entry,onClose}:{entry:Service;onClose:()=>void}){
   onSuccess:data=>{qc.invalidateQueries({queryKey:['services']});qc.invalidateQueries({queryKey:['appointments']});qc.invalidateQueries({queryKey:['stats']});qc.invalidateQueries({queryKey:['customers']});qc.invalidateQueries({queryKey:['pets']});toast.success(`Đã xóa dịch vụ và ${data.deleted_appointments} lịch hẹn`);onClose();},
   onError:error=>{toast.error(errorMessage(error));preview.refetch();}
  });
- const ready=!!preview.data && confirmationName===entry.name && !remove.isPending && !preview.isFetching;
+ const ready=!!preview.data && preview.data.active_appointments===0 && preview.data.multi_service_appointments===0 && confirmationName===entry.name && !remove.isPending && !preview.isFetching;
  return <Modal title="Xóa vĩnh viễn dịch vụ" onClose={onClose}>
   <div className="form-stack">
    <p><strong>{entry.name}</strong> sẽ bị xóa vĩnh viễn khỏi PawCare và không thể khôi phục qua giao diện.</p>
    {preview.isLoading?<Loading/>:preview.error?<ErrorNotice message={errorMessage(preview.error)}/>:preview.data&&<>
     <p><strong>{preview.data.appointments} lịch hẹn</strong> sẽ bị xóa, trong đó có <strong>{preview.data.active_appointments} lịch đang chờ/đang xử lý</strong> và <strong>{preview.data.completed_appointments} lịch đã hoàn thành</strong>.</p>
     <p><strong>{preview.data.care_records} hồ sơ chăm sóc liên quan</strong> sẽ được giữ lại, nhưng bỏ liên kết đến lịch hẹn bị xóa. Thống kê lịch hẹn/doanh thu liên quan cũng sẽ thay đổi.</p>
+    {(preview.data.active_appointments>0||preview.data.multi_service_appointments>0)&&<p className="form-hint form-hint-error" role="alert">Không thể xóa vĩnh viễn: dịch vụ có {preview.data.active_appointments} lịch đang xử lý hoặc {preview.data.multi_service_appointments} lịch đặt kèm dịch vụ khác. Hãy ngừng cung cấp để giữ dữ liệu khách hàng.</p>}
     <Field label={`Nhập chính xác tên dịch vụ "${entry.name}" để xác nhận`}>
       <input value={confirmationName} onChange={e=>setConfirmationName(e.target.value)} autoComplete="off" placeholder={entry.name}/>
     </Field>
