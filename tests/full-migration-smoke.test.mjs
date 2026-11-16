@@ -60,6 +60,22 @@ test('Full PostgreSQL migration smoke test with immutable service/payment histor
    await db.query('UPDATE services SET name=$1 WHERE id=$2',['Tên dịch vụ đã đổi',service]);
    const preserved=(await db.query('SELECT name_snapshot FROM appointment_services WHERE appointment_id=$1',[a])).rows[0];
    assert.equal(preserved.name_snapshot,'Tắm và vệ sinh');
+   // Real PostgreSQL integration: a mixed-service booking keeps all of its rows
+   // when a service is stopped; its booked names are independent of later renames.
+   const second=(await db.query(
+    'INSERT INTO services(organization_id,name,category,description,duration_minutes,price) VALUES($1,$2,$3,$4,$5,$6) RETURNING id',
+    [org,'Vệ sinh tai','Spa','Care',30,50000])).rows[0].id;
+   await db.query('INSERT INTO appointment_services(appointment_id,service_id,position,price_snapshot,duration_minutes_snapshot,name_snapshot) VALUES($1,$2,1,$3,$4,$5)',
+    [a,second,50000,30,'Vệ sinh tai']);
+   await db.query('UPDATE services SET is_active=FALSE WHERE id=$1',[second]);
+   const bundle=await db.query(`SELECT string_agg(aps.name_snapshot,' + ' ORDER BY aps.position) AS names,
+      COUNT(*)::int AS count FROM appointment_services aps WHERE aps.appointment_id=$1`,[a]);
+   assert.equal(bundle.rows[0].count,2);
+   assert.equal(bundle.rows[0].names,'Tắm và vệ sinh + Vệ sinh tai');
+   assert.equal((await db.query('SELECT COUNT(*)::int AS total FROM appointments WHERE id=$1',[a])).rows[0].total,1);
+   const care=(await db.query("INSERT INTO care_records(pet_id,organization_id,title,record_type,care_date,appointment_id,service_names_snapshot) VALUES($1,$2,$3,$4,CURRENT_DATE,$5,$6) RETURNING service_names_snapshot",
+    [pet,org,'Kết quả chăm sóc','other',a,bundle.rows[0].names])).rows[0];
+   assert.equal(care.service_names_snapshot,'Tắm và vệ sinh + Vệ sinh tai');
    const first=(await db.query("INSERT INTO payments(organization_id,appointment_id,customer_id,amount,method,payment_reference,bank_transaction_reference,status) VALUES($1,$2,$3,$4,'bank_transfer',$5,$6,'paid') RETURNING id",
     [org,a,customer,200000,'PC_TEST_01','BANK_REF_001'])).rows[0].id;
    assert.ok(first);
