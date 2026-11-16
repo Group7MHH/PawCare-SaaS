@@ -52,7 +52,7 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
   rows<any>(staff
    ? 'SELECT COUNT(DISTINCT pet_id) AS value FROM appointments WHERE organization_id=? AND staff_id=?'
    : `SELECT COUNT(*)::int AS value FROM pets p JOIN users u ON u.id=p.owner_id
-      WHERE u.role='customer'`,params),
+      WHERE u.role='customer'`,staff?[org,id]:[]),
   rows<any>(`SELECT COUNT(*)::int AS appointments,COUNT(*) FILTER (WHERE status='completed')::int AS completed,
    COALESCE(SUM(price_snapshot) FILTER (WHERE status='completed'),0) AS revenue
    FROM appointments WHERE ${where}`,params)
