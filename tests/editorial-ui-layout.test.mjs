@@ -21,7 +21,7 @@ test('appointment detail reads actual appointment records',()=>{
 });
 test('pet records are filtered rather than generated as mock medical events',()=>{
  const page=read('frontend/src/pages/Pets.tsx');
- for(const term of ['filteredRecords=records.filter',"recordTab==='vaccination'",'filteredRecords.map','/pets/${id}/records'])assert.ok(page.includes(term),term);
+ for(const term of ['filteredRecords=records.filter',"recordTab==='all'||r.record_type===recordTab",'filteredRecords.map','/pets/${id}/records'])assert.ok(page.includes(term),term);
 });
 test('service bundle workflow keeps API payload',()=>{
  const booking=read('frontend/src/pages/Booking.tsx');
