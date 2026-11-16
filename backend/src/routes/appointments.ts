@@ -4,6 +4,7 @@ import {pool,rows,exec,transaction,lockStaff,type DB} from '../lib/db.js';
 import {asyncRoute,HttpError,idParam,parse,pageParams} from '../lib/http.js';
 import {isPrivileged,orgId,requireAuth,requireOrganization} from '../lib/auth.js';
 import {getActiveBank} from '../lib/payment-bank.js';
+import {classifyAppointmentCare} from '../lib/care-records.js';
 import {canTransition,hasStaffCapacity,isoUTC,sqlUTC,validateBookingTime} from '../lib/scheduling.js';
 const router=Router();router.use(requireAuth,requireOrganization);
 // Whitelisted and deterministic across filtering/pagination; ID order is numeric.
@@ -245,9 +246,19 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
     await exec("UPDATE payments SET status='void' WHERE appointment_id=? AND organization_id=? AND status IN ('unpaid','awaiting_payment')",[id,orgId(req)],db);
    }
    if(d.status==='completed' && current.status!=='completed'){
+     // Match actual appointment services; do not classify every completed booking as grooming.
+     const selectedServices=await rows<{name:string;category:string|null}>(`
+       SELECT COALESCE(aps.name_snapshot,s.name) AS name,s.category
+       FROM appointment_services aps JOIN services s ON s.id=aps.service_id
+       WHERE aps.appointment_id=? ORDER BY aps.position`,[id],db);
+     if(!selectedServices.length){
+       selectedServices.push(...await rows<{name:string;category:string|null}>(
+         'SELECT name,category FROM services WHERE id=?',[current.service_id],db));
+     }
+     const recordType=classifyAppointmentCare(selectedServices);
      await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id)
-       VALUES(?,?,?,'Kết quả chăm sóc','grooming',(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?)`,
-       [current.pet_id,orgId(req),req.user!.id,d.care_result??current.care_result,id],db);
+       VALUES(?,?,?,'Kết quả chăm sóc',?,(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?)`,
+       [current.pet_id,orgId(req),req.user!.id,recordType,d.care_result??current.care_result,id],db);
    }
  });res.json({message:'Đã cập nhật lịch hẹn'});
 }));
