@@ -15,7 +15,8 @@ const roles={admin:'Admin',staff:'Staff',customer:'Customer'};
 type AccountDeletionImpact={
  id:number;full_name:string;email:string;role:string;pets:number;
  appointments:number;active_appointments:number;completed_appointments:number;
- completed_revenue:number;care_records:number
+ completed_revenue:number;care_records:number;payments:number;paid_payments:number;
+ pending_review_payments:number;payment_amount:number
 };
 const initial=(a:Account):AccountForm=>({
  full_name:a.full_name,email:a.email,phone:a.phone||'',address:a.address||''
@@ -101,7 +102,8 @@ export function Accounts(){
    confirmation_email:confirmationEmail,
    expected_pets:deletePreview.data!.pets,
    expected_appointments:deletePreview.data!.appointments,
-   expected_care_records:deletePreview.data!.care_records
+   expected_care_records:deletePreview.data!.care_records,
+   expected_payments:deletePreview.data!.payments
   })),
   onSuccess:data=>{
    toast.success(data.message);
@@ -201,10 +203,10 @@ export function Accounts(){
            <li>{deletePreview.data.appointments} lịch hẹn ({deletePreview.data.active_appointments} lịch chưa hoàn tất, {deletePreview.data.completed_appointments} lịch hoàn thành)</li>
            <li>{deletePreview.data.care_records} hồ sơ chăm sóc</li>
            <li>Doanh thu lịch hoàn thành bị xóa: {Number(deletePreview.data.completed_revenue).toLocaleString('vi-VN')} ₫</li>
+           <li>{deletePreview.data.payments} giao dịch thanh toán, gồm {deletePreview.data.paid_payments} đã thanh toán và {deletePreview.data.pending_review_payments} đang/cần đối soát</li>
+           <li>Giá trị các giao dịch bị xóa: {Number(deletePreview.data.payment_amount).toLocaleString('vi-VN')} ₫</li>
           </ul>
-          {selected.role==='staff'&& (deletePreview.data.appointments>0||deletePreview.data.care_records>0)
-           ? <p className="form-hint form-hint-error" role="alert">Không thể xóa nhân viên có lịch hẹn hoặc hồ sơ chăm sóc liên quan. Hãy khóa tài khoản để giữ dữ liệu Customer.</p>
-           : <p><strong>Cảnh báo:</strong> Xóa tài khoản và dữ liệu liên quan là không thể hoàn tác. Hãy kiểm tra kỹ thông tin trước khi xác nhận.</p>}
+          <p className="form-hint form-hint-error" role="alert"><strong>Cảnh báo không thể hoàn tác:</strong> Các lịch hẹn của Customer được giao cho nhân viên này, kết quả chăm sóc và chứng từ thanh toán liên quan cũng sẽ bị xóa. Thống kê doanh thu có thể giảm. Chỉ xác nhận khi không còn cần dữ liệu hoặc đã sao lưu.</p>
           <Field label={`Nhập chính xác email ${selected.email} để xác nhận`}>
            <input type="text" autoComplete="off" spellCheck={false} value={confirmationEmail}
             onChange={e=>setConfirmationEmail(e.target.value)} placeholder={selected.email}/>
@@ -217,7 +219,7 @@ export function Accounts(){
         <div className="pc-account-actions">
          <button type="button" className="button button-secondary" onClick={()=>{setConfirmDelete(false);setConfirmationEmail('');}}>Hủy</button>
          <button type="button" className="button button-outline-danger"
-          disabled={!deletePreview.data||(selected.role==='staff'&&(deletePreview.data.appointments>0||deletePreview.data.care_records>0))||confirmationEmail.trim().toLowerCase()!==selected.email||!adminPassword||isBusy}
+          disabled={!deletePreview.data||confirmationEmail.trim().toLowerCase()!==selected.email||!adminPassword||isBusy||deletePreview.isFetching}
           onClick={()=>deleteAccount.mutate()}>Xác nhận xóa vĩnh viễn</button>
         </div>
        </div>}
