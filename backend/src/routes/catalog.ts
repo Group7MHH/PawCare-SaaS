@@ -58,9 +58,7 @@ router.post('/services/:id/permanent-delete',requireRole('admin'),asyncRoute(asy
   const [service]=await rows<{id:number;name:string}>('SELECT id,name FROM services WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
   if(!service)throw new HttpError(404,'Dịch vụ đã bị xóa hoặc không tồn tại');
   if(payload.confirmation_name!==service.name)throw new HttpError(422,'Tên dịch vụ xác nhận không chính xác');
-  // Booking takes a shared service lock before the global scheduling lock.
-  // Take them in the same order to avoid deleting a service during booking.
-  await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
+  // FOR UPDATE on the service serializes with booking's FOR SHARE service lock.
   const [count]=await rows<{total:number}>('SELECT COUNT(*)::int AS total FROM appointments WHERE id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?) AND organization_id=?',[id,orgId(req)],db);
   if(count.total!==payload.expected_appointments)throw new HttpError(409,'Số lịch hẹn đã thay đổi. Hãy tải lại thông tin và xác nhận lần nữa');
   const [unsafe]=await rows<{bundled:number;active:number}>(`
