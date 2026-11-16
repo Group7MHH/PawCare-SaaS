@@ -36,6 +36,7 @@ router.delete('/:id',asyncRoute(async(req,res)=>{
 }));
 const careSchema=z.object({title:z.string().min(2).max(160),record_type:z.enum(['vaccination','medical','grooming','other']).default('other'),care_date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),description:z.string().max(3000).nullable().optional(),next_due_date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional()});
 router.post('/:id/records',asyncRoute(async(req,res)=>{
+ if(req.user!.role==='customer')throw new HttpError(403,'Lịch sử chăm sóc được ghi nhận bởi nhân viên sau khi thực hiện dịch vụ');
  const pet=await ownedPet(idParam(req.params.id),req);const d=parse(careSchema,req.body);
  if(req.user!.role==='staff' && !(await rows("SELECT 1 FROM appointments WHERE pet_id=? AND organization_id=? AND staff_id=? AND status IN ('in_progress','completed') LIMIT 1",[pet.id,orgId(req),req.user!.id])).length)
   throw new HttpError(403,'Staff chỉ được ghi hồ sơ khi đang hoặc đã thực hiện chăm sóc cho thú cưng này');
