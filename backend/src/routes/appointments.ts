@@ -6,6 +6,14 @@ import {isPrivileged,orgId,requireAuth,requireOrganization} from '../lib/auth.js
 import {getActiveBank} from '../lib/payment-bank.js';
 import {canTransition,hasStaffCapacity,isoUTC,sqlUTC,validateBookingTime} from '../lib/scheduling.js';
 const router=Router();router.use(requireAuth,requireOrganization);
+// Whitelisted and deterministic across filtering/pagination; ID order is numeric.
+const appointmentOrders={
+ id_desc:'ORDER BY a.id DESC',
+ id_asc:'ORDER BY a.id ASC',
+ starts_at_asc:'ORDER BY a.starts_at ASC,a.id ASC',
+ starts_at_desc:'ORDER BY a.starts_at DESC,a.id DESC'
+} as const;
+const appointmentSortSchema=z.enum(['id_desc','id_asc','starts_at_asc','starts_at_desc']);
 const bookingSchema=z.object({
  pet_id:z.coerce.number().int().positive(),
  service_id:z.coerce.number().int().positive().optional(), // legacy single-service client
@@ -72,9 +80,12 @@ router.get('/',asyncRoute(async(req,res)=>{
   clauses.push("(a.status IN ('pending','confirmed') AND a.starts_at < now())");
  }
  if(req.query.search){clauses.push('(u.full_name ILIKE ? OR p.name ILIKE ? OR s.name ILIKE ?)');params.push(...Array(3).fill(`%${String(req.query.search).slice(0,80)}%`));}
+ const sort=appointmentSortSchema.safeParse(req.query.sort??'id_desc');
+ if(!sort.success)throw new HttpError(422,'Kiểu sắp xếp lịch hẹn không hợp lệ');
+ const orderBy=appointmentOrders[sort.data];
  const where=clauses.length?' WHERE '+clauses.join(' AND '):'';
  const [{total}]=await rows<any>(`SELECT COUNT(*) AS total FROM appointments a JOIN users u ON a.customer_id=u.id JOIN pets p ON a.pet_id=p.id JOIN services s ON a.service_id=s.id LEFT JOIN payments pay ON pay.appointment_id=a.id ${where}`,params);
- const items=await rows<any>(`${appointmentSelect}${where} ORDER BY a.starts_at DESC,a.id DESC LIMIT ? OFFSET ?`,[...params,limit,(page-1)*limit]);
+ const items=await rows<any>(`${appointmentSelect}${where} ${orderBy} LIMIT ? OFFSET ?`,[...params,limit,(page-1)*limit]);
  res.json({items:items.map(mapAppointment),total,page,limit});
 }));
 router.get('/availability',asyncRoute(async(req,res)=>{
