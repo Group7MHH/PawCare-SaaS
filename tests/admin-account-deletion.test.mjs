@@ -35,7 +35,19 @@ test('Admin UI previews effects and requires typed email and Admin password',()=
  assert.match(ui,/expected_appointments:deletePreview\.data!\.appointments/);
  assert.match(ui,/admin_password:adminPassword/);
  assert.match(ui,/json\('DELETE'/);
- assert.match(ui,/Không thể xóa nhân viên có lịch hẹn hoặc hồ sơ chăm sóc liên quan/);
- assert.match(ui,/selected\.role==='staff'/);
- assert.match(api,/dependencies\.appointments>0\|\|dependencies\.care_records>0/);
+ assert.match(ui,/Cảnh báo không thể hoàn tác/);
+ assert.match(ui,/expected_payments:deletePreview\.data!\.payments/);
+ assert.match(ui,/deletePreview\.data\.paid_payments/);
+ assert.doesNotMatch(ui,/disabled=\{!deletePreview\.data\|\|\(selected\.role==='staff'/);
+ assert.doesNotMatch(api,/dependencies\.appointments>0\|\|dependencies\.care_records>0/);
+ assert.doesNotMatch(api,/billing\.total>0/);
+});
+
+test('Admin explicitly approves deleting settled payments and Staff-assigned bookings',()=>{
+ assert.match(api,/expected_payments!==impact\.payments/);
+ assert.match(api,/payments_removed:impact\.payments/);
+ assert.match(api,/paid_payments_removed:impact\.paid_payments/);
+ assert.match(api,/account\.role==='admin'/);
+ assert.match(api,/confirmation_email!==account\.email/);
+ assert.match(api,/ON DELETE CASCADE/);
 });
