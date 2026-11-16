@@ -31,14 +31,11 @@ test('Admin appointment list exposes payment status, filtering and readable navi
  assert.ok(page.includes('value={sort}'));
  assert.ok(read('frontend/src/pages/MyAppointments.tsx').includes('sort=${sort}'));
  assert.ok(page.includes('Quản lý lịch hẹn và thanh toán'));
- assert.ok(page.includes('aria-label="Lọc trạng thái thanh toán"'));
- assert.ok(page.includes('pc-pay-filter-chip'));
- assert.ok(page.includes('aria-pressed={paymentStatus===item.v}'));
- assert.ok(page.includes('setPaymentStatus(item.v)'));
- assert.ok(!page.includes('className="pc-payment-filter"'));
- assert.ok(css.includes('.pc-pay-filter-options{'));
- assert.ok(css.includes('overflow-x:auto'));
- assert.ok(page.includes('payment_status='));
+  // Hide the secondary payment filter; payment state remains on each appointment.
+  assert.ok(!page.includes('pc-pay-filter-bar'));
+  assert.ok(!page.includes('setPaymentStatus('));
+  assert.ok(page.includes('className="filter-tabs"'));
+  assert.ok(page.includes('<PaymentPanel key={selected.id} appointmentId={selected.id} admin/>'));
  assert.ok(page.includes('<th>THANH TOÁN</th>'));
  assert.ok(page.includes("paid:'Đã thanh toán'"));
  assert.ok(page.includes("unpaid:'Chưa thanh toán'"));
