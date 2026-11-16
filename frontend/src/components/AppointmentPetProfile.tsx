@@ -30,7 +30,7 @@ export function AppointmentPetProfile({petId,viewerId}:{petId:number;viewerId:nu
     <h4>Lịch sử chăm sóc ({profile.data.records.length})</h4>
     {profile.data.records.length===0?<p className="pc-appointment-pet-empty">Chưa có lịch sử chăm sóc.</p>:
     <div className="pc-appointment-pet-history">{profile.data.records.map(record=><article key={record.id}>
-     <div className="pc-appointment-pet-record-head"><strong>{record.title}</strong><time>{dateOnly(record.care_date)}</time></div>
+     <div className="pc-appointment-pet-record-head"><strong>{record.service_names_snapshot||record.title}</strong><time>{dateOnly(record.care_date)}</time></div>
      {record.description&&<p>{record.description}</p>}
      {record.next_due_date&&<small>Ngày nhắc lại: {dateOnly(record.next_due_date)}</small>}
     </article>)}</div>}

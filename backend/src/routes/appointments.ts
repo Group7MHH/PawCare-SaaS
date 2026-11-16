@@ -256,9 +256,10 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
          'SELECT name,category FROM services WHERE id=?',[current.service_id],db));
      }
      const recordType=classifyAppointmentCare(selectedServices);
-     await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id)
-       VALUES(?,?,?,'Kết quả chăm sóc',?,(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?)`,
-       [current.pet_id,orgId(req),req.user!.id,recordType,d.care_result??current.care_result,id],db);
+     const bookedServiceNames=selectedServices.map(service=>service.name).join(' + ');
+     await exec(`INSERT INTO care_records(pet_id,organization_id,created_by_user_id,title,record_type,care_date,description,appointment_id,service_names_snapshot)
+       VALUES(?,?,?,'Kết quả chăm sóc',?,(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,?,?,?)`,
+       [current.pet_id,orgId(req),req.user!.id,recordType,d.care_result??current.care_result,id,bookedServiceNames||null],db);
    }
  });res.json({message:'Đã cập nhật lịch hẹn'});
 }));

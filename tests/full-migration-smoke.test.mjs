@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const migrations=Array.from({length:13},(_,i)=>String(i+1).padStart(3,'0'));
+const migrations=Array.from({length:14},(_,i)=>String(i+1).padStart(3,'0'));
 const list=[
 '001_postgres_schema.sql','002_default_services.sql','003_owner_multitenant.sql',
 '004_single_store.sql','005_completed_revenue.sql','006_multi_service_appointments.sql',
 '007_staff_assignment.sql','008_staff_self_service_queue.sql','009_manual_payments.sql',
 '010_payment_bank_settings.sql','011_staff_payment_reconciliation.sql',
-'012_service_name_snapshot.sql','013_awaiting_bank_payment.sql'
+'012_service_name_snapshot.sql','013_awaiting_bank_payment.sql','014_care_record_service_names.sql'
 ];
 test('Full PostgreSQL migration smoke test with immutable service/payment history',
  {skip:!process.env.TEST_DATABASE_URL},async()=>{
@@ -31,6 +31,8 @@ test('Full PostgreSQL migration smoke test with immutable service/payment histor
     const sql=readFileSync(new URL('../database/'+filename,import.meta.url),'utf8');
     if(sql.trim())await db.query(sql);
    }
+   const careSnapshotColumn=await db.query("SELECT 1 FROM information_schema.columns WHERE table_schema=$1 AND table_name='care_records' AND column_name='service_names_snapshot'",[schema]);
+   assert.equal(careSnapshotColumn.rowCount,1);
    for(const column of ['name_snapshot']){
     const r=await db.query('SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name=$2 AND column_name=$3',[schema,'appointment_services',column]);
     assert.equal(r.rowCount,1);
