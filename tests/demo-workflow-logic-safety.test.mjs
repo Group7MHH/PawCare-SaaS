@@ -14,12 +14,12 @@ test('Permanent service deletion protects active and bundled bookings',()=>{
  assert.ok(api.includes("UPDATE care_records SET appointment_id=NULL"));
 });
 
-test('Staff deletion and Customer promotion cannot erase or strand existing data',()=>{
+test('Admin-approved Staff deletion is permitted; Customer role promotion remains protected',()=>{
  const api=read('backend/src/routes/accounts.ts');
- assert.ok(api.includes("if(account.role==='staff')"));
- assert.ok(api.includes("FROM appointments WHERE staff_id=?"));
- assert.ok(api.includes("FROM care_records WHERE created_by_user_id=?"));
- assert.ok(api.includes('dependencies.appointments>0||dependencies.care_records>0'));
+ assert.ok(api.includes("DELETE FROM appointments WHERE customer_id=? OR staff_id=?"));
+ assert.ok(api.includes('expected_appointments!==impact.appointments'));
+ assert.ok(!api.includes('dependencies.appointments>0||dependencies.care_records>0'));
+ assert.ok(!api.includes('if(billing.total>0)'));
  assert.ok(api.includes("if(data.role==='staff')"));
  assert.ok(api.includes("FROM pets WHERE owner_id=?"));
  assert.ok(api.includes("FROM appointments WHERE customer_id=?"));

@@ -96,6 +96,22 @@ test('Full PostgreSQL migration smoke test with immutable service/payment histor
     [org,b,customer,200000,'PC_TEST_02','BANK_REF_001']),e=>e.code==='23505');
    const bank=(await db.query("SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name='payment_bank_settings' AND column_name='bank_account'",[schema])).rowCount;
    assert.equal(bank,1);
+   // Integration regression: explicitly approved Staff deletion removes a paid
+   // assigned appointment (and its payment) while retaining the Customer account.
+   await db.query('BEGIN');
+   try{
+    await db.query(`DELETE FROM care_records WHERE created_by_user_id=$1
+       OR appointment_id IN (SELECT id FROM appointments WHERE staff_id=$1)`,[staff]);
+    await db.query('DELETE FROM appointments WHERE staff_id=$1',[staff]);
+    const deleted=await db.query('DELETE FROM users WHERE id=$1 RETURNING id',[staff]);
+    assert.equal(deleted.rowCount,1);
+    await db.query('COMMIT');
+   }catch(error){await db.query('ROLLBACK');throw error;}
+   assert.equal((await db.query('SELECT COUNT(*)::int AS n FROM users WHERE id=$1',[staff])).rows[0].n,0);
+   assert.equal((await db.query('SELECT COUNT(*)::int AS n FROM users WHERE id=$1',[customer])).rows[0].n,1);
+   assert.equal((await db.query('SELECT COUNT(*)::int AS n FROM pets WHERE id=$1',[pet])).rows[0].n,1);
+   assert.equal((await db.query('SELECT COUNT(*)::int AS n FROM appointments WHERE id=$1',[a])).rows[0].n,0);
+   assert.equal((await db.query('SELECT COUNT(*)::int AS n FROM payments WHERE id=$1',[first])).rows[0].n,0);
    assert.ok(adminId);
   }finally{await db.end();}
  }finally{
