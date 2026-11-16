@@ -22,7 +22,14 @@ test('Admin appointment list exposes payment status, filtering and readable navi
  assert.ok(backend.includes("req.user!.role==='admin' && req.query.payment_status"));
  assert.ok(backend.includes("clauses.push('pay.status=?')"));
  assert.ok(backend.includes("LEFT JOIN payments pay ON pay.appointment_id=a.id"));
- assert.ok(backend.includes('ORDER BY a.starts_at DESC,a.id DESC'));
+ assert.ok(backend.includes("id_desc:'ORDER BY a.id DESC'"));
+ assert.ok(backend.includes("id_asc:'ORDER BY a.id ASC'"));
+ assert.ok(backend.includes("starts_at_asc:'ORDER BY a.starts_at ASC,a.id ASC'"));
+ assert.ok(backend.includes('const orderBy=appointmentOrders[sort.data]'));
+ assert.ok(backend.includes('${appointmentSelect}${where} ${orderBy} LIMIT ? OFFSET ?'));
+ assert.ok(page.includes('sort=${sort}'));
+ assert.ok(page.includes('value={sort}'));
+ assert.ok(read('frontend/src/pages/MyAppointments.tsx').includes('sort=${sort}'));
  assert.ok(page.includes('Quản lý lịch hẹn và thanh toán'));
  assert.ok(page.includes('aria-label="Lọc trạng thái thanh toán"'));
  assert.ok(page.includes('pc-pay-filter-chip'));
