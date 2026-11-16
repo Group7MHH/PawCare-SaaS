@@ -10,7 +10,17 @@ const timeLabel=(iso:string)=>new Date(iso).toLocaleTimeString('vi-VN',{hour:'2-
 function sameLocalDay(iso:string){const fmt=(v:Date)=>v.toLocaleDateString('en-CA',{timeZone:'Asia/Ho_Chi_Minh'});return fmt(new Date(iso))===fmt(new Date());}
 
 export function StaffDashboard(){
- const q=useQuery({queryKey:['staff-work'],queryFn:()=>api<{items:Appointment[];total:number}>('/appointments?limit=50'),refetchInterval:15000});
+ const q=useQuery({queryKey:['staff-work'],queryFn:async()=>{
+  const items:Appointment[]=[];
+  // Fetch ALL active assigned bookings, not the newest 50 including completed bookings.
+  // Page through the server result so old pending work cannot disappear.
+  for(let page=1;page<=100;page++){
+   const result=await api<{items:Appointment[];total:number}>(`/appointments?active_work=true&sort=starts_at_asc&limit=100&page=${page}`);
+   items.push(...result.items);
+   if(items.length>=result.total||result.items.length===0)return {items,total:result.total};
+  }
+  throw new Error('Quá nhiều lịch được phân công; không thể tải đủ lịch làm việc.');
+ },refetchInterval:15000});
  if(q.isLoading)return <Loading/>;
  if(q.error||!q.data)return <ErrorNotice message="Không thể tải lịch được phân công"/>;
  const items=q.data.items;
