@@ -48,6 +48,13 @@ test('Full PostgreSQL migration smoke test with immutable service/payment histor
    await db.query('INSERT INTO organization_members(organization_id,user_id,role) VALUES($1,$2,$3)',[org,staff,'staff']);
    const service=(await db.query('INSERT INTO services(organization_id,name,category,description,duration_minutes,price) VALUES($1,$2,$3,$4,$5,$6) RETURNING id',[org,'Tắm và vệ sinh','SPA','Care',60,200000])).rows[0].id;
    const pet=(await db.query('INSERT INTO pets(owner_id,name,species) VALUES($1,$2,$3) RETURNING id',[customer,'Buddy','dog'])).rows[0].id;
+   // Dashboard's Admin pet count must run without an extraneous bind parameter.
+   // Staff count uses exactly the organization and staff parameters.
+   const adminPetSql=`SELECT COUNT(*)::int AS value FROM pets p JOIN users u ON u.id=p.owner_id WHERE u.role='customer'`;
+   const adminPets=await db.query(adminPetSql,[]);
+   assert.equal(adminPets.rows[0].value,1);
+   const staffPets=await db.query('SELECT COUNT(DISTINCT pet_id)::int AS value FROM appointments WHERE organization_id=$1 AND staff_id=$2',[org,staff]);
+   assert.equal(staffPets.rows[0].value,0);
    const newAppointment=async(offset)=>{
     const start=new Date(Date.now()+offset*24*3600000);
     const end=new Date(start.getTime()+3600000);
