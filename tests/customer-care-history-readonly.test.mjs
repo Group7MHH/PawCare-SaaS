@@ -26,3 +26,27 @@ test('Customer cannot bypass UI to manually create a care record, Staff still ca
  assert.ok(completed.includes("d.status==='completed' && current.status!=='completed'"));
  assert.ok(completed.includes('INSERT INTO care_records'));
 });
+
+test('Care history tabs reflect actual types and hide when records are empty',()=>{
+ const page=read('frontend/src/pages/Pets.tsx');
+ assert.ok(page.includes("records.length>0&&<div className=\"pc-pet-section-tabs\""));
+ for(const type of ["vaccination","medical","grooming","other"]){
+  assert.ok(page.includes("key:'"+type+"'"),type);
+ }
+ assert.ok(page.includes("filter(category=>category.count>0)"));
+ assert.ok(page.includes("recordTab==='all'||r.record_type===recordTab"));
+ assert.ok(page.includes("'Chưa có lịch sử chăm sóc'"));
+});
+
+test('Completed care records use service-aware type, not a fixed grooming type',()=>{
+ const route=read('backend/src/routes/appointments.ts');
+ const classifier=read('backend/src/lib/care-records.ts');
+ assert.ok(route.includes('classifyAppointmentCare(selectedServices)'));
+ assert.ok(route.includes('ORDER BY aps.position'));
+ assert.ok(route.includes('recordType,d.care_result'));
+ assert.ok(!route.includes("'Kết quả chăm sóc','grooming'"));
+ for(const category of ["vaccination","medical","grooming","other"]){
+  assert.ok(classifier.includes("'"+category+"'"));
+ }
+ assert.ok(classifier.includes("types.every(type=>type===types[0])"));
+});
