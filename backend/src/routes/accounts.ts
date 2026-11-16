@@ -52,10 +52,11 @@ router.get('/accounts',asyncRoute(async(req,res)=>{
 /** Preview all database rows affected by permanently deleting one account. */
 type DeletionImpact={
  pets:number;appointments:number;active_appointments:number;
- completed_appointments:number;completed_revenue:number;care_records:number
+ completed_appointments:number;completed_revenue:number;care_records:number;
+ payments:number;paid_payments:number;pending_review_payments:number;payment_amount:number
 };
 async function deletionImpact(target:number,db?:DB):Promise<DeletionImpact>{
- const [petRows,appointmentRows,recordRows]=await Promise.all([
+ const [petRows,appointmentRows,recordRows,paymentRows]=await Promise.all([
   rows<{count:number}>('SELECT COUNT(*)::int AS count FROM pets WHERE owner_id=?',[target],db),
   rows<{appointments:number;active_appointments:number;completed_appointments:number;completed_revenue:number}>(`
    SELECT COUNT(*)::int AS appointments,
@@ -69,15 +70,24 @@ async function deletionImpact(target:number,db?:DB):Promise<DeletionImpact>{
    WHERE created_by_user_id=? OR pet_id IN (SELECT id FROM pets WHERE owner_id=?)
    OR appointment_id IN (SELECT id FROM appointments
     WHERE customer_id=? OR staff_id=? OR pet_id IN (SELECT id FROM pets WHERE owner_id=?))`,
-   [target,target,target,target,target],db)
+   [target,target,target,target,target],db),
+  rows<{payments:number;paid_payments:number;pending_review_payments:number;payment_amount:number}>(`
+   SELECT COUNT(*)::int AS payments,
+     COUNT(*) FILTER (WHERE p.status='paid')::int AS paid_payments,
+     COUNT(*) FILTER (WHERE p.status IN ('pending_review','refund_required','refunded'))::int AS pending_review_payments,
+     COALESCE(SUM(p.amount),0) AS payment_amount
+   FROM payments p JOIN appointments a ON a.id=p.appointment_id
+   WHERE a.customer_id=? OR a.staff_id=?
+     OR a.pet_id IN (SELECT id FROM pets WHERE owner_id=?)`,[target,target,target],db)
  ]);
- return {pets:petRows[0].count,...appointmentRows[0],care_records:recordRows[0].count};
+ return {pets:petRows[0].count,...appointmentRows[0],care_records:recordRows[0].count,...paymentRows[0]};
 }
 const deleteConfirmation=adminProof.extend({
  confirmation_email:z.string().trim().email().max(190).transform(value=>value.toLowerCase()),
  expected_pets:z.number().int().nonnegative(),
  expected_appointments:z.number().int().nonnegative(),
- expected_care_records:z.number().int().nonnegative()
+ expected_care_records:z.number().int().nonnegative(),
+ expected_payments:z.number().int().nonnegative()
 }).strict();
 
 router.get('/accounts/:id/delete-preview',sensitiveLimit,asyncRoute(async(req,res)=>{
@@ -109,26 +119,15 @@ router.delete('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
   if(!account)throw new HttpError(404,'Không tìm thấy tài khoản');
   if(account.role==='admin')throw new HttpError(403,'Không được xóa tài khoản Admin');
   if(data.confirmation_email!==account.email)throw new HttpError(400,'Email xác nhận không khớp với tài khoản');
-  if(account.role==='staff'){
-    // Never cascade-delete a customer's assigned appointment or care history.
-    const [dependencies]=await rows<{appointments:number;care_records:number}>(`
-      SELECT (SELECT COUNT(*)::int FROM appointments WHERE staff_id=?) AS appointments,
-             (SELECT COUNT(*)::int FROM care_records WHERE created_by_user_id=?) AS care_records`,
-      [target,target],db);
-    if(dependencies.appointments>0||dependencies.care_records>0)
-      throw new HttpError(409,'Nhân viên có lịch hoặc hồ sơ chăm sóc liên quan. Hãy khóa tài khoản để bảo toàn dữ liệu khách hàng.');
-  }
   const impact=await deletionImpact(target,db);
   if(data.expected_pets!==impact.pets ||
      data.expected_appointments!==impact.appointments ||
-     data.expected_care_records!==impact.care_records){
+     data.expected_care_records!==impact.care_records ||
+     data.expected_payments!==impact.payments){
    throw new HttpError(409,'Dữ liệu tài khoản đã thay đổi. Hãy xem lại danh sách dữ liệu sẽ bị xóa');
   }
-  // Do not silently destroy settled or disputed financial records during account deletion.
-  const [billing]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total FROM payments p JOIN appointments a ON a.id=p.appointment_id
-    WHERE (a.customer_id=? OR a.staff_id=? OR a.pet_id IN (SELECT id FROM pets WHERE owner_id=?))
-      AND p.status IN ('paid','pending_review','refund_required','refunded')`,[target,target,target],db);
-  if(billing.total>0)throw new HttpError(409,'Tài khoản có giao dịch đã thanh toán, đang đối soát hoặc cần lưu chứng từ. Không thể xóa vĩnh viễn hồ sơ tài chính.');
+  // Payment rows are deleted with appointments through ON DELETE CASCADE.
+  // Admin has explicitly reviewed payment count/value and reconfirmed password.
   // care_records reference both pets and appointments without ON DELETE CASCADE.
   // Remove those plus records authored by the deleted user before appointments.
   await exec(`DELETE FROM care_records
@@ -150,11 +149,13 @@ router.delete('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
   await exec('INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details) VALUES(?,?,NULL,?,?::jsonb)',[
    req.user!.id,orgId(req),'account.permanently_deleted',
    JSON.stringify({role:account.role,pets_removed:impact.pets,appointments_removed:impact.appointments,
-    care_records_removed:impact.care_records,completed_revenue_removed:impact.completed_revenue})
+    care_records_removed:impact.care_records,completed_revenue_removed:impact.completed_revenue,
+    payments_removed:impact.payments,paid_payments_removed:impact.paid_payments,
+    payment_amount_removed:impact.payment_amount})
   ],db);
  });
  res.setHeader('Cache-Control','no-store');
- res.json({message:'Đã xóa vĩnh viễn tài khoản và toàn bộ dữ liệu liên quan'});
+ res.json({message:'Đã xóa vĩnh viễn tài khoản cùng lịch hẹn, thanh toán và dữ liệu liên quan'});
 }));
 
 router.patch('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
