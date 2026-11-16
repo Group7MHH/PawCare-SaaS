@@ -40,7 +40,13 @@ router.get('/services/:id/delete-preview',requireRole('admin'),asyncRoute(async(
           JOIN appointment_services aps ON aps.appointment_id=a.id
           WHERE aps.service_id=? AND a.organization_id=?) AS care_records
   FROM appointments WHERE id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?) AND organization_id=?`,[id,orgId(req),id,orgId(req)]);
- res.json({service_id:id,service_name:service.name,...impact});
+ const [bundled]=await rows<{total:number}>(`
+  SELECT COUNT(*)::int AS total FROM appointments a
+  WHERE a.organization_id=? AND a.id IN
+    (SELECT appointment_id FROM appointment_services WHERE service_id=?)
+    AND (SELECT COUNT(*) FROM appointment_services aps WHERE aps.appointment_id=a.id)>1`,
+  [orgId(req),id]);
+ res.json({service_id:id,service_name:service.name,...impact,multi_service_appointments:bundled.total});
 }));
 router.post('/services/:id/permanent-delete',requireRole('admin'),asyncRoute(async(req,res)=>{
  const id=idParam(req.params.id);
@@ -52,8 +58,22 @@ router.post('/services/:id/permanent-delete',requireRole('admin'),asyncRoute(asy
   const [service]=await rows<{id:number;name:string}>('SELECT id,name FROM services WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
   if(!service)throw new HttpError(404,'Dịch vụ đã bị xóa hoặc không tồn tại');
   if(payload.confirmation_name!==service.name)throw new HttpError(422,'Tên dịch vụ xác nhận không chính xác');
+  // Booking takes a shared service lock before the global scheduling lock.
+  // Take them in the same order to avoid deleting a service during booking.
+  await db.query('SELECT pg_advisory_xact_lock($1,$2)',[42371,0]);
   const [count]=await rows<{total:number}>('SELECT COUNT(*)::int AS total FROM appointments WHERE id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?) AND organization_id=?',[id,orgId(req)],db);
   if(count.total!==payload.expected_appointments)throw new HttpError(409,'Số lịch hẹn đã thay đổi. Hãy tải lại thông tin và xác nhận lần nữa');
+  const [unsafe]=await rows<{bundled:number;active:number}>(`
+    SELECT COUNT(*) FILTER (WHERE
+      (SELECT COUNT(*) FROM appointment_services aps WHERE aps.appointment_id=a.id)>1)::int AS bundled,
+      COUNT(*) FILTER (WHERE a.status IN ('pending','confirmed','in_progress'))::int AS active
+    FROM appointments a WHERE a.organization_id=?
+      AND a.id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?)`,
+    [orgId(req),id],db);
+  if(unsafe.bundled>0)throw new HttpError(409,
+    'Dịch vụ thuộc lịch gồm nhiều dịch vụ. Hãy ngừng cung cấp thay vì xóa để giữ lịch hẹn và doanh thu của dịch vụ khác.');
+  if(unsafe.active>0)throw new HttpError(409,
+    'Dịch vụ đang có lịch chưa hoàn thành. Hãy xử lý các lịch này hoặc ngừng cung cấp dịch vụ.');
   // Financial receipts are never silently erased when a paid booking is hard-deleted.
   const [financial]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total FROM payments
    WHERE appointment_id IN (SELECT appointment_id FROM appointment_services WHERE service_id=?)
@@ -94,7 +114,7 @@ router.patch('/staff/:id',requireRole('admin'),asyncRoute(async(req,res)=>{
    await exec('UPDATE organization_members SET is_active=? WHERE organization_id=? AND user_id=?',[d.is_active,orgId(req),id],db);
    await exec('UPDATE users SET is_active=? WHERE id=?',[d.is_active,id],db);
   }
-  if(d.specialty!==undefined||d.bio!==undefined)await exec(`INSERT INTO organization_staff_profiles(organization_id,user_id,specialty,bio) VALUES(?,?,?,?) ON CONFLICT(organization_id,user_id) DO UPDATE SET specialty=COALESCE(EXCLUDED.specialty,organization_staff_profiles.specialty),bio=COALESCE(EXCLUDED.bio,organization_staff_profiles.bio)`,[orgId(req),id,d.specialty??null,d.bio??null],db);
+  if(d.specialty!==undefined||d.bio!==undefined)await exec(`INSERT INTO organization_staff_profiles(organization_id,user_id,specialty,bio) VALUES(?,?,?,?) ON CONFLICT(organization_id,user_id) DO UPDATE SET specialty=CASE WHEN ? THEN EXCLUDED.specialty ELSE organization_staff_profiles.specialty END,bio=CASE WHEN ? THEN EXCLUDED.bio ELSE organization_staff_profiles.bio END`,[orgId(req),id,d.specialty??null,d.bio??null,d.specialty!==undefined,d.bio!==undefined],db);
   await exec('INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details) VALUES(?,?,?,?,?::jsonb)',[req.user!.id,orgId(req),id,'staff.update',JSON.stringify(d)],db);
  });res.json({message:'Đã cập nhật nhân viên trong cửa hàng'});
 }));
