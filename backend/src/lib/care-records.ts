@@ -8,7 +8,7 @@ function normalize(value:string):string{
 function classifyLabel(value:string):CareRecordCategory{
  const label=normalize(value);
  if(/tiem|vaccin|vaccine|chung ngua|immuniz/.test(label))return 'vaccination';
- if(/kham|suc khoe|dieu tri|chua benh|xet nghiem|chan doan|nha khoa|dental|medical|check.?up|vet clinic/.test(label))return 'medical';
+ if(/kham|suc khoe|dieu tri|chua benh|xet nghiem|chan doan|nha khoa|rang mieng|cao voi|dental|medical|check.?up|vet clinic/.test(label))return 'medical';
  if(/tam|spa|cat tia|tia long|groom|ve sinh|cham soc long|cat mong|ve sinh tai|lam dep|massage/.test(label))return 'grooming';
  return 'other';
 }
