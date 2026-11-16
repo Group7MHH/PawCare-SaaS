@@ -92,9 +92,9 @@ router.get('/accounts/:id/delete-preview',sensitiveLimit,asyncRoute(async(req,re
  res.json({...account,...impact});
 }));
 
-/** Hard delete all records attached to Customer/Staff in one PostgreSQL transaction.
- * This also permanently removes appointments assigned to the deleted Staff,
- * even when the customers of those appointments still exist.
+/** Explicit Admin-approved irreversible deletion for the single-store demo.
+ * Cross-customer appointments assigned to deleted Staff and their payments also disappear.
+ * The preview, exact email and Admin password must be verified before the cascade.
  */
 router.delete('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
  const target=idParam(req.params.id),data=parse(deleteConfirmation,req.body);
@@ -109,26 +109,15 @@ router.delete('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
   if(!account)throw new HttpError(404,'Không tìm thấy tài khoản');
   if(account.role==='admin')throw new HttpError(403,'Không được xóa tài khoản Admin');
   if(data.confirmation_email!==account.email)throw new HttpError(400,'Email xác nhận không khớp với tài khoản');
-  if(account.role==='staff'){
-    // Never cascade-delete a customer's assigned appointment or care history.
-    const [dependencies]=await rows<{appointments:number;care_records:number}>(`
-      SELECT (SELECT COUNT(*)::int FROM appointments WHERE staff_id=?) AS appointments,
-             (SELECT COUNT(*)::int FROM care_records WHERE created_by_user_id=?) AS care_records`,
-      [target,target],db);
-    if(dependencies.appointments>0||dependencies.care_records>0)
-      throw new HttpError(409,'Nhân viên có lịch hoặc hồ sơ chăm sóc liên quan. Hãy khóa tài khoản để bảo toàn dữ liệu khách hàng.');
-  }
   const impact=await deletionImpact(target,db);
   if(data.expected_pets!==impact.pets ||
      data.expected_appointments!==impact.appointments ||
      data.expected_care_records!==impact.care_records){
    throw new HttpError(409,'Dữ liệu tài khoản đã thay đổi. Hãy xem lại danh sách dữ liệu sẽ bị xóa');
   }
-  // Do not silently destroy settled or disputed financial records during account deletion.
-  const [billing]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total FROM payments p JOIN appointments a ON a.id=p.appointment_id
-    WHERE (a.customer_id=? OR a.staff_id=? OR a.pet_id IN (SELECT id FROM pets WHERE owner_id=?))
-      AND p.status IN ('paid','pending_review','refund_required','refunded')`,[target,target,target],db);
-  if(billing.total>0)throw new HttpError(409,'Tài khoản có giao dịch đã thanh toán, đang đối soát hoặc cần lưu chứng từ. Không thể xóa vĩnh viễn hồ sơ tài chính.');
+  // Admin deliberately confirmed the irreversible cascade after reviewing counts.
+  // Payments (including paid / pending_review) are deleted by appointments ON DELETE CASCADE.
+  // No partial deletion: the whole operation commits or rolls back as one transaction.
   // care_records reference both pets and appointments without ON DELETE CASCADE.
   // Remove those plus records authored by the deleted user before appointments.
   await exec(`DELETE FROM care_records
