@@ -202,9 +202,8 @@ export function Accounts(){
            <li>{deletePreview.data.care_records} hồ sơ chăm sóc</li>
            <li>Doanh thu lịch hoàn thành bị xóa: {Number(deletePreview.data.completed_revenue).toLocaleString('vi-VN')} ₫</li>
           </ul>
-          {selected.role==='staff'&& (deletePreview.data.appointments>0||deletePreview.data.care_records>0)
-           ? <p className="form-hint form-hint-error" role="alert">Không thể xóa nhân viên có lịch hẹn hoặc hồ sơ chăm sóc liên quan. Hãy khóa tài khoản để giữ dữ liệu Customer.</p>
-           : <p><strong>Cảnh báo:</strong> Xóa tài khoản và dữ liệu liên quan là không thể hoàn tác. Hãy kiểm tra kỹ thông tin trước khi xác nhận.</p>}
+          <p className="form-hint form-hint-error" role="alert"><strong>Cảnh báo:</strong> Xóa vĩnh viễn sẽ xóa cả lịch hẹn, hồ sơ chăm sóc và bản ghi thanh toán liên quan, kể cả giao dịch đã thanh toán hoặc đang đối soát. Doanh thu thống kê sẽ giảm tương ứng. Không thể hoàn tác.</p>
+          {selected.role==='staff'&&deletePreview.data.appointments>0&&<p className="form-hint form-hint-error"><strong>Lưu ý:</strong> Xóa Staff cũng xóa {deletePreview.data.appointments} lịch được giao cho nhân viên này, kể cả lịch của Customer khác.</p>}
           <Field label={`Nhập chính xác email ${selected.email} để xác nhận`}>
            <input type="text" autoComplete="off" spellCheck={false} value={confirmationEmail}
             onChange={e=>setConfirmationEmail(e.target.value)} placeholder={selected.email}/>
@@ -217,7 +216,7 @@ export function Accounts(){
         <div className="pc-account-actions">
          <button type="button" className="button button-secondary" onClick={()=>{setConfirmDelete(false);setConfirmationEmail('');}}>Hủy</button>
          <button type="button" className="button button-outline-danger"
-          disabled={!deletePreview.data||(selected.role==='staff'&&(deletePreview.data.appointments>0||deletePreview.data.care_records>0))||confirmationEmail.trim().toLowerCase()!==selected.email||!adminPassword||isBusy}
+          disabled={!deletePreview.data||deletePreview.isFetching||confirmationEmail.trim().toLowerCase()!==selected.email||!adminPassword||isBusy}
           onClick={()=>deleteAccount.mutate()}>Xác nhận xóa vĩnh viễn</button>
         </div>
        </div>}
