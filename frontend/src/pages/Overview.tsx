@@ -7,8 +7,9 @@ import {PetAvatar} from '../components/PetAvatar';
 import {Loading,Empty,Badge,ErrorNotice} from '../components/UI';
 import {CompanionCover,PawcareMark,NotebookStory} from '../components/BrandArtwork';
 
+import {greeting} from '../lib/greeting';
+
 const VN='Asia/Ho_Chi_Minh';
-function greeting(){const h=Number(new Intl.DateTimeFormat('vi-VN',{hour:'numeric',hourCycle:'h23',timeZone:VN}).format(new Date()));return h<11?'Chào buổi sáng':h<14?'Chào buổi trưa':h<18?'Chào buổi chiều':'Chào buổi tối';}
 const dayOf=(iso:string)=>new Date(iso).toLocaleDateString('vi-VN',{day:'2-digit',timeZone:VN});
 const monthOf=(iso:string)=>new Date(iso).toLocaleDateString('vi-VN',{month:'short',timeZone:VN});
 const timeOf=(iso:string)=>new Date(iso).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',timeZone:VN});
