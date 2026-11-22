@@ -45,7 +45,9 @@ test('dashboard distinguishes cash collected from completed services; next booki
  assert.ok(admin.includes('stats.collected'));
  assert.ok(!admin.includes('stats.refund_required'));
  assert.ok(backend.includes('ORDER BY CASE WHEN a.status=\'in_progress\' THEN 0 ELSE 1 END,a.starts_at ASC LIMIT 1'));
- assert.ok(overview.includes('dashboard?.next||null'));
+ assert.ok(overview.includes("to='/my-appointments'")||overview.includes("to:'/my-appointments'"));
+ assert.ok(!overview.includes('dashboard?.next||null'));
+ assert.ok(backend.includes("next:"));
 });
 test('service name snapshot is written at booking, preserved historically and shown on all appointments',()=>{
  const migration=read('database/012_service_name_snapshot.sql');
