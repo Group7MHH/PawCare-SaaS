@@ -4,6 +4,8 @@ import {Loading,ErrorNotice} from './UI';
 import {api,dateOnly,errorMessage,speciesName,type Pet,type CareRecord} from '../lib/api';
 
 type PetProfileResponse={pet:Pet;records:CareRecord[]};
+const todayVN=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'});
+
 
 /** Read-only pet information in an authorized appointment detail. */
 export function AppointmentPetProfile({petId,viewerId}:{petId:number;viewerId:number}){
@@ -22,7 +24,7 @@ export function AppointmentPetProfile({petId,viewerId}:{petId:number;viewerId:nu
      <div><dt>Loài</dt><dd>{speciesName(profile.data.pet.species)}</dd></div>
      <div><dt>Giống</dt><dd>{profile.data.pet.breed||'—'}</dd></div>
      <div><dt>Giới tính</dt><dd>{profile.data.pet.gender==='male'?'Đực':profile.data.pet.gender==='female'?'Cái':'Chưa rõ'}</dd></div>
-     <div><dt>Ngày sinh</dt><dd>{dateOnly(profile.data.pet.birthday)}</dd></div>
+     <div><dt>Ngày sinh</dt><dd>{dateOnly(profile.data.pet.birthday)}</dd>{profile.data.pet.birthday&&profile.data.pet.birthday.slice(0,10)>todayVN()&&<small className="pc-appointment-pet-birthday-warning" role="status">Ngày sinh trong tương lai — cần kiểm tra lại hồ sơ</small>}</div>
      <div><dt>Cân nặng</dt><dd>{profile.data.pet.weight_kg!=null?`${profile.data.pet.weight_kg} kg`:'—'}</dd></div>
      <div><dt>Màu lông</dt><dd>{profile.data.pet.color||'—'}</dd></div>
     </dl>
