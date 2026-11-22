@@ -35,6 +35,7 @@ test('Original filters, editing and data source are retained',()=>{
  assert.ok(page.includes('reschedule.mutate()'));
 });
 
+const pageHasDuplicateStepBars=()=>read('frontend/src/pages/AdminAppointments.tsx').includes('pc-aw-track');
 test('New workflow design is responsive and installed',()=>{
  const css=read('frontend/src/appointment-workflow.css');
  const main=read('frontend/src/main.tsx');
@@ -42,5 +43,8 @@ test('New workflow design is responsive and installed',()=>{
  assert.ok(css.includes('.pc-aw-steps'));
  assert.ok(css.includes('.pc-aw-state'));
  assert.ok(css.includes('.pc-aw-filter-row'));
- assert.ok(css.includes('@media(max-width:720px)'));
+ assert.ok(css.includes('@media(max-width:760px)'));
+ assert.ok(css.includes('.pc-aw-step-no'));
+ assert.ok(!css.includes('.pc-aw-track'));
+ assert.ok(!pageHasDuplicateStepBars());
 });

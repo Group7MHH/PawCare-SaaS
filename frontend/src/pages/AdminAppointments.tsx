@@ -1,7 +1,7 @@
 import {useState,type FormEvent} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
-import {CalendarDays,ChevronLeft,ChevronRight,Edit3,ArrowRight,AlertTriangle} from 'lucide-react';
+import {CalendarDays,ChevronLeft,ChevronRight,ArrowRight,AlertTriangle} from 'lucide-react';
 import {toast} from 'react-hot-toast';
 import {PaymentPanel} from '../components/PaymentPanel';
 import {AppointmentPetProfile} from '../components/AppointmentPetProfile';
@@ -30,25 +30,25 @@ function progressIndex(a:Appointment):number{
 }
 function AppointmentProgress({appointment:a}:{appointment:Appointment}){
  const index=progressIndex(a);
- if(index<0)return <div className="pc-aw-state pc-aw-state-cancelled"><strong>Đã hủy</strong><small>Không tiếp tục xử lý</small></div>;
+ if(index<0)return <div className="pc-aw-state pc-aw-state-cancelled"><span className="pc-aw-state-title"><span className="pc-aw-dot"/><strong>Đã hủy</strong></span></div>;
  const name=['Chờ Admin phân công','Chờ Staff tiếp nhận','Đã xác nhận','Đang thực hiện','Hoàn thành'][index];
- const next=a.is_overdue?'Admin cần xử lý lịch quá hạn':a.needs_admin_attention?'Admin cần kiểm tra điều phối':
-  ['Admin phân công nhân viên','Staff xác nhận hoặc từ chối','Staff bắt đầu chăm sóc','Staff ghi kết quả','Đã lưu kết quả chăm sóc'][index];
- return <div className={'pc-aw-state pc-aw-state-'+index}>
-  <div className="pc-aw-state-title"><span>{index+1}/5</span><strong>{name}</strong></div>
-  <div className="pc-aw-track" role="img" aria-label={'Tiến trình bước '+(index+1)+' trên 5'}>{steps.map((s,i)=><span key={s.name} className={i<=index?'done':''}/>)}</div>
-  <small>{next}</small>
+ const detail=a.needs_admin_attention?'Admin cần điều phối':
+   index===0?'Admin cần phân công':
+   index===4?'Đã hoàn thành chăm sóc':
+   a.staff_name?'NV: '+a.staff_name:'Staff phụ trách';
+ return <div className={'pc-aw-state pc-aw-state-'+index} aria-label={'Bước '+(index+1)+'/5: '+name}>
+  <div className="pc-aw-state-title"><span className="pc-aw-dot"/><strong>{name}</strong><span className="pc-aw-step-count">{index+1}/5</span></div>
+  <small>{detail}</small>
  </div>;
 }
 function WorkflowGuide(){
+ const labels=['Admin phân công','Staff tiếp nhận','Đã xác nhận','Đang thực hiện','Hoàn thành'];
  return <section className="pc-aw-guide" aria-labelledby="pc-aw-heading">
-  <header className="pc-aw-guide-head"><div><span>QUY TRÌNH XỬ LÝ</span><h2 id="pc-aw-heading">Một lịch hẹn đi qua 5 bước</h2><p>Khách đặt lịch → Admin phân công → Staff tiếp nhận, thực hiện và hoàn thành.</p></div><strong>05 bước · 03 vai trò</strong></header>
+  <div className="pc-aw-guide-head"><h2 id="pc-aw-heading">Quy trình xử lý lịch hẹn</h2><span>5 bước · từ phân công đến hoàn thành</span></div>
   <ol className="pc-aw-steps">{steps.map((s,i)=><li key={s.name}>
-   <span className="pc-aw-step-no">{String(i+1).padStart(2,'0')}</span>
-   <div><strong>{s.name}</strong><small>{s.actor} · {s.task}</small></div>
-   {i!==steps.length-1&&<ArrowRight className="pc-aw-step-arrow" size={16} aria-hidden="true"/>}
+   <span className="pc-aw-step-no">{i+1}</span><strong>{labels[i]}</strong>
+   {i<steps.length-1&&<ArrowRight className="pc-aw-step-arrow" size={14} aria-hidden="true"/>}
   </li>)}</ol>
-  <div className="pc-aw-legend"><span><AlertTriangle size={15}/> Quá hạn và điều phối là ngoại lệ, lịch không tự hủy.</span><span><strong>Thanh toán</strong> được theo dõi độc lập với tiến độ chăm sóc.</span></div>
  </section>;
 }
 
@@ -59,12 +59,12 @@ export function AdminAppointments(){const {user}=useAuth();const [searchParams]=
  },onSuccess:()=>{qc.invalidateQueries({queryKey:['admin-appointments']});qc.invalidateQueries({queryKey:['appointments']});qc.invalidateQueries({queryKey:['staff-work']});qc.invalidateQueries({queryKey:['dashboard']});setSelected(null);toast.success('Đã đổi giờ hẹn; nhân viên được giao không thay đổi.');},onError:e=>toast.error(errorMessage(e))});const decision=useMutation({mutationFn:(action:'accept'|'decline')=>api<{message:string}>(`/appointments/${selected!.id}/${action}`,json('POST',{})),onSuccess:result=>{qc.invalidateQueries({queryKey:['admin-appointments']});qc.invalidateQueries({queryKey:['staff-work']});qc.invalidateQueries({queryKey:['dashboard']});setSelected(null);toast.success(result.message);},onError:e=>toast.error(errorMessage(e))});const open=(a:Appointment)=>{setSelected(a);setRescheduleAt(new Date(a.starts_at).toLocaleString('sv-SE',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).replace(' ','T'));setEdit({status:a.status,staff_id:String(a.staff_id||''),notes:a.notes||'',care_result:(a as Appointment & {care_result?:string|null}).care_result||''});};
 
  return <div className="pc-aw-page">
- <PageTitle eyebrow="VẬN HÀNH & CHĂM SÓC" title={user?.role==='admin'?'Quản lý lịch hẹn và thanh toán':'Quản lý lịch hẹn'} description={user?.role==='staff'?'Xem lịch được giao và cập nhật tiến trình chăm sóc.':'Theo dõi phân công, tiếp nhận, thực hiện chăm sóc và thanh toán theo từng lịch hẹn.'}/>
+ <PageTitle eyebrow="VẬN HÀNH & CHĂM SÓC" title={user?.role==='admin'?'Quản lý lịch hẹn và thanh toán':'Quản lý lịch hẹn'} description={user?.role==='staff'?'Theo dõi và cập nhật lịch được giao.':'Phân công nhân viên và theo dõi dịch vụ chăm sóc.'}/>
  <WorkflowGuide/>
- <Panel className="pc-aw-panel" title="Danh sách đặt lịch" sub="Mỗi lịch hiển thị bước hiện tại, việc cần làm tiếp theo và thanh toán riêng biệt.">
+ <Panel className="pc-aw-panel" title="Danh sách đặt lịch">
   <div className="pc-aw-controls">
    <div className="pc-aw-filter-row">
-    <span className="pc-aw-filter-caption">TIẾN TRÌNH</span>
+    
     <div className="filter-tabs">
      <button type="button" aria-pressed={status==='all'&&!overdueOnly} className={status==='all'&&!overdueOnly?'selected':''} onClick={()=>{setStatus('all');setOverdueOnly(false);setPage(1);}}>Tất cả</button>
      {states.map(s=><button key={s.v} type="button" aria-pressed={status===s.v&&!overdueOnly} className={status===s.v&&!overdueOnly?'selected':''} onClick={()=>{setStatus(s.v);setOverdueOnly(false);setPage(1);}}>{s.t}</button>)}
@@ -76,16 +76,15 @@ export function AdminAppointments(){const {user}=useAuth();const [searchParams]=
    </div>
   </div>
   {list.isLoading?<Loading/>:list.error?<ErrorNotice message={errorMessage(list.error)}/>:!list.data?.items.length?<Empty title="Chưa có lịch hẹn phù hợp" description="Thử chọn bộ lọc khác hoặc thay đổi từ khóa tìm kiếm."/>:
-   <TableWrap><thead><tr><th>MÃ LỊCH</th><th>KHÁCH HÀNG / THÚ CƯNG</th><th>DỊCH VỤ</th><th>THỜI GIAN</th><th>TIẾN TRÌNH</th><th>NHÂN VIÊN</th><th>THANH TOÁN</th><th>THAO TÁC</th></tr></thead>
+   <TableWrap><thead><tr><th>MÃ LỊCH</th><th>KHÁCH HÀNG / THÚ CƯNG</th><th>DỊCH VỤ</th><th>THỜI GIAN</th><th>TRẠNG THÁI / NHÂN VIÊN</th><th>THANH TOÁN</th><th>THAO TÁC</th></tr></thead>
     <tbody>{list.data.items.map(a=><tr key={a.id} className={a.is_overdue?'pc-aw-overdue-row':''}>
      <td className="strong pc-aw-id">#{String(a.id).padStart(4,'0')}</td>
      <td><strong className="pc-aw-primary">{a.customer_name}</strong><small className="pc-aw-secondary">{a.pet_name}</small></td>
      <td className="pc-aw-service">{a.service_name}<small className="pc-aw-secondary">{money(a.price_snapshot)}</small></td>
      <td className="pc-aw-time">{dateTime(a.starts_at)}{a.is_overdue&&<small className="pc-aw-overdue"><AlertTriangle size={12}/> Quá giờ hẹn</small>}</td>
      <td><AppointmentProgress appointment={a}/></td>
-     <td>{a.staff_name||<span className="muted-text">Chưa phân công</span>}</td>
      <td>{user?.role==='staff'&&a.staff_id!==user.id?<span className="muted-text">Sau khi nhận lịch</span>:<span className={'pc-staff-pay-tag pc-staff-pay-tag--'+(a.payment_status||'unpaid')}>{paymentLabels[a.payment_status||'unpaid']||'Chưa thanh toán'}</span>}</td>
-     <td><button type="button" className="table-action pc-aw-details" onClick={()=>open(a)}><Edit3 size={15}/> Chi tiết</button></td>
+     <td><button type="button" className="table-action pc-aw-details" onClick={()=>open(a)}>Chi tiết</button></td>
     </tr>)}</tbody></TableWrap>}
    <div className="pagination"><span>{list.data?.total||0} lịch hẹn · Trang {page}</span><div><button type="button" className="icon-button" aria-label="Trang trước" disabled={page===1} onClick={()=>setPage(page-1)}><ChevronLeft size={17}/></button><span className="page-number">{page}</span><button type="button" className="icon-button" aria-label="Trang sau" disabled={page*15>=(list.data?.total||0)} onClick={()=>setPage(page+1)}><ChevronRight size={17}/></button></div></div>
  </Panel>
