@@ -1,5 +1,5 @@
 import {NavLink,Outlet,useLocation} from 'react-router-dom';
-import {LayoutDashboard,PawPrint,CalendarPlus,CalendarDays,Users,Scissors,UserRound,LogOut,Menu,ChevronRight,Bell,UserCog,ShieldCheck,BookHeart,PanelLeftClose,PanelLeftOpen,ArrowUpRight,CreditCard,type LucideIcon} from 'lucide-react';
+import {LayoutDashboard,PawPrint,CalendarPlus,CalendarDays,Users,Scissors,UserRound,LogOut,Menu,ChevronRight,UserCog,ShieldCheck,BookHeart,PanelLeftClose,PanelLeftOpen,ArrowUpRight,CreditCard,type LucideIcon} from 'lucide-react';
 import {useEffect,useState} from 'react';
 import {useAuth} from '../lib/auth';
 import {toast} from 'react-hot-toast';
@@ -11,7 +11,6 @@ const adminLinks:NavItem[]=[{to:'/admin/dashboard',title:'Tổng quan',icon:Layo
 const staffLinks:NavItem[]=[{to:'/staff/dashboard',title:'Công việc của tôi',icon:LayoutDashboard},{to:'/staff/appointments',title:'Lịch được giao',icon:CalendarDays}];
 const adminOnlyLinks:NavItem[]=[{to:'/admin/team',title:'Thành viên cửa hàng',icon:UserCog},{to:'/admin/accounts',title:'Quản lý tài khoản',icon:ShieldCheck}];
 const roleName={admin:'Quản trị viên',staff:'Nhân viên',customer:'Khách hàng'} as const;
-const roleTab={admin:'QUẢN TRỊ',staff:'NHÂN VIÊN',customer:'CHĂM SÓC'} as const;
 const roleLabel={admin:'Điều hành cửa hàng',staff:'Góc làm việc',customer:'Sổ sức khỏe'} as const;
 
 export function Layout(){
@@ -63,7 +62,7 @@ export function Layout(){
   <div className="main-area nb-main-area">
    <header className="tb nb-toolbar">
     <div className="tb-crumb nb-breadcrumb"><button type="button" className="icon-button mobile-only nb-mobile-toggle" onClick={()=>setOpen(true)} aria-label="Mở menu" aria-expanded={open} aria-controls="pawcare-notebook-sidebar"><Menu size={22}/></button><span className="nb-toolbar-overline">PAWCARE JOURNAL</span><ChevronRight size={14}/><b>{active}</b></div>
-    <div className="tb-right nb-toolbar-actions"><span className="tb-date">{new Date().toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span><span className="tb-sep"/><span className="nb-toolbar-role">{roleTab[user.role]}</span><button type="button" className="tb-btn" aria-label="Thông báo" title="Thông báo" onClick={()=>toast('Thông báo mới sẽ được hiển thị tại đây')}><Bell size={18}/></button><NavLink to="/profile" className="tb-profile" aria-label="Mở hồ sơ tài khoản"><span className="avatar">{initial}</span><span className="n">{user.full_name}</span><ArrowUpRight size={14}/></NavLink></div>
+    <div className="tb-right nb-toolbar-actions"><span className="tb-date">{new Date().toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span><NavLink to="/profile" className="tb-profile" aria-label="Mở hồ sơ tài khoản"><span className="avatar">{initial}</span><span className="n">{user.full_name}</span><ArrowUpRight size={14}/></NavLink></div>
    </header>
    <main id="main-content" className="page-content nb-page-content"><Outlet/></main>
    <footer className="footer nb-footer"><span>© {new Date().getFullYear()} PawCare <span className="nb-footer-mark" aria-hidden="true"><PawcareMark size={14}/></span> Chăm sóc từ những điều nhỏ nhất</span></footer>
