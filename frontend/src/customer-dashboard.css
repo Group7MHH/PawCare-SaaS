@@ -1,0 +1,51 @@
+/* Customer landing page: one clear hero, then three purposeful shortcuts. */
+.pc-customer-home{min-width:0}
+.pc-customer-home .nb-intro{margin-bottom:18px}
+.pc-customer-home .nb-customer-cover{min-height:306px;margin-bottom:22px;grid-template-columns:minmax(0,1.15fr) minmax(240px,.85fr);box-shadow:0 10px 28px rgba(37,52,54,.08)}
+.pc-customer-home .nb-cover-copy{min-height:306px;padding:38px 18px 36px clamp(25px,3vw,46px);justify-content:center}
+.pc-customer-home .nb-cover-copy h2{font-size:clamp(32px,3vw,45px);max-width:520px;line-height:1.13;margin:18px 0 11px}
+.pc-customer-home .nb-cover-copy p{max-width:435px;font-size:13px;line-height:1.7;margin-bottom:21px}
+.pc-customer-home .nb-cover-buttons{gap:12px}
+.pc-customer-home .nb-cover-buttons>a{min-height:43px}
+.pc-customer-home .nb-cover-illustration{min-height:306px}
+.pc-home-shortcuts{border:1px solid #e6ddd0;border-radius:17px;background:#fffdf9;padding:27px clamp(17px,2vw,28px) 29px;box-shadow:0 3px 15px rgba(56,55,45,.035)}
+.pc-home-shortcuts-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:20px}
+.pc-home-shortcuts-heading h2{font-size:clamp(19px,2.2vw,25px);margin:6px 0 0;color:#203449;letter-spacing:-.03em}
+.pc-home-shortcuts-heading>p{font-size:12px;color:#7b8685;margin:0 0 3px}
+.pc-home-shortcuts-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.pc-home-shortcut{position:relative;display:flex;align-items:flex-start;gap:13px;min-width:0;min-height:130px;padding:21px 18px;border:1px solid #e4e7e4;border-radius:12px;background:#fafbf8;text-decoration:none;color:#203449;transition:border-color .2s,background-color .2s,box-shadow .2s,transform .2s}
+.pc-home-shortcut:hover{border-color:#aec9b8;background:#f2f8f3;box-shadow:0 8px 17px rgba(39,74,64,.06);transform:translateY(-2px)}
+.pc-home-shortcut:focus-visible{outline:3px solid #769d8c;outline-offset:2px}
+.pc-home-shortcut-icon{display:grid;place-items:center;flex:none;width:39px;height:39px;border-radius:10px;border:1px solid #d7e4d9;background:#edf4ed;color:#4c7561}
+.pc-home-shortcut-content{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;padding-right:8px}
+.pc-home-shortcut-content small{font-size:10px;color:#99a99c;font-weight:800;letter-spacing:.04em}
+.pc-home-shortcut-content strong{font-size:14px;line-height:1.35;color:#263f47}
+.pc-home-shortcut-content>span{font-size:11px;line-height:1.55;color:#71817e}
+.pc-home-shortcut-arrow{margin-left:auto;flex:none;color:#9caaa4}
+.pc-home-shortcut:hover .pc-home-shortcut-arrow{color:#527f69}
+@media(max-width:1050px){
+ .pc-customer-home .nb-customer-cover{grid-template-columns:minmax(0,1.2fr) minmax(210px,.8fr)}
+ .pc-home-shortcut{padding:18px 14px;gap:10px}
+}
+@media(max-width:760px){
+ .pc-customer-home .nb-customer-cover{min-height:295px;display:block}
+ .pc-customer-home .nb-cover-copy{min-height:295px;max-width:none;padding:33px 155px 32px 23px}
+ .pc-customer-home .nb-cover-illustration{position:absolute;right:-26px;top:35px;min-height:210px;width:185px;opacity:.55;pointer-events:none}
+ .pc-customer-home .nb-cover-copy h2{font-size:clamp(29px,5vw,38px)}
+ .pc-home-shortcuts-grid{grid-template-columns:1fr}
+ .pc-home-shortcut{min-height:87px;align-items:center}
+ .pc-home-shortcuts-heading{align-items:flex-start;flex-direction:column;gap:7px}
+}
+@media(max-width:480px){
+ .pc-customer-home .nb-intro{margin-bottom:15px}
+ .pc-customer-home .nb-customer-cover{min-height:310px}
+ .pc-customer-home .nb-cover-copy{min-height:310px;padding:25px 20px 27px}
+ .pc-customer-home .nb-cover-illustration{opacity:.14;right:-75px;top:80px}
+ .pc-customer-home .nb-cover-copy h2{font-size:32px;max-width:300px}
+ .pc-customer-home .nb-cover-copy p{font-size:12px;max-width:285px}
+ .pc-customer-home .nb-cover-buttons{gap:9px}
+ .pc-customer-home .nb-cover-buttons>a{font-size:11px}
+ .pc-home-shortcuts{padding:21px 15px}
+ .pc-home-shortcut{padding:15px 13px}
+}
+@media(prefers-reduced-motion:reduce){.pc-home-shortcut{transition:none}.pc-home-shortcut:hover{transform:none}}
