@@ -8,11 +8,12 @@ test('all PawCare routes and role boundaries remain available',()=>{
  for(const route of ['/overview','/pets','/book','/services','/my-appointments','/admin/dashboard','/admin/appointments','/admin/catalog','/admin/customers','/admin/team','/staff/dashboard','/staff/appointments'])assert.ok(routes.includes('path="'+route+'"'),route);
  assert.match(routes,/AdminOnly/);assert.match(routes,/StaffOnly/);
 });
-test('customer overview uses actual pets and dashboard endpoints',()=>{
+test('customer overview keeps functional navigation, not repeated data previews',()=>{
  const page=read('frontend/src/pages/Overview.tsx');
- assert.match(page,/api<\{items:Pet\[\]\}>\('\/pets'\)/);assert.match(page,/api<Stats>\('\/dashboard'\)/);
  assert.match(page,/className="nb-customer-cover/);
- assert.match(page,/nb-pet-album/);
+ assert.match(page,/className="pc-home-shortcuts/);
+ for(const route of ['/pets','/book','/my-appointments','/payments','/services'])assert.ok(page.includes(route),route);
+ for(const label of ['Gia đình nhỏ của bạn','Lịch sắp tới','Những trang vừa viết'])assert.ok(!page.includes(label),label);
  assert.doesNotMatch(page,/mũi tiêm cần nhắc lại|ưu đãi thành viên 10%|ngày tiêm giả/);
 });
 test('appointment detail reads actual appointment records',()=>{
