@@ -69,7 +69,7 @@ export function AdminAppointments(){const {user}=useAuth();const [searchParams]=
      <button type="button" aria-pressed={status==='all'&&!overdueOnly} className={status==='all'&&!overdueOnly?'selected':''} onClick={()=>{setStatus('all');setOverdueOnly(false);setPage(1);}}>Tất cả</button>
      {states.map(s=><button key={s.v} type="button" aria-pressed={status===s.v&&!overdueOnly} className={status===s.v&&!overdueOnly?'selected':''} onClick={()=>{setStatus(s.v);setOverdueOnly(false);setPage(1);}}>{s.t}</button>)}
     </div>
-    {user?.role==='admin'&&<button type="button" aria-pressed={overdueOnly} className={'pc-aw-filter-warning '+(overdueOnly?'selected':'')} onClick={()=>{setOverdueOnly(true);setStatus('all');setPage(1);setSelected(null);}}><AlertTriangle size={14}/> Quá hạn</button>}
+    {user?.role==='admin'&&<button type="button" aria-pressed={overdueOnly} className={'pc-aw-filter-warning '+(overdueOnly?'selected':'')} onClick={()=>{setOverdueOnly(true);setStatus('all');setPage(1);setSelected(null);}}>Lịch quá hẹn</button>}
    </div>
    <div className="pc-aw-tools"><SearchBox value={search} onChange={v=>{setSearch(v);setPage(1);}} placeholder="Tìm khách hàng, thú cưng, dịch vụ..."/>
     <label className="pc-pets-sort">Sắp xếp <select aria-label="Sắp xếp lịch hẹn" value={sort} onChange={e=>{setSort(e.target.value);setPage(1);setSelected(null);}}><option value="id_desc">Mã mới nhất trước</option><option value="id_asc">Mã cũ nhất trước</option><option value="starts_at_asc">Giờ hẹn gần nhất trước</option><option value="starts_at_desc">Giờ hẹn xa nhất trước</option></select></label>
