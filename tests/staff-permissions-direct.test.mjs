@@ -3,24 +3,23 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=(p)=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('Admin can grant and revoke Staff from account management',()=>{
+test('Admin can only revoke Staff from account management',()=>{
  const api=read('backend/src/routes/accounts.ts');
  const ui=read('frontend/src/pages/Accounts.tsx');
  assert.match(api,/router\.patch\('\/accounts\/:id\/role',sensitiveLimit/);
  assert.match(api,/router\.use\(requireAuth,requireRole\('admin'\)\)/);
  assert.match(api,/await confirmAdmin\(req\.user!\.id,data\.admin_password\)/);
- assert.match(api,/z\.enum\(\['staff','customer'\]\)/);
- assert.match(ui,/Cấp quyền Staff/);
+ assert.ok(api.includes("role:z.literal('customer')"));
+ assert.ok(api.includes("account.role!=='staff'"));
  assert.match(ui,/Thu hồi quyền Staff/);
+ assert.doesNotMatch(ui,/Cấp quyền Staff/);
  assert.match(ui,/roleChange\.mutate\(\)/);
 });
-test('Staff promotion updates users, memberships and profiles within one transaction',()=>{
+test('Staff revocation updates users and memberships within one transaction',()=>{
  const source=read('backend/src/routes/accounts.ts');
  assert.match(source,/router\.patch\('\/accounts\/:id\/role'[\s\S]*?await transaction\(async db=>/);
- assert.match(source,/INSERT INTO organization_members/);
- assert.match(source,/ON CONFLICT\(organization_id,user_id\) DO UPDATE SET role='staff',is_active=TRUE/);
- assert.match(source,/INSERT INTO staff_profiles/);
- assert.match(source,/INSERT INTO organization_staff_profiles/);
+ assert.match(source,/UPDATE organization_members SET is_active=FALSE/);
+ assert.doesNotMatch(source,/INSERT INTO staff_profiles/);
  assert.match(source,/UPDATE users SET role=\? WHERE id=\?/);
  assert.match(source,/account\.role\.changed/);
 });
