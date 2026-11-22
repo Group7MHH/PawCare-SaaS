@@ -5,7 +5,7 @@ import {api,speciesName,type Pet,type Stats} from '../lib/api';
 import {useAuth} from '../lib/auth';
 import {PetAvatar} from '../components/PetAvatar';
 import {Loading,Empty,Badge,ErrorNotice} from '../components/UI';
-import {CompanionCover,PawcareMark,NotebookStory} from '../components/BrandArtwork';
+import {CompanionCover,PawcareMark} from '../components/BrandArtwork';
 
 import {greeting} from '../lib/greeting';
 
@@ -24,7 +24,7 @@ export function Overview(){
  const next=dashboard?.next||null;
  const firstName=user?.full_name.split(' ').slice(-1)[0]||'bạn';
  return <div className="nb-dashboard nb-customer-dashboard">
-  <div className="nb-intro nb-enter"><div><span className="nb-overline"><span className="nb-overline-dot"/> TRANG 01 · HỒ SƠ CÁ NHÂN</span><h1>{greeting()}, {firstName}<span className="nb-hello-mark">.</span></h1><p>Những điều tốt đẹp bắt đầu từ việc chăm sóc bé mỗi ngày.</p></div><span className="nb-date-stamp"><BookHeart size={17}/> SỔ TAY PAWCARE</span></div>
+  <div className="nb-intro nb-enter"><div><span className="nb-overline"><span className="nb-overline-dot"/> TỔNG QUAN KHÁCH HÀNG</span><h1>{greeting()}, {firstName}<span className="nb-hello-mark">.</span></h1><p>Những điều tốt đẹp bắt đầu từ việc chăm sóc bé mỗi ngày.</p></div><span className="nb-date-stamp"><BookHeart size={17}/> SỔ TAY PAWCARE</span></div>
   <section className="nb-customer-cover nb-enter" aria-label="Bắt đầu chăm sóc thú cưng">
    <div className="nb-cover-copy"><div className="nb-cover-label"><span className="nb-cover-label-mark"><PawcareMark size={18}/></span> YOUR PET, OUR STORY <span className="nb-cover-line"/></div><h2>Mỗi dấu chân,<br/><em>một câu chuyện.</em></h2><p>Lưu giữ hồ sơ chăm sóc, theo dõi hành trình và đặt những buổi hẹn trọn vẹn cho bạn nhỏ.</p><div className="nb-cover-buttons"><Link to="/book" className="nb-action-primary"><CalendarPlus size={18}/> Đặt lịch chăm sóc <ArrowUpRight size={17}/></Link><Link to="/pets" className="nb-action-quiet">Mở sổ thú cưng <ArrowRight size={17}/></Link></div><div className="nb-cover-foot"><span className="nb-cover-foot-line"/><span>PAWCARE · THE CARE EDITION</span></div></div>
    <div className="nb-cover-art nb-cover-illustration" aria-hidden="true"><CompanionCover/><span className="nb-art-caption">A LITTLE MORE LOVE, EVERY DAY</span></div>
@@ -42,7 +42,7 @@ export function Overview(){
   </div>
   <div className="nb-customer-bottom">
    <section className="nb-paper-panel nb-journey nb-enter"><div className="nb-section-heading"><div><span className="nb-section-kicker">03 / NHẬT KÝ</span><h2>Những trang vừa viết</h2><p>Lịch sử chăm sóc từ các cuộc hẹn thực tế.</p></div><Link className="nb-section-link" to="/my-appointments">Xem lịch sử <ArrowUpRight size={16}/></Link></div>{!recent.length?<Empty title="Chưa có hoạt động" description="Nhật ký sẽ xuất hiện khi bạn đặt lịch chăm sóc."/>:<div className="nb-timeline">{recent.slice(0,5).map((a,index)=><div className="nb-timeline-item" key={a.id}><div className={`nb-timeline-marker ${index===0?'latest':''}`}><CalendarDays size={17}/></div><div className="nb-timeline-main"><strong>{a.service_name}</strong><small>{a.pet_name} · {dateTimeVN(a.starts_at)}</small></div><Badge status={a.status}/></div>)}</div>}</section>
-   <aside className="nb-quick-notes nb-enter"><div className="nb-quick-deco" aria-hidden="true"><NotebookStory/></div><span className="nb-section-kicker">LỐI TẮT</span><h2>Hôm nay, bạn muốn làm gì?</h2><div className="nb-quick-list"><Link to="/book"><CalendarPlus size={19}/> Đặt một lịch mới <ArrowRight size={16}/></Link><Link to="/pets"><PawPrint size={19}/> Cập nhật sổ thú cưng <ArrowRight size={16}/></Link><Link to="/my-appointments"><CalendarDays size={19}/> Xem lại các cuộc hẹn <ArrowRight size={16}/></Link></div><span className="nb-quick-signature">WITH LOVE, PAWCARE <Heart size={13}/></span></aside>
+   <section className="nb-quick-notes nb-enter" aria-label="Các thao tác chăm sóc thường dùng"><h2>Hôm nay, bạn muốn làm gì?</h2><div className="nb-quick-list"><Link to="/book"><CalendarPlus size={19}/> Đặt một lịch mới <ArrowRight size={16}/></Link><Link to="/pets"><PawPrint size={19}/> Cập nhật sổ thú cưng <ArrowRight size={16}/></Link><Link to="/my-appointments"><CalendarDays size={19}/> Xem lại các cuộc hẹn <ArrowRight size={16}/></Link></div></section>
   </div>
  </div>;
 }
