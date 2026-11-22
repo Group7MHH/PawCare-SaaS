@@ -9,12 +9,10 @@ test('Notebook sidebar preserves role navigation and accessible logout',()=>{
  for(const item of ['aria-expanded','aria-controls','aria-label="Mở mục lục"','Escape','aria-label="Thanh điều hướng PawCare"'])assert.ok(layout.includes(item),item);
  assert.doesNotMatch(layout,/pawcare:notebook-collapsed|nb-collapsed|nb-collapse-toggle|<Menu/);
 });
-test('Customer dashboard renders real pets and appointments rather than fabricated medical advice',()=>{
+test('Customer dashboard uses direct actions without duplicated pet or appointment widgets',()=>{
  const page=read('frontend/src/pages/Overview.tsx');
- assert.ok(page.includes("api<{items:Pet[]}>('/pets')"));
- assert.ok(page.includes("api<Stats>('/dashboard')"));
- for(const token of ['nb-customer-cover','nb-pet-polaroid','nb-ticket','nb-timeline','/my-appointments','/book','/pets'])assert.ok(page.includes(token),token);
- assert.match(page,/Không phải nhắc lịch y tế cá nhân/);
+ for(const token of ['nb-customer-cover','pc-home-shortcuts','pc-home-shortcut','/my-appointments','/book','/pets','/payments','/services'])assert.ok(page.includes(token),token);
+ for(const unused of ['nb-pet-album','nb-appointment-section','nb-journey','nb-ticket','nb-timeline',"api<{items:Pet[]}>('/pets')","api<Stats>('/dashboard')"])assert.ok(!page.includes(unused),unused);
  assert.doesNotMatch(page,/mũi tiêm cần nhắc lại|ngày tiêm giả|khách hàng mẫu/);
 });
 test('Staff dashboard shows only work assigned by Admin',()=>{
