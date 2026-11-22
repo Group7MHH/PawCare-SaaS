@@ -14,18 +14,16 @@ test('Permanent service deletion protects active and bundled bookings',()=>{
  assert.ok(api.includes("UPDATE care_records SET appointment_id=NULL"));
 });
 
-test('Admin-approved Staff deletion is permitted; Customer role promotion remains protected',()=>{
+test('Admin can delete Staff and revoke Staff role without granting new Staff access',()=>{
  const api=read('backend/src/routes/accounts.ts');
  assert.ok(api.includes("DELETE FROM appointments WHERE customer_id=? OR staff_id=?"));
  assert.ok(api.includes('expected_appointments!==impact.appointments'));
  assert.ok(!api.includes('dependencies.appointments>0||dependencies.care_records>0'));
  assert.ok(!api.includes('if(billing.total>0)'));
- assert.ok(api.includes("if(data.role==='staff')"));
- assert.ok(api.includes("FROM pets WHERE owner_id=?"));
- assert.ok(api.includes("FROM appointments WHERE customer_id=?"));
- assert.ok(api.includes('history.pets>0||history.bookings>0'));
+ assert.ok(api.includes("role:z.literal('customer')"));
+ assert.ok(api.includes("account.role!=='staff'"));
+ assert.ok(!api.includes("if(data.role==='staff')"));
 });
-
 test('Overdue bookings can be rescheduled by Admin, preserving time validation and capacity',()=>{
  const api=read('backend/src/routes/appointments.ts');
  const page=read('frontend/src/pages/AdminAppointments.tsx');
