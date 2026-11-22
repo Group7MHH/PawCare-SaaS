@@ -45,3 +45,52 @@
 @media(max-width:1100px){.pc-aw-steps li{gap:5px;padding-right:14px}.pc-aw-steps li>strong{font-size:10px}}
 @media(max-width:760px){.pc-aw-guide{padding:15px}.pc-aw-guide-head{align-items:flex-start;flex-direction:column;gap:5px}.pc-aw-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pc-aw-steps li{justify-content:flex-start;padding:9px;border:1px solid #e1e8e2;border-radius:8px}.pc-aw-step-arrow{display:none}.pc-aw-tools .search-box{width:100%;max-width:none}}
 @media(max-width:430px){.pc-aw-steps{grid-template-columns:1fr}.pc-aw-filter-row{align-items:flex-start}}
+
+/* Focused appointment detail: overview stays visible and each section has its own tab. */
+.pc-appt-dialog.modal-wide{width:min(100%,1040px);max-width:1040px;max-height:min(92dvh,1000px);padding:0;display:flex;flex-direction:column;overflow:hidden;border-radius:16px}
+.pc-appt-dialog>.modal-head{flex:none;margin:0;padding:19px 26px 15px;border-bottom:1px solid #e5e9ec}
+.pc-appt-dialog>.modal-head h2{font-size:19px}
+.pc-appt-detail-view{display:flex;flex-direction:column;min-height:0;flex:1}
+.pc-appt-detail-top{flex:none;padding:18px 26px 15px}
+.pc-appt-detail-hero{display:flex;justify-content:space-between;align-items:center;gap:22px}
+.pc-appt-detail-service>span{font-size:10px;font-weight:800;letter-spacing:.09em;color:#789087}
+.pc-appt-detail-service h3{font-size:20px;line-height:1.3;color:#263b48;margin:4px 0}
+.pc-appt-detail-service p{color:#6d8089;font-size:12px;margin:0}
+.pc-appt-detail-hero .pc-aw-state{min-width:180px;max-width:230px;padding:12px 14px;background:#f3f7f5;border:1px solid #e1eae5;border-radius:10px}
+.pc-appt-detail-facts{margin:16px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;background:#f7f9fa;border:1px solid #edf0f2;border-radius:10px;padding:14px 16px}
+.pc-appt-detail-facts>div{min-width:0}
+.pc-appt-detail-facts dt{font-size:11px;color:#718495;margin-bottom:5px}
+.pc-appt-detail-facts dd{font-size:12px;font-weight:700;color:#2c3d50;line-height:1.4;margin:0;overflow-wrap:anywhere}
+.pc-appt-dialog .pc-appt-alert{margin-top:12px!important;border-radius:8px!important;line-height:1.5}
+.pc-appt-detail-tabs{display:flex;flex:none;gap:5px;padding:0 26px;border-bottom:1px solid #e5eaf0}
+.pc-appt-detail-tabs button{appearance:none;border:0;border-bottom:2px solid transparent;background:none;padding:12px 16px 11px;font:700 12px var(--font-body);color:#718493;cursor:pointer;white-space:nowrap}
+.pc-appt-detail-tabs button:hover{color:#304e57;background:#f7f8f7}
+.pc-appt-detail-tabs button.active{color:#264a51;border-bottom-color:#578b76}
+.pc-appt-detail-tabs button:focus-visible{outline:2px solid #6f9f87;outline-offset:-3px}
+.pc-appt-detail-content{min-height:0;overflow-y:auto;overscroll-behavior:contain;flex:1;padding:19px 26px 24px}
+.pc-appt-detail-content>section{max-width:100%;margin:0}
+.pc-appt-section-title{margin:0 0 16px}
+.pc-appt-section-title h3{margin:0 0 5px;font-size:16px;color:#293f4c}
+.pc-appt-section-title p{font-size:12px;color:#72818c;margin:0}
+.pc-appt-manage-pane>.form-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.pc-appt-manage-pane>.form-stack>.field{min-width:0}
+.pc-appt-manage-pane>.form-stack>.field:has(textarea),.pc-appt-manage-pane>.form-stack>.modal-actions{grid-column:1/-1}
+.pc-appt-manage-pane>.form-stack>.modal-actions{margin-top:6px;border-top:1px solid #edf0f2;padding-top:14px}
+.pc-appt-manage-pane>.pc-attention-note{border-radius:9px!important;margin-bottom:16px}
+.pc-appt-pet-pane .pc-appointment-pet{margin:0;border:0;padding:0;background:transparent}
+.pc-appt-pet-pane .pc-appointment-pet-history{max-height:none;overflow-y:visible}
+.pc-appt-payment-pane .pc-payment-panel{margin:0;box-shadow:none}
+@media(max-width:760px){
+ .pc-appt-dialog.modal-wide{max-height:94dvh;border-radius:12px}
+ .pc-appt-dialog>.modal-head{padding:16px 17px 12px}
+ .pc-appt-detail-top{padding:15px 17px 12px}
+ .pc-appt-detail-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .pc-appt-detail-tabs{padding:0 12px;overflow-x:auto}
+ .pc-appt-detail-tabs button{padding:12px 11px}
+ .pc-appt-detail-content{padding:16px 17px 20px}
+}
+@media(max-width:540px){
+ .pc-appt-detail-hero{align-items:flex-start;flex-direction:column;gap:12px}
+ .pc-appt-detail-hero .pc-aw-state{max-width:none;width:100%}
+ .pc-appt-manage-pane>.form-stack{grid-template-columns:1fr}
+}
