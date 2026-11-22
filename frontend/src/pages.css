@@ -259,3 +259,6 @@
 .pc-appointment-pet-record-head strong{font-size:13px}.pc-appointment-pet-record-head time,.pc-appointment-pet-history small{font-size:12px;color:var(--ink-3);flex:none}
 .pc-appointment-pet-history article p{font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;margin:6px 0}
 @media(max-width:650px){.pc-appointment-pet{padding:13px}.pc-appointment-pet-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pc-appointment-pet-record-head{flex-direction:column;gap:4px}}
+
+/* Visible data-quality alert for pet birthdays saved before server validation. */
+.pc-appointment-pet-birthday-warning{display:block;margin-top:6px;font-size:11px;font-weight:650;line-height:1.45;color:#9a631d}
