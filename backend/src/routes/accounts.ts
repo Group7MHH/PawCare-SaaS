@@ -161,7 +161,6 @@ router.patch('/accounts/:id/role',sensitiveLimit,asyncRoute(async(req,res)=>{
    // Leave membership for historical appointment FK, mark it unavailable for booking.
    await exec("UPDATE organization_members SET is_active=FALSE WHERE organization_id=? AND user_id=? AND role='staff'",
     [organization,target],db);
-  }
   await exec('UPDATE users SET role=? WHERE id=?',[data.role,target],db);
   await exec('DELETE FROM sessions WHERE user_id=?',[target],db);
   await exec(`INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details)
