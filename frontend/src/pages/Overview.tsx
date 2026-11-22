@@ -1,47 +1,59 @@
-import {useQuery} from '@tanstack/react-query';
-import {Link,useNavigate} from 'react-router-dom';
-import {ArrowRight,ArrowUpRight,BookHeart,CalendarDays,CalendarPlus,ChevronRight,Clock3,Heart,PawPrint,Plus} from 'lucide-react';
-import {api,speciesName,type Pet,type Stats} from '../lib/api';
+import {Link} from 'react-router-dom';
+import {ArrowRight,ArrowUpRight,BookHeart,CalendarDays,CalendarPlus,CreditCard,PawPrint,Scissors} from 'lucide-react';
 import {useAuth} from '../lib/auth';
-import {PetAvatar} from '../components/PetAvatar';
-import {Loading,Empty,Badge,ErrorNotice} from '../components/UI';
 import {CompanionCover,PawcareMark} from '../components/BrandArtwork';
-
 import {greeting} from '../lib/greeting';
 
-const VN='Asia/Ho_Chi_Minh';
-const dayOf=(iso:string)=>new Date(iso).toLocaleDateString('vi-VN',{day:'2-digit',timeZone:VN});
-const monthOf=(iso:string)=>new Date(iso).toLocaleDateString('vi-VN',{month:'short',timeZone:VN});
-const timeOf=(iso:string)=>new Date(iso).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',timeZone:VN});
-const dateTimeVN=(iso:string)=>new Date(iso).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:VN});
+/**
+ * Customer dashboard is intentionally action-focused.
+ * Pet cards, upcoming appointment previews and the activity journal belong
+ * on their dedicated pages instead of being repeated on this landing screen.
+ */
+const shortcuts=[
+ {to:'/pets',title:'Hồ sơ thú cưng',description:'Xem và cập nhật thông tin của bé.',icon:PawPrint},
+ {to:'/my-appointments',title:'Lịch hẹn của tôi',description:'Theo dõi trạng thái các lịch đã đặt.',icon:CalendarDays},
+ {to:'/payments',title:'Thanh toán',description:'Kiểm tra và xử lý khoản thanh toán.',icon:CreditCard}
+] as const;
+
 export function Overview(){
- const {user}=useAuth(),nav=useNavigate();
- const pets=useQuery({queryKey:['pets'],queryFn:()=>api<{items:Pet[]}>('/pets')});
- const stats=useQuery({queryKey:['dashboard'],queryFn:()=>api<Stats>('/dashboard'),refetchInterval:15000,refetchOnWindowFocus:'always',staleTime:0});
- if(pets.isLoading||stats.isLoading)return <Loading/>;
- if(pets.error||stats.error)return <ErrorNotice message="Không thể tải trang tổng quan. Vui lòng kiểm tra kết nối."/>;
- const list=pets.data?.items||[],dashboard=stats.data,recent=dashboard?.recent||[];
- const next=dashboard?.next||null;
- const firstName=user?.full_name.split(' ').slice(-1)[0]||'bạn';
- return <div className="nb-dashboard nb-customer-dashboard">
-  <div className="nb-intro nb-enter"><div><span className="nb-overline"><span className="nb-overline-dot"/> TỔNG QUAN KHÁCH HÀNG</span><h1>{greeting()}, {firstName}<span className="nb-hello-mark">.</span></h1><p>Những điều tốt đẹp bắt đầu từ việc chăm sóc bé mỗi ngày.</p></div><span className="nb-date-stamp"><BookHeart size={17}/> SỔ TAY PAWCARE</span></div>
+ const {user}=useAuth();
+ const firstName=user?.full_name.trim().split(/\s+/).slice(-1)[0]||'bạn';
+ return <div className="nb-dashboard nb-customer-dashboard pc-customer-home">
+  <header className="nb-intro nb-enter">
+   <div><span className="nb-overline"><span className="nb-overline-dot"/> TỔNG QUAN KHÁCH HÀNG</span>
+    <h1>{greeting()}, {firstName}<span className="nb-hello-mark">.</span></h1>
+    <p>Chào mừng trở lại PawCare. Bạn muốn chăm sóc bé như thế nào hôm nay?</p>
+   </div>
+   <span className="nb-date-stamp"><BookHeart size={17}/> SỔ TAY PAWCARE</span>
+  </header>
+
   <section className="nb-customer-cover nb-enter" aria-label="Bắt đầu chăm sóc thú cưng">
-   <div className="nb-cover-copy"><div className="nb-cover-label"><span className="nb-cover-label-mark"><PawcareMark size={18}/></span> YOUR PET, OUR STORY <span className="nb-cover-line"/></div><h2>Mỗi dấu chân,<br/><em>một câu chuyện.</em></h2><p>Lưu giữ hồ sơ chăm sóc, theo dõi hành trình và đặt những buổi hẹn trọn vẹn cho bạn nhỏ.</p><div className="nb-cover-buttons"><Link to="/book" className="nb-action-primary"><CalendarPlus size={18}/> Đặt lịch chăm sóc <ArrowUpRight size={17}/></Link><Link to="/pets" className="nb-action-quiet">Mở sổ thú cưng <ArrowRight size={17}/></Link></div><div className="nb-cover-foot"><span className="nb-cover-foot-line"/><span>PAWCARE · THE CARE EDITION</span></div></div>
-   <div className="nb-cover-art nb-cover-illustration" aria-hidden="true"><CompanionCover/><span className="nb-art-caption">A LITTLE MORE LOVE, EVERY DAY</span></div>
+   <div className="nb-cover-copy">
+    <div className="nb-cover-label"><span className="nb-cover-label-mark"><PawcareMark size={18}/></span> PAWCARE <span className="nb-cover-line"/></div>
+    <h2>Mỗi dấu chân,<em> một câu chuyện.</em></h2>
+    <p>Chọn dịch vụ phù hợp và đặt lịch chăm sóc cho thú cưng chỉ với vài thao tác.</p>
+    <div className="nb-cover-buttons">
+     <Link to="/book" className="nb-action-primary"><CalendarPlus size={18}/> Đặt lịch chăm sóc <ArrowUpRight size={17}/></Link>
+     <Link to="/services" className="nb-action-quiet"><Scissors size={17}/> Xem dịch vụ <ArrowRight size={17}/></Link>
+    </div>
+   </div>
+   <div className="nb-cover-art nb-cover-illustration" aria-hidden="true"><CompanionCover/></div>
   </section>
-  <div className="nb-customer-layout">
-   <section className="nb-paper-panel nb-pet-album nb-enter"><div className="nb-section-heading"><div><span className="nb-section-kicker">01 / HỒ SƠ</span><h2>Gia đình nhỏ của bạn</h2><p>Mỗi bạn nhỏ đều có một cuốn sổ riêng.</p></div><Link className="nb-section-link" to="/pets">Xem tất cả <ArrowUpRight size={16}/></Link></div>
-    {!list.length?<Empty title="Chưa có thú cưng" description="Hãy thêm người bạn đầu tiên vào sổ chăm sóc." action={<Link className="button button-primary" to="/pets"><Plus size={16}/> Thêm thú cưng</Link>}/>:<div className="nb-pet-album-grid">{list.slice(0,3).map((p,index)=><Link to={`/pets/${p.id}`} key={p.id} className={`nb-pet-polaroid nb-polaroid-${index%3}`}><span className="nb-pet-polaroid-portrait"><span className="nb-pet-photo-ornament"/><PetAvatar species={p.species} size={60}/></span><span className="nb-pet-polaroid-body"><strong>{p.name}</strong><small>{p.breed||speciesName(p.species)}</small><span>{typeof p.record_count==='number'?`${p.record_count} lần chăm sóc`:'Mở hồ sơ'} <ArrowUpRight size={14}/></span></span></Link>)}</div>}
-    <button type="button" className="nb-add-pet" onClick={()=>nav('/pets')}><Plus size={17}/> Thêm hoặc cập nhật hồ sơ <ChevronRight size={16}/></button>
-   </section>
-   <section className="nb-paper-panel nb-appointment-section nb-enter"><div className="nb-section-heading"><div><span className="nb-section-kicker">02 / LỊCH HẸN</span><h2>Lịch sắp tới</h2><p>Một tấm vé cho mỗi lần chăm sóc.</p></div><Link className="nb-section-link" to="/my-appointments">Tất cả <ArrowUpRight size={16}/></Link></div>
-    {next?<details className="nb-ticket" open><summary className="nb-ticket-summary"><span className="nb-ticket-date"><strong>{dayOf(next.starts_at)}</strong><small>{monthOf(next.starts_at)}</small></span><span className="nb-ticket-primary"><small>CUỘC HẸN TIẾP THEO</small><strong>{next.service_name}</strong><span>{next.pet_name} · {timeOf(next.starts_at)}</span></span><ChevronRight className="nb-ticket-chevron" size={20}/></summary><div className="nb-ticket-details"><Badge status={next.status}/><span><Clock3 size={15}/> {dateTimeVN(next.starts_at)}</span><Link to="/my-appointments">Mở chi tiết <ArrowUpRight size={15}/></Link></div></details>:<div className="nb-ticket-empty"><CalendarDays size={29}/><strong>Chưa có buổi hẹn nào sắp tới</strong><span>Cuốn sổ đang chờ trang đầu tiên.</span><Link to="/book">Đặt lịch ngay <ArrowRight size={16}/></Link></div>}
-    <div className="nb-care-note"><div className="nb-care-note-icon"><Heart size={22}/></div><div><strong>Một chút yêu thương mỗi ngày</strong><p>Hãy dành thời gian chơi đùa, vận động và quan sát thay đổi sức khỏe của bé.</p><small>Lời khuyên chung · Không phải nhắc lịch y tế cá nhân</small></div></div>
-   </section>
-  </div>
-  <div className="nb-customer-bottom">
-   <section className="nb-paper-panel nb-journey nb-enter"><div className="nb-section-heading"><div><span className="nb-section-kicker">03 / NHẬT KÝ</span><h2>Những trang vừa viết</h2><p>Lịch sử chăm sóc từ các cuộc hẹn thực tế.</p></div><Link className="nb-section-link" to="/my-appointments">Xem lịch sử <ArrowUpRight size={16}/></Link></div>{!recent.length?<Empty title="Chưa có hoạt động" description="Nhật ký sẽ xuất hiện khi bạn đặt lịch chăm sóc."/>:<div className="nb-timeline">{recent.slice(0,5).map((a,index)=><div className="nb-timeline-item" key={a.id}><div className={`nb-timeline-marker ${index===0?'latest':''}`}><CalendarDays size={17}/></div><div className="nb-timeline-main"><strong>{a.service_name}</strong><small>{a.pet_name} · {dateTimeVN(a.starts_at)}</small></div><Badge status={a.status}/></div>)}</div>}</section>
-   <section className="nb-quick-notes nb-enter" aria-label="Các thao tác chăm sóc thường dùng"><h2>Hôm nay, bạn muốn làm gì?</h2><div className="nb-quick-list"><Link to="/book"><CalendarPlus size={19}/> Đặt một lịch mới <ArrowRight size={16}/></Link><Link to="/pets"><PawPrint size={19}/> Cập nhật sổ thú cưng <ArrowRight size={16}/></Link><Link to="/my-appointments"><CalendarDays size={19}/> Xem lại các cuộc hẹn <ArrowRight size={16}/></Link></div></section>
-  </div>
+
+  <section className="pc-home-shortcuts nb-enter" aria-labelledby="pc-home-shortcuts-title">
+   <div className="pc-home-shortcuts-heading">
+    <div><span className="nb-section-kicker">THAO TÁC NHANH</span><h2 id="pc-home-shortcuts-title">Hôm nay, bạn muốn làm gì?</h2></div>
+    <p>Truy cập nhanh những việc bạn thường cần.</p>
+   </div>
+   <nav className="pc-home-shortcuts-grid" aria-label="Các chức năng chăm sóc">
+    {shortcuts.map(({to,title,description,icon:Icon},index)=>
+     <Link key={to} to={to} className="pc-home-shortcut">
+      <span className="pc-home-shortcut-icon"><Icon size={21} strokeWidth={1.8}/></span>
+      <span className="pc-home-shortcut-content"><small>{String(index+1).padStart(2,'0')}</small><strong>{title}</strong><span>{description}</span></span>
+      <ArrowUpRight className="pc-home-shortcut-arrow" size={18} aria-hidden="true"/>
+     </Link>
+    )}
+   </nav>
+  </section>
  </div>;
 }

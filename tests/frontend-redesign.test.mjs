@@ -53,13 +53,14 @@ test('services use actual API prices and navigate to booking',()=>{
  for(const snippet of ['/book?service_ids=','money(service.price)','service.duration_minutes','totalDuration+service.duration_minutes>600'])
   assert.ok(cards.includes(snippet),snippet);
 });
-test('Customer dashboard and pets show live information, not fabricated medical reminders',()=>{
+test('Customer landing directs to live pages; pet records keep real data',()=>{
  const overview=read('frontend/src/pages/Overview.tsx'),pets=read('frontend/src/pages/Pets.tsx');
- assert.match(overview,/api<\{items:Pet\[\]\}>\('\/pets'\)/);
- assert.match(overview,/api<Stats>\('\/dashboard'\)/);
  assert.match(overview,/className="nb-customer-cover/);
- assert.match(overview,/nb-ticket/);
+ assert.match(overview,/pc-home-shortcuts-grid/);
+ for(const route of ['/book','/pets','/my-appointments','/payments'])assert.ok(overview.includes(route),route);
+ assert.ok(!overview.includes('nb-ticket'));
  assert.doesNotMatch(overview,/mũi tiêm cần nhắc lại|ngày tiêm giả/);
+ assert.ok(pets.includes("api<{items:Pet[]}>('/pets')"));
  assert.match(pets,/filteredRecords=records\.filter/);
 });
 test('Admin assignment and Staff workflow remain connected',()=>{

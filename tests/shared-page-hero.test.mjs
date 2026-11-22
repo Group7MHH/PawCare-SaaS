@@ -21,8 +21,8 @@ test('service hero uses shared banner without duplicate framed box',()=>{
 test('customer overview uses unique notebook cover while other pages retain shared hero',()=>{
  const page=read('frontend/src/pages/Overview.tsx');
  assert.match(page,/className="nb-customer-cover/);
- assert.match(page,/nb-pet-album/);
- assert.match(page,/api<Stats>\('\/dashboard'\)/);
+ assert.match(page,/pc-home-shortcuts-grid/);
+ assert.doesNotMatch(page,/nb-pet-album|nb-appointment-section|nb-journey/);
 });
 test('shared hero respects small screens and reduced motion',()=>{
  const css=read('frontend/src/styles.css');

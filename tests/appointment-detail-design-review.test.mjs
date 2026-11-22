@@ -15,12 +15,13 @@ test('Appointment detail uses focused tabs and summary without changing actions'
  assert.ok(css.includes('.pc-appt-dialog.modal-wide'));
  assert.ok(css.includes('@media(max-width:540px)'));
 });
-test('Customer overview removes only redundant metrics journey strip',()=>{
+test('Customer dashboard removes three requested preview modules',()=>{
  const page=read('frontend/src/pages/Overview.tsx');
  assert.ok(!page.includes('className="nb-index-strip nb-enter"'));
  assert.ok(!page.includes('Xem hành trình'));
- for(const item of ['nb-customer-layout','nb-pet-album','nb-appointment-section','nb-customer-bottom','nb-journey','nb-quick-notes'])assert.ok(page.includes(item),item);
- assert.ok(page.includes("api<Stats>('/dashboard')"));
+ for(const removed of ['nb-customer-layout','nb-pet-album','nb-appointment-section','nb-customer-bottom','nb-journey','nb-timeline'])assert.ok(!page.includes(removed),removed);
+ for(const retained of ['nb-intro','nb-customer-cover','pc-home-shortcuts','/book','/pets','/my-appointments','/payments'])assert.ok(page.includes(retained),retained);
+ assert.ok(!page.includes("api<Stats>('/dashboard')"));
 });
 test('Legacy pet future birthdays are flagged without mutating user records',()=>{
  const dossier=read('frontend/src/components/AppointmentPetProfile.tsx');
