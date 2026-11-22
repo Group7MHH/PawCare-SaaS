@@ -1,5 +1,4 @@
 import {Router} from 'express';
-import {randomBytes} from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import {z} from 'zod';
@@ -22,12 +21,6 @@ const sensitiveLimit=rateLimit({
  message:{message:'Quá nhiều yêu cầu nhạy cảm. Vui lòng thử lại sau.'}
 });
 const adminProof=z.object({admin_password:z.string().min(1).max(100)});
-const accountEdit=adminProof.extend({
- full_name:z.string().trim().min(2).max(120),
- email:z.string().trim().email().max(190).transform(value=>value.toLowerCase()),
- phone:z.string().trim().max(25).nullable(),
- address:z.string().trim().max(255).nullable()
-});
 type AccountRow={id:number;full_name:string;email:string;phone:string|null;address:string|null;role:'admin'|'staff'|'customer';is_active:boolean;created_at:string};
 
 async function confirmAdmin(id:number,password:string){
@@ -146,34 +139,9 @@ router.delete('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
  res.json({message:'Đã xóa vĩnh viễn tài khoản và toàn bộ dữ liệu liên quan'});
 }));
 
-router.patch('/accounts/:id',sensitiveLimit,asyncRoute(async(req,res)=>{
- const target=idParam(req.params.id),data=parse(accountEdit,req.body);
- if(target===req.user!.id)throw new HttpError(403,'Vui lòng cập nhật hồ sơ của bạn trong Thông tin cá nhân');
- await confirmAdmin(req.user!.id,data.admin_password);
- await transaction(async db=>{
-  const [account]=await rows<{id:number;role:string;email:string}>('SELECT id,role,email FROM users WHERE id=? FOR UPDATE',[target],db);
-  if(!account)throw new HttpError(404,'Không tìm thấy tài khoản');
-  if(account.role==='admin')throw new HttpError(403,'Không được thay đổi thông tin tài khoản quản trị viên khác');
-  await exec('UPDATE users SET full_name=?,email=?,phone=?,address=? WHERE id=?',[data.full_name,data.email,data.phone||null,data.address||null,target],db);
-  // Invalidate every prior session so changes to the login email take effect.
-  await exec('DELETE FROM sessions WHERE user_id=?',[target],db);
-  await exec('INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details) VALUES(?,?,?,?,?::jsonb)',[
-   req.user!.id,orgId(req),target,'account.profile.updated',
-   JSON.stringify({email_changed:account.email!==data.email})
-  ],db);
- });
- res.setHeader('Cache-Control','no-store');
- res.json({message:'Đã cập nhật tài khoản. Các phiên đăng nhập cũ đã được thu hồi.'});
-}));
-
-
-/** Admin grants/revokes Staff directly on an existing account.
- * Keep the membership row when downgrading: historical appointments have an
- * (organization_id,staff_id) foreign key to organization_members.
- */
 router.patch('/accounts/:id/role',sensitiveLimit,asyncRoute(async(req,res)=>{
  const target=idParam(req.params.id);
- const data=parse(adminProof.extend({role:z.enum(['staff','customer'])}).strict(),req.body);
+ const data=parse(adminProof.extend({role:z.literal('customer')}).strict(),req.body);
  if(target===req.user!.id)throw new HttpError(403,'Không thể tự thay đổi quyền của mình');
  await confirmAdmin(req.user!.id,data.admin_password);
  const organization=orgId(req);
@@ -184,18 +152,8 @@ router.patch('/accounts/:id/role',sensitiveLimit,asyncRoute(async(req,res)=>{
   if(!account)throw new HttpError(404,'Không tìm thấy tài khoản');
   if(account.role==='admin')throw new HttpError(403,'Không được thay đổi quyền Admin');
   if(account.role===data.role)throw new HttpError(409,'Tài khoản đã có quyền này');
-  if(!account.is_active)throw new HttpError(409,'Tài khoản đang bị khóa. Vui lòng mở khóa trước khi cấp quyền');
-  if(data.role==='staff'){
-    // Staff-only pages cannot access the Customer's historical bookings.
-    const [history]=await rows<{pets:number;bookings:number}>(`
-      SELECT (SELECT COUNT(*)::int FROM pets WHERE owner_id=?) AS pets,
-             (SELECT COUNT(*)::int FROM appointments WHERE customer_id=?) AS bookings`,
-      [target,target],db);
-    if(history.pets>0||history.bookings>0)
-      throw new HttpError(409,'Tài khoản đang có thú cưng hoặc lịch hẹn của Customer. Hãy dùng tài khoản chưa có lịch sử để cấp quyền Staff.');
-  }
-
-  if(data.role==='customer'){
+  if(!account.is_active)throw new HttpError(409,'Tài khoản đang bị khóa, không thể thu hồi quyền');
+  if(account.role!=='staff')throw new HttpError(409,'Chỉ có thể thu hồi quyền Staff của nhân viên');
    // Do not strand ongoing bookings without an authorized staff member.
    const [busy]=await rows<{total:number}>(`SELECT COUNT(*)::int AS total
     FROM appointments WHERE staff_id=? AND status IN ('pending','confirmed','in_progress')`,[target],db);
@@ -203,14 +161,6 @@ router.patch('/accounts/:id/role',sensitiveLimit,asyncRoute(async(req,res)=>{
    // Leave membership for historical appointment FK, mark it unavailable for booking.
    await exec("UPDATE organization_members SET is_active=FALSE WHERE organization_id=? AND user_id=? AND role='staff'",
     [organization,target],db);
-  }else{
-   await exec(`INSERT INTO organization_members(organization_id,user_id,role,is_active)
-    VALUES(?,?,'staff',TRUE)
-    ON CONFLICT(organization_id,user_id) DO UPDATE SET role='staff',is_active=TRUE`,
-    [organization,target],db);
-   await exec('INSERT INTO staff_profiles(user_id) VALUES(?) ON CONFLICT(user_id) DO NOTHING',[target],db);
-   await exec(`INSERT INTO organization_staff_profiles(organization_id,user_id)
-    VALUES(?,?) ON CONFLICT(organization_id,user_id) DO NOTHING`,[organization,target],db);
   }
   await exec('UPDATE users SET role=? WHERE id=?',[data.role,target],db);
   await exec('DELETE FROM sessions WHERE user_id=?',[target],db);
@@ -221,30 +171,7 @@ router.patch('/accounts/:id/role',sensitiveLimit,asyncRoute(async(req,res)=>{
     ],db);
  });
  res.setHeader('Cache-Control','no-store');
- res.json({message:data.role==='staff'?
-  'Đã cấp quyền Staff. Nhân viên đăng nhập lại để sử dụng quyền mới.':
-  'Đã thu hồi quyền Staff. Tài khoản trở về Customer và cần đăng nhập lại.'});
-}));
-
-router.post('/accounts/:id/reset-password',sensitiveLimit,asyncRoute(async(req,res)=>{
- const target=idParam(req.params.id),data=parse(adminProof,req.body);
- if(target===req.user!.id)throw new HttpError(403,'Vui lòng tự đổi mật khẩu trong Thông tin cá nhân');
- await confirmAdmin(req.user!.id,data.admin_password);
- const temporaryPassword=randomBytes(18).toString('base64url'); // 24 high-entropy chars
- const hashed=await bcrypt.hash(temporaryPassword,12);
- await transaction(async db=>{
-  const [account]=await rows<{id:number;role:string}>('SELECT id,role FROM users WHERE id=? FOR UPDATE',[target],db);
-  if(!account)throw new HttpError(404,'Không tìm thấy tài khoản');
-  if(account.role==='admin')throw new HttpError(403,'Không được đặt lại mật khẩu của quản trị viên khác');
-  await exec('UPDATE users SET password_hash=? WHERE id=?',[hashed,target],db);
-  await exec('DELETE FROM sessions WHERE user_id=?',[target],db);
-  await exec('INSERT INTO role_audit_logs(actor_id,organization_id,target_user_id,action,details) VALUES(?,?,?,?,?::jsonb)',[
-   req.user!.id,orgId(req),target,'account.password.reset',JSON.stringify({sessions_revoked:true})
-  ],db);
- });
- res.setHeader('Cache-Control','no-store');
- res.setHeader('Pragma','no-cache');
- res.json({message:'Đã cấp mật khẩu mới và đăng xuất mọi phiên cũ',temporary_password:temporaryPassword});
+ res.json({message:'Đã thu hồi quyền Staff. Tài khoản trở về Customer và cần đăng nhập lại.'});
 }));
 
 export default router;
