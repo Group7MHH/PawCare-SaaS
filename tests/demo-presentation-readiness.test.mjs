@@ -41,7 +41,8 @@ test('Admin appointment list exposes payment status, filtering and readable navi
  assert.ok(page.includes("unpaid:'Chưa thanh toán'"));
  assert.ok(layout.includes("title:'Lịch & thanh toán'"));
  assert.ok(css.includes('.nb-app .nb-nav-link .nb-link-index{display:none}'));
- assert.ok(css.includes('text-overflow:clip'));
+ assert.ok(css.includes('text-overflow:ellipsis'));
+ assert.ok(css.includes('white-space:nowrap;overflow-wrap:normal;word-break:normal'));
 });
 
 test('Production code does not expose any destructive demo reset tool',()=>{
