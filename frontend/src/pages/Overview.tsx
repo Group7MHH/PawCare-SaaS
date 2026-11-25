@@ -1,5 +1,5 @@
 import {Link} from 'react-router-dom';
-import {ArrowRight,ArrowUpRight,BookHeart,CalendarDays,CalendarPlus,CreditCard,PawPrint,Scissors} from 'lucide-react';
+import {ArrowRight,ArrowUpRight,CalendarDays,CalendarPlus,CreditCard,PawPrint,Scissors} from 'lucide-react';
 import {useAuth} from '../lib/auth';
 import {CompanionCover,PawcareMark} from '../components/BrandArtwork';
 import {greeting} from '../lib/greeting';
@@ -46,7 +46,7 @@ export function Overview(){
     
    </div>
    <nav className="pc-home-shortcuts-grid" aria-label="Các chức năng chăm sóc">
-    {shortcuts.map(({to,title,description,icon:Icon},index)=>
+    {shortcuts.map(({to,title,description,icon:Icon})=>
      <Link key={to} to={to} className="pc-home-shortcut">
       <span className="pc-home-shortcut-icon"><Icon size={21} strokeWidth={1.8}/></span>
       <span className="pc-home-shortcut-content"><strong>{title}</strong><span>{description}</span></span>

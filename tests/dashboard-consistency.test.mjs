@@ -8,7 +8,7 @@ test('Admin dashboard exposes completed counts and refreshed activity',()=>{
  assert.match(api,/COUNT\(\*\) FILTER \(WHERE status='completed'\)/);
  assert.match(api,/recent_completed:recentCompleted/);
  assert.match(api,/ORDER BY a.updated_at DESC,a.id DESC LIMIT 7/);
- assert.match(api,/COALESCE\(completed_at,updated_at\)/);
+ assert.match(api,/COALESCE\(a\.completed_at,a\.updated_at\)/);
  assert.match(api,/Cache-Control','no-store'/);
  assert.match(page,/recent_completed:recentCompleted/);
  assert.match(page,/Các lịch vừa hoàn thành/);
