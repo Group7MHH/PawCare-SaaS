@@ -1,7 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
 import type {CSSProperties} from 'react';
 import {Link} from 'react-router-dom';
-import {Activity,ArrowRight,ArrowUpRight,CalendarDays,ChartNoAxesCombined,CheckCircle2,ChevronRight,ClipboardList,PawPrint,TrendingUp,Users,Wallet} from 'lucide-react';
+import {Activity,ArrowRight,ArrowUpRight,CalendarDays,ChartNoAxesCombined,CheckCircle2,ClipboardList,TrendingUp,Wallet} from 'lucide-react';
 import {api,dateTime,money,type Stats} from '../lib/api';
 import {Loading,Badge,Empty,ErrorNotice} from '../components/UI';
 import {AdminLedger} from '../components/BrandArtwork';
@@ -23,7 +23,6 @@ export function AdminDashboard(){
  const allStatuses=statuses?.reduce((a,x)=>a+x.value,0)||0;
  const confirmed=statuses?.filter(s=>['confirmed','completed','in_progress'].includes(s.status)).reduce((a,x)=>a+x.value,0)||0;
  const percent=allStatuses?Math.round(confirmed/allStatuses*100):0;
- const completedCount=stats.completed||0;
  return <div className="nb-dashboard nb-admin-dashboard">
   <header className="nb-admin-intro nb-enter"><div><span className="nb-overline"><span className="nb-overline-dot"/> PHÒNG ĐIỀU HÀNH · PAWCARE</span><h1>Toàn cảnh <em>vận hành.</em></h1><p>Số liệu thực tế, công việc rõ ràng và mọi quyết định trong tầm tay.</p></div><div className="nb-admin-intro-art" aria-hidden="true"><AdminLedger/></div><Link className="nb-action-primary" to="/admin/appointments"><CalendarDays size={18}/> Quản lý lịch hẹn <ArrowUpRight size={17}/></Link></header>
   {(exceptions.data?.total||0)>0&&<section className="nb-admin-alert nb-enter" role="status"><span className="nb-admin-alert-icon"><ClipboardList size={22}/></span><div><strong>{exceptions.data!.total} lịch quá hẹn chưa xử lý</strong><p>Các lịch chưa bắt đầu dù đã qua giờ hẹn. Hãy kiểm tra và xử lý.</p></div><Link to="/admin/appointments?overdue=true">Xem lịch quá hẹn <ArrowRight size={17}/></Link></section>}
