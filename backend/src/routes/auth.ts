@@ -11,7 +11,9 @@ const registerLimit=rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:'dra
 router.use('/login',loginLimit);
 router.use('/register',registerLimit);
 const credentials=z.object({email:z.string().email().max(190).transform(v=>v.toLowerCase().trim()),password:z.string().min(8).max(100)});
-const registration=credentials.extend({full_name:z.string().trim().min(2).max(120),phone:z.string().max(25).optional()});
+const fullName=z.string().trim().min(2).max(120).regex(/^[\p{L}\p{M}]+(?: +[\p{L}\p{M}]+)*$/u,'Họ tên chỉ gồm chữ và khoảng trắng');
+const phone=z.string().trim().refine(v=>v===''||/^0[35789]\d{8}$/.test(v),'Số di động Việt Nam phải gồm 10 chữ số');
+const registration=credentials.extend({full_name:fullName,phone:phone.optional()});
 async function startingOrganization(){
  return (await rows<any>('SELECT id FROM organizations WHERE is_active=TRUE ORDER BY id LIMIT 1'))[0]?.id??null;
 }
@@ -42,7 +44,7 @@ router.post('/login',asyncRoute(async(req,res)=>{
 router.post('/logout',asyncRoute(async(req,res)=>{await revokeSession(req);clearSession(res);res.json({message:'Đã đăng xuất'});}));
 router.get('/me',requireAuth,(req,res)=>res.json({user:req.user}));
 router.patch('/profile',requireAuth,asyncRoute(async(req,res)=>{
- const d=parse(z.object({full_name:z.string().trim().min(2).max(120),phone:z.string().max(25).nullable().optional(),address:z.string().max(255).nullable().optional()}),req.body);
+ const d=parse(z.object({full_name:fullName,phone:phone.nullable().optional(),address:z.string().max(255).nullable().optional()}),req.body);
  await exec('UPDATE users SET full_name=?,phone=?,address=? WHERE id=?',[d.full_name,d.phone??null,d.address??null,req.user!.id]);
  res.json({user:await currentUser(req.user!.id,req.user!.organization_id)});
 }));

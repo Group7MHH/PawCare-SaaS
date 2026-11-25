@@ -25,7 +25,7 @@ export function ServiceCards({services,selectedIds=[],onToggle,totalDuration=0}:
   <div className="pc-service-card-grid">
    {visible.map((service,index)=>{
     const selected=selectedIds.includes(service.id);
-    const disabled=!!onToggle&&!selected&&(totalDuration+service.duration_minutes>600);
+    const disabled=!!onToggle&&!selected&&(selectedIds.length>=8||totalDuration+service.duration_minutes>600);
     return <article key={service.id} className={`pc-service-plan ${selected?'selected':''}`}>
      <div className="pc-service-plan-top">
       <span className="pc-service-serial">{String(index+1).padStart(2,'0')} / {service.category||'Dịch vụ'}</span>

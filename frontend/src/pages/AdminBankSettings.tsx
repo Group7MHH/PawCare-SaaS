@@ -3,6 +3,7 @@ import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {toast} from 'react-hot-toast';
 import {Banknote,CheckCircle2,Landmark,LockKeyhole,Save,ShieldCheck,Info} from 'lucide-react';
 import {api,errorMessage,json} from '../lib/api';
+import {resolveVietQrBin} from '../lib/vietqr';
 import {PageTitle,Loading,ErrorNotice} from '../components/UI';
 
 type Bank={name:string;account:string;owner:string};
@@ -48,7 +49,7 @@ export function AdminBankSettings({embedded=false}:{embedded?:boolean}){
     <form onSubmit={submit} className="pc-bank-form">
      <label><span>Tên ngân hàng</span><input list="pc-vietqr-banks" value={form.name} maxLength={80} required minLength={2} placeholder="Ví dụ: MB Bank" onChange={e=>update({name:e.target.value})}/><datalist id="pc-vietqr-banks">{['Vietcombank','MB Bank','Techcombank'].map(name=><option value={name} key={name}/>)}</datalist><small>Chọn tên ngân hàng gợi ý để hệ thống có thể tạo VietQR; ngân hàng khác vẫn có thể chuyển khoản thủ công.</small></label>
      <label><span>Số tài khoản nhận tiền</span><input inputMode="numeric" autoComplete="off" pattern="[0-9]{6,32}" value={form.account} maxLength={32} required placeholder="Nhập số tài khoản" onChange={e=>update({account:e.target.value.replace(/\s/g,'')})}/></label>
-     <label><span>Tên chủ tài khoản</span><input value={form.owner} maxLength={100} minLength={2} required placeholder="Tên chủ tài khoản theo ngân hàng" onChange={e=>update({owner:e.target.value})}/></label>
+     <label><span>Tên chủ tài khoản</span><input pattern="[\p{L}\p{M} ]+" title="Chỉ nhập chữ và khoảng trắng theo tên trên tài khoản ngân hàng" value={form.owner} maxLength={100} minLength={2} required placeholder="Tên chủ tài khoản theo ngân hàng" onChange={e=>update({owner:e.target.value})}/></label>
      <label className="pc-bank-toggle"><input type="checkbox" checked={form.enabled} onChange={e=>update({enabled:e.target.checked})}/><span><strong>Cho phép khách chọn chuyển khoản</strong><small>Tắt khi cần tạm ngừng nhận chuyển khoản mới. Thanh toán tại cửa hàng vẫn hoạt động.</small></span></label>
      <label><span>Mật khẩu Admin để xác nhận thay đổi</span><input type="password" autoComplete="current-password" required value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Nhập mật khẩu quản trị viên"/></label>
      <div className="pc-bank-actions"><button className="button button-primary" type="submit" disabled={save.isPending}><Save size={16}/>{save.isPending?'Đang lưu...':'Lưu cấu hình ngân hàng'}</button><span>{dirty?'Có thay đổi chưa lưu':'Đang dùng cấu hình đã lưu'}</span></div>
@@ -58,6 +59,7 @@ export function AdminBankSettings({embedded=false}:{embedded?:boolean}){
     <section className="pc-bank-preview">
      <div className="pc-bank-preview-head"><Banknote size={21}/><span>PREVIEW / PAYMENT</span><span>PAWCARE</span></div>
      <div className="pc-bank-preview-body"><small>THÔNG TIN NHẬN CHUYỂN KHOẢN</small><strong>{form.name||'Tên ngân hàng'}</strong><b>{form.account||'•••• •••• ••••'}</b><span>{form.owner||'Tên chủ tài khoản'}</span></div>
+     {resolveVietQrBin(form.name)&&/^[0-9]{6,19}$/.test(form.account)&&form.owner.trim()&&<div style={{padding:'12px',textAlign:'center'}}><img width={128} height={128} alt="VietQR tài khoản nhận tiền, chưa gắn số tiền" referrerPolicy="no-referrer" src={`https://img.vietqr.io/image/${resolveVietQrBin(form.name)}-${form.account}-qr_only.png?accountName=${encodeURIComponent(form.owner.trim())}`}/><small style={{display:'block'}}>Mã QR xem trước · chưa gắn giao dịch</small></div>}
      <div className="pc-bank-preview-foot"><CheckCircle2 size={16}/>{form.enabled?'Đang cho phép chuyển khoản':'Đang tạm ngừng chuyển khoản'}</div>
     </section>
     <section className="pc-bank-guidance"><div><ShieldCheck size={20}/><strong>Quyền hạn và đối soát</strong></div><p>Khách có thể quét VietQR và thông báo đã chuyển khoản. Chỉ Admin được xác nhận thanh toán trong bản demo, thay đổi tài khoản ngân hàng và ghi nhận hoàn tiền; Staff chỉ xem trạng thái.</p><div><Info size={20}/><strong>Lịch hẹn đã tạo</strong></div><p>Tài khoản ngân hàng được lưu theo từng giao dịch chuyển khoản mới. Việc thay đổi cấu hình không tự chuyển hướng các khoản khách đã được hướng dẫn thanh toán.</p><div><LockKeyhole size={20}/><strong>Nguồn cấu hình</strong></div><p>{settings.data?.settings.source==='environment'?'Đang sử dụng thông tin từ Render. Sau khi lưu tại đây, thiết lập của Admin được ưu tiên.':settings.data?.settings.source==='database'?'Đang sử dụng cấu hình Admin đã lưu trong PostgreSQL.':'Chưa có ngân hàng được cấu hình. Bạn có thể thêm tại đây.'}</p></section>

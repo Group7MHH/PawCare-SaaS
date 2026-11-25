@@ -32,9 +32,9 @@ export function AuthPage({mode}:{mode:'login'|'register'}){
    <h2>{isLogin?'Chào mừng bạn quay lại':'Bắt đầu cuốn sổ của bé'}</h2>
    <p>{isLogin?'Đăng nhập để tiếp tục quản lý lịch chăm sóc.':'Tạo tài khoản để lưu hồ sơ và đặt lịch cho thú cưng.'}</p>
    <form onSubmit={submit} className="form-stack">
-    {!isLogin&&<label className="field"><span>Họ và tên</span><input autoComplete="name" required minLength={2} placeholder="Nguyễn Văn A" value={form.full_name} onChange={e=>setForm({...form,full_name:e.target.value})}/></label>}
+    {!isLogin&&<label className="field"><span>Họ và tên</span><input autoComplete="name" required minLength={2} maxLength={120} pattern="[\p{L}\p{M} ]+" title="Chỉ nhập chữ và khoảng trắng" placeholder="Nguyễn Văn A" value={form.full_name} onChange={e=>setForm({...form,full_name:e.target.value})}/></label>}
     <label className="field"><span>Địa chỉ email</span><input type="email" autoComplete="email" required placeholder="ban@example.com" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label>
-    {!isLogin&&<label className="field"><span>Số điện thoại (tùy chọn)</span><input type="tel" autoComplete="tel" placeholder="09xxxxxxxx" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label>}
+    {!isLogin&&<label className="field"><span>Số điện thoại (tùy chọn)</span><input type="tel" autoComplete="tel" placeholder="09xxxxxxxx" inputMode="numeric" maxLength={10} pattern="0[35789][0-9]{8}" title="Số di động Việt Nam gồm 10 chữ số" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label>}
     <label className="field"><span>Mật khẩu</span><span className="password-wrap"><input minLength={8} required type={visible?'text':'password'} autoComplete={isLogin?'current-password':'new-password'} placeholder="Ít nhất 8 ký tự" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/><button type="button" aria-label={visible?'Ẩn mật khẩu':'Hiện mật khẩu'} onClick={()=>setVisible(!visible)}>{visible?<EyeOff size={17}/>:<Eye size={17}/>}</button></span></label>
     <button className="button button-primary btn-full" type="submit" disabled={busy}>{busy?'Đang xử lý...':isLogin?'Đăng nhập':'Tạo tài khoản'}{!busy&&<ArrowRight size={17}/>}</button>
    </form>

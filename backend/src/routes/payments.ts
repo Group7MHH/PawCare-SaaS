@@ -57,7 +57,7 @@ router.put('/admin-bank',requireRole('admin'),bankChangeLimit,asyncRoute(async(r
  const data=parse(z.object({
   name:z.string().trim().min(2).max(80),
   account:z.string().trim().regex(/^[0-9]{6,32}$/,'Số tài khoản phải gồm 6 đến 32 chữ số'),
-  owner:z.string().trim().min(2).max(100),
+  owner:z.string().trim().min(2).max(100).regex(/^[\p{L}\p{M}]+(?: +[\p{L}\p{M}]+)*$/u,'Tên chủ tài khoản chỉ gồm chữ và khoảng trắng'),
   enabled:z.boolean(),
   admin_password:z.string().min(1).max(100)
  }).strict(),req.body);

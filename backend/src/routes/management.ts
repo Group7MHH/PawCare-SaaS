@@ -54,7 +54,7 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
    : `SELECT COUNT(*)::int AS value FROM pets p JOIN users u ON u.id=p.owner_id
       WHERE u.role='customer'`,staff?[org,id]:[]),
   rows<any>(`SELECT COUNT(*)::int AS appointments,COUNT(*) FILTER (WHERE status='completed')::int AS completed,
-   COALESCE(SUM(price_snapshot) FILTER (WHERE status='completed'),0) AS revenue
+   COALESCE(SUM(price_snapshot) FILTER (WHERE status<>'cancelled'),0) AS revenue
    FROM appointments WHERE ${where}`,params)
  ]);
  const [finance]=await rows<{collected:number;unpaid:number;awaiting_payment:number;pending_review:number;refund_required:number;refunded:number}>(`
@@ -70,15 +70,25 @@ router.get('/dashboard',asyncRoute(async(req,res)=>{
   FROM appointments a JOIN users u ON u.id=a.customer_id JOIN pets p ON p.id=a.pet_id JOIN services s ON s.id=a.service_id
   LEFT JOIN LATERAL (SELECT string_agg(COALESCE(aps.name_snapshot,svc.name),' + ' ORDER BY aps.position) AS names FROM appointment_services aps JOIN services svc ON svc.id=aps.service_id WHERE aps.appointment_id=a.id) bundle ON TRUE
   WHERE a.organization_id=? ${staff?'AND a.staff_id=?':''} ORDER BY a.updated_at DESC,a.id DESC LIMIT 7`,params);
- const series=await rows<any>(`SELECT to_char(COALESCE(completed_at,updated_at) AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS month,
-  COALESCE(SUM(price_snapshot),0) AS revenue,COUNT(*) AS appointments
-  FROM appointments WHERE ${where} AND status='completed'
-  AND COALESCE(completed_at,updated_at) >= (date_trunc('month', now() AT TIME ZONE 'Asia/Ho_Chi_Minh') - interval '5 months') AT TIME ZONE 'Asia/Ho_Chi_Minh'
-  AND COALESCE(completed_at,updated_at) < (date_trunc('month', now() AT TIME ZONE 'Asia/Ho_Chi_Minh') + interval '1 month') AT TIME ZONE 'Asia/Ho_Chi_Minh'
-  GROUP BY to_char(COALESCE(completed_at,updated_at) AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') ORDER BY month ASC`,params);
+ const series=await rows<any>(`WITH scoped AS (
+ SELECT a.id,a.starts_at,a.status,a.price_snapshot,p.amount,p.status AS payment_status,p.paid_at
+ FROM appointments a LEFT JOIN payments p ON p.appointment_id=a.id WHERE a.organization_id=? ${staff?'AND a.staff_id=?':''}
+ ), months AS (
+ SELECT generate_series(date_trunc('month',now() AT TIME ZONE 'Asia/Ho_Chi_Minh') - interval '5 months',
+ date_trunc('month',now() AT TIME ZONE 'Asia/Ho_Chi_Minh'),interval '1 month') AS month
+ ), projected AS (
+ SELECT date_trunc('month',starts_at AT TIME ZONE 'Asia/Ho_Chi_Minh') AS month,SUM(price_snapshot) AS revenue
+ FROM scoped WHERE status<>'cancelled' GROUP BY 1
+ ), collected AS (
+ SELECT date_trunc('month',paid_at AT TIME ZONE 'Asia/Ho_Chi_Minh') AS month,SUM(amount) AS revenue
+ FROM scoped WHERE payment_status='paid' AND paid_at IS NOT NULL GROUP BY 1
+ )
+ SELECT to_char(months.month,'YYYY-MM') AS month,COALESCE(projected.revenue,0) AS revenue,
+ COALESCE(collected.revenue,0) AS collected FROM months
+ LEFT JOIN projected ON projected.month=months.month LEFT JOIN collected ON collected.month=months.month ORDER BY months.month`,params);
  const recentCompleted=await rows<any>(`SELECT a.id,a.starts_at,COALESCE(a.completed_at,a.updated_at) AS completed_at,
-  a.price_snapshot,u.full_name AS customer_name,p.name AS pet_name,COALESCE(bundle.names,s.name) AS service_name
-  FROM appointments a JOIN users u ON u.id=a.customer_id JOIN pets p ON p.id=a.pet_id JOIN services s ON s.id=a.service_id
+  a.price_snapshot,pay.status AS payment_status,u.full_name AS customer_name,p.name AS pet_name,COALESCE(bundle.names,s.name) AS service_name
+  FROM appointments a JOIN users u ON u.id=a.customer_id JOIN pets p ON p.id=a.pet_id JOIN services s ON s.id=a.service_id LEFT JOIN payments pay ON pay.appointment_id=a.id
   LEFT JOIN LATERAL (SELECT string_agg(COALESCE(aps.name_snapshot,svc.name),' + ' ORDER BY aps.position) AS names FROM appointment_services aps JOIN services svc ON svc.id=aps.service_id WHERE aps.appointment_id=a.id) bundle ON TRUE
   WHERE a.organization_id=? ${staff?'AND a.staff_id=?':''} AND a.status='completed'
   ORDER BY COALESCE(a.completed_at,a.updated_at) DESC,a.id DESC LIMIT 5`,params);

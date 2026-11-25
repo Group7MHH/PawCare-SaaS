@@ -24,7 +24,7 @@ export function Overview(){
     <h1>{greeting()}, {firstName}<span className="nb-hello-mark">.</span></h1>
     <p>Chào mừng trở lại PawCare. Bạn muốn chăm sóc bé như thế nào hôm nay?</p>
    </div>
-   <span className="nb-date-stamp"><BookHeart size={17}/> SỔ TAY PAWCARE</span>
+   
   </header>
 
   <section className="nb-customer-cover nb-enter" aria-label="Bắt đầu chăm sóc thú cưng">
@@ -42,14 +42,14 @@ export function Overview(){
 
   <section className="pc-home-shortcuts nb-enter" aria-labelledby="pc-home-shortcuts-title">
    <div className="pc-home-shortcuts-heading">
-    <div><span className="nb-section-kicker">THAO TÁC NHANH</span><h2 id="pc-home-shortcuts-title">Hôm nay, bạn muốn làm gì?</h2></div>
-    <p>Truy cập nhanh những việc bạn thường cần.</p>
+    <div><h2 id="pc-home-shortcuts-title">Hôm nay, bạn muốn làm gì?</h2></div>
+    
    </div>
    <nav className="pc-home-shortcuts-grid" aria-label="Các chức năng chăm sóc">
     {shortcuts.map(({to,title,description,icon:Icon},index)=>
      <Link key={to} to={to} className="pc-home-shortcut">
       <span className="pc-home-shortcut-icon"><Icon size={21} strokeWidth={1.8}/></span>
-      <span className="pc-home-shortcut-content"><small>{String(index+1).padStart(2,'0')}</small><strong>{title}</strong><span>{description}</span></span>
+      <span className="pc-home-shortcut-content"><strong>{title}</strong><span>{description}</span></span>
       <ArrowUpRight className="pc-home-shortcut-arrow" size={18} aria-hidden="true"/>
      </Link>
     )}
