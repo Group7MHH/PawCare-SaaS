@@ -17,9 +17,9 @@ test('completing an appointment records the completion time',()=>{
  assert.match(booking,/completed_at=CASE WHEN/);
  assert.match(booking,/THEN now\(\) ELSE completed_at END/);
 });
-test('dashboard monthly revenue uses completion time and Vietnam calendar months',()=>{
- assert.match(dashboard,/to_char\(COALESCE\(completed_at,updated_at\) AT TIME ZONE 'Asia\/Ho_Chi_Minh', 'YYYY-MM'\)/);
- assert.match(dashboard,/status='completed'/);
+test('dashboard separates projected appointment value from confirmed cash receipts by Vietnam month',()=>{
+ assert.match(dashboard,/date_trunc\('month',starts_at AT TIME ZONE 'Asia\/Ho_Chi_Minh'\)/);
+ assert.match(dashboard,/date_trunc\('month',paid_at AT TIME ZONE 'Asia\/Ho_Chi_Minh'\)/);
+ assert.match(dashboard,/payment_status='paid' AND paid_at IS NOT NULL/);
  assert.match(dashboard,/interval '5 months'/);
- assert.doesNotMatch(dashboard,/to_char\(starts_at AT TIME ZONE 'UTC', 'YYYY-MM'\)/);
 });
