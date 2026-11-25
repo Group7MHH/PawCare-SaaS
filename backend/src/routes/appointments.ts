@@ -27,6 +27,7 @@ const bookingSchema=z.object({
 }).refine(d=>!!(d.service_id||d.service_ids?.length),{message:'Vui lòng chọn ít nhất một dịch vụ'});
 type BookableService={id:number;name:string;price:number;duration_minutes:number};
 async function getSelectedServices(org:number,ids:number[],db:DB=pool):Promise<BookableService[]>{
+ if(ids.length>5)throw new HttpError(422,'Mỗi lịch hẹn tối đa 5 dịch vụ');
  if(!ids.length||new Set(ids).size!==ids.length||ids.some(id=>!Number.isSafeInteger(id)||id<=0))
    throw new HttpError(422,'Vui lòng chọn ít nhất một dịch vụ hợp lệ, không trùng lặp');
  const result=await rows<BookableService>('SELECT id,name,price,duration_minutes FROM services WHERE organization_id=? AND is_active=TRUE AND id=ANY(?::int[]) FOR SHARE',[org,ids],db);
@@ -236,6 +237,7 @@ router.patch('/:id',asyncRoute(async(req,res)=>{
    const [fresh]=await rows<any>('SELECT status,staff_id,starts_at,ends_at FROM appointments WHERE id=? AND organization_id=? FOR UPDATE',[id,orgId(req)],db);
    if(!fresh || fresh.status!==current.status || isoUTC(fresh.starts_at)!==isoUTC(current.starts_at) || fresh.staff_id!==current.staff_id)throw new HttpError(409,'Lịch đã thay đổi, hãy tải lại trang');
    if(d.starts_at!==undefined){
+    validateBookingTime(start,originalDuration);
     if(!await hasBookingCapacity(db,orgId(req),st,en,id))
      throw new HttpError(409,'Khung giờ mới đã hết công suất. Hãy chọn giờ khác');
    }
