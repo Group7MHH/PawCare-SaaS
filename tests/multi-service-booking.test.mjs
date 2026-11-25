@@ -41,17 +41,17 @@ test('booking screen selects multiple services and displays the real total',()=>
  assert.match(ui,/blockedSlots/);
 });
 
-test('booking service count is capped at five; duration and unique IDs remain validated',()=>{
+test('booking service count is capped at eight; duration and unique IDs remain validated',()=>{
  const api=read('backend/src/routes/appointments.ts');
  const booking=read('frontend/src/pages/Booking.tsx');
  const cards=read('frontend/src/components/ServiceCards.tsx');
  assert.ok(api.includes('service_ids:z.array(z.number().int().positive()).min(1).optional()'));
  assert.ok(api.includes('service_ids:z.string().max(2048).regex(/^\\d+(,\\d+)*$/).optional()'));
- assert.ok(api.includes('ids.length>5'));
- assert.ok(!booking.includes('slice(0,8)'));
- assert.ok(!booking.includes('selected.length}/8'));
- assert.ok(booking.includes('Đã chọn {selected.length} / 5 dịch vụ'));
- assert.ok(!cards.includes('maxSelected'));
+ assert.ok(api.includes('ids.length>8'));
+ assert.ok(booking.includes('slice(0,8)'));
+ assert.ok(booking.includes('ids.length>=8'));
+ assert.ok(booking.includes('Đã chọn {selected.length} / 8 dịch vụ'));
+ assert.ok(cards.includes('selectedIds.length>=8'));
  assert.ok(cards.includes('totalDuration+service.duration_minutes>600'));
  assert.ok(api.includes('new Set(ids).size!==ids.length'));
  assert.ok(api.includes('if(ordered.reduce((sum,item)=>sum+item.duration_minutes,0)>600)'));
