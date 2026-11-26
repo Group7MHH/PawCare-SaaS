@@ -1,0 +1,68 @@
+/* Viewport-level modal overlay. A portal prevents transformed page ancestors
+   from creating a containing block for a fixed-position backdrop. */
+.pc-modal-root.modal-backdrop{
+ position:fixed;inset:0;z-index:1200;
+ display:flex;align-items:center;justify-content:center;
+ box-sizing:border-box;padding:clamp(12px,3vw,36px);
+ background:rgba(22,31,38,.42);
+ backdrop-filter:none;-webkit-backdrop-filter:none;
+ overflow:auto;overscroll-behavior:contain;
+ animation:pc-modal-fade .14s ease-out both;
+}
+.pc-modal-root>.modal{
+ box-sizing:border-box;min-width:0;min-height:0;
+ max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);
+ margin:auto;background:#fff;border:1px solid #e2e6e4;
+ border-radius:18px;box-shadow:0 20px 65px rgba(19,32,39,.20),0 4px 14px rgba(19,32,39,.06);
+ animation:pc-modal-arrive .19s cubic-bezier(.2,.75,.25,1) both;
+ overscroll-behavior:contain;scrollbar-width:thin;
+}
+.pc-modal-root>.modal:focus{outline:none}
+.pc-modal-root>.modal>.modal-head{align-items:center}
+.pc-modal-root>.modal>.modal-head h2{color:#263c49;font-weight:750;line-height:1.35}
+.pc-modal-root>.modal>.modal-head .icon-button{
+ flex:none;width:36px;height:36px;border-radius:10px;
+ color:#65757c;background:#f4f6f5;
+}
+.pc-modal-root>.modal>.modal-head .icon-button:hover{color:#263c49;background:#e9edeb}
+.pc-modal-root>.pc-pet-editor.modal{
+ width:min(100%,620px);max-width:620px;max-height:calc(100dvh - 40px);
+ display:flex;flex-direction:column;padding:0;overflow:hidden;
+}
+.pc-pet-editor>.modal-head{
+ margin:0;padding:20px 25px 17px;border-bottom:1px solid #e8ecea;flex:none;
+}
+.pc-pet-editor>.modal-head h2{font-size:21px}
+.pc-pet-editor>.pc-pet-editor-form{
+ min-height:0;overflow:auto;overscroll-behavior:contain;gap:16px;
+ padding:19px 25px 0;
+}
+.pc-pet-editor-intro{font-size:13px;line-height:1.6;color:#697a81;margin:0}
+.pc-pet-editor .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 16px}
+.pc-pet-editor .field{gap:7px}
+.pc-pet-editor .field>span:first-child{color:#364c56;font-size:13px;font-weight:650}
+.pc-pet-editor .field input,.pc-pet-editor .field select,.pc-pet-editor .field textarea{
+ box-sizing:border-box;min-width:0;min-height:44px;border:1px solid #d6dedc;border-radius:9px;
+ padding:10px 12px;background:#fff;color:#263c49;font-size:14px;
+}
+.pc-pet-editor .field textarea{min-height:86px;resize:vertical}
+.pc-pet-editor .field :is(input,select,textarea):focus{outline:0;border-color:#50847c;box-shadow:0 0 0 3px rgba(80,132,124,.15)}
+.pc-pet-editor .modal-actions{
+ position:sticky;bottom:0;z-index:1;flex:none;margin:0 -25px;padding:14px 25px 18px;
+ background:#fff;border-top:1px solid #e8ecea;gap:10px;
+}
+.pc-pet-editor .modal-actions .button{min-height:42px;padding-inline:20px;border-radius:9px}
+@keyframes pc-modal-fade{from{opacity:0}to{opacity:1}}
+@keyframes pc-modal-arrive{from{opacity:0;transform:translateY(7px) scale(.99)}to{opacity:1;transform:none}}
+@media(max-width:540px){
+ .pc-modal-root.modal-backdrop{padding:12px}
+ .pc-modal-root>.modal{max-height:calc(100dvh - 24px);border-radius:14px}
+ .pc-modal-root>.pc-pet-editor.modal{max-height:calc(100dvh - 24px)}
+ .pc-pet-editor>.modal-head{padding:15px 17px}
+ .pc-pet-editor>.modal-head h2{font-size:18px}
+ .pc-pet-editor>.pc-pet-editor-form{padding:15px 17px 0;gap:13px}
+ .pc-pet-editor .form-grid{grid-template-columns:1fr;gap:12px}
+ .pc-pet-editor .modal-actions{margin-inline:-17px;padding:12px 17px 15px}
+ .pc-pet-editor .field :is(input,select,textarea){font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){.pc-modal-root.modal-backdrop,.pc-modal-root>.modal{animation:none}}
