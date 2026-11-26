@@ -1,0 +1,63 @@
+/* Customer appointment list: no reserved space for an unopened detail pane. */
+.pc-my-appointments{width:100%;min-width:0}
+.pc-my-appointments>.panel{width:100%;min-width:0;margin-bottom:0}
+.pc-my-appointments .table-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.pc-my-appointments .filter-tabs{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
+.pc-my-appointments .search-box{flex:1 1 210px;max-width:320px;min-width:0}
+.pc-my-appointments .pc-pets-sort{margin-left:auto}
+.pc-my-appointments .table-scroll{width:100%;min-width:0;overflow-x:visible}
+.pc-my-appointments .data-table{width:100%;min-width:0;table-layout:fixed}
+.pc-my-col-ref{width:10%}.pc-my-col-pet{width:11%}.pc-my-col-service{width:30%}
+.pc-my-col-time{width:15%}.pc-my-col-cost{width:11%}.pc-my-col-status{width:14%}.pc-my-col-action{width:9%}
+.pc-my-appointments .data-table :is(th,td){padding:13px 11px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle}
+.pc-my-appointments .data-table th{font-size:11px}
+.pc-my-service-cell{line-height:1.65}
+.pc-my-time-cell time{font-variant-numeric:tabular-nums}
+.pc-my-cost-cell{font-weight:650;font-variant-numeric:tabular-nums}
+.pc-my-status-cell .badge{max-width:100%;white-space:normal;text-align:left;line-height:1.4}
+.pc-my-status-cell .badge-dot{flex:none}
+.pc-my-detail-button{display:inline-flex;align-items:center;gap:4px;justify-content:center;max-width:100%;border:1px solid #dce5e4;background:#f6f9f8;color:#315e59;padding:7px 8px;border-radius:7px;font-size:12px;font-weight:650;white-space:normal;cursor:pointer}
+.pc-my-detail-button svg{flex:none}
+.pc-my-detail-button:hover{background:#e8f2ef;border-color:#bad4cd}
+.pc-my-appointments .pc-booking-ref:focus-visible,.pc-my-detail-button:focus-visible{outline:2px solid #2c8072;outline-offset:2px}
+.pc-modal-root>.pc-my-appointment-dialog.modal-wide{width:min(100%,920px);max-width:920px;max-height:calc(100dvh - 40px);display:flex;flex-direction:column;padding:0;overflow:hidden}
+.pc-my-appointment-dialog>.modal-head{flex:none;padding:18px 24px;margin:0;border-bottom:1px solid #e5ebe9}
+.pc-my-detail-scroll{min-height:0;overflow:auto;overscroll-behavior:contain;padding:22px 24px}
+.pc-my-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+.pc-my-detail-info,.pc-my-detail-payment{min-width:0}
+.pc-my-detail-info .pc-detail-pet small{font-size:12px;overflow-wrap:anywhere}
+.pc-my-detail-info .pc-detail-pet strong{font-size:15px}
+.pc-my-detail-info .pc-detail-pet-icon{flex:none}
+.pc-my-detail-info .summary-list>div{gap:12px}
+.pc-my-detail-info .summary-list strong{white-space:normal;overflow-wrap:anywhere;text-align:right}
+.pc-my-detail-info .pc-detail-note strong,.pc-my-detail-info .pc-detail-note p{font-size:13px}
+.pc-my-detail-info .pc-detail-note p{white-space:pre-wrap}
+.pc-my-detail-payment .pc-payment-panel{margin:0;box-shadow:none}
+.pc-my-detail-footer{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;flex:none;padding:14px 24px;border-top:1px solid #e5ebe9;background:#fff}
+@media(max-width:1100px){
+ .pc-my-appointments .data-table :is(th,td){padding:11px 8px}
+ .pc-my-detail-button{padding:6px;font-size:11px}
+}
+/* A labelled card per row at narrow widths, rather than horizontal scrolling. */
+@media(max-width:900px){
+ .pc-my-appointments .table-scroll{border:0;border-radius:0}
+ .pc-my-appointments .data-table,.pc-my-appointments .data-table tbody{display:block}
+ .pc-my-appointments .data-table colgroup{display:none}
+ .pc-my-appointments .data-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .pc-my-appointments .data-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;border:1px solid #dfe7e6;border-radius:12px;padding:15px;margin-bottom:12px;background:#fff}
+ .pc-my-appointments .data-table tbody td{display:flex;flex-direction:column;align-items:flex-start;gap:4px;border:0;padding:0;min-width:0;background:transparent}
+ .pc-my-appointments .data-table tbody td[data-label]::before{content:attr(data-label);font-size:11px;color:#71828b;font-weight:600}
+ .pc-my-appointments .pc-my-service-cell,.pc-my-appointments .pc-my-action-cell{grid-column:1/-1}
+ .pc-my-appointments .pc-my-action-cell{border-top:1px solid #e9efed!important;padding-top:10px!important;align-items:flex-end!important}
+ .pc-my-detail-button{font-size:13px;padding:8px 12px}
+}
+@media(max-width:680px){
+ .pc-my-appointments .table-toolbar{align-items:stretch}
+ .pc-my-appointments .search-box{max-width:none;flex-basis:100%}
+ .pc-my-appointments .pc-pets-sort{margin-left:0}
+ .pc-my-detail-grid{grid-template-columns:minmax(0,1fr);gap:18px}
+ .pc-my-appointment-dialog>.modal-head{padding:15px 16px}
+ .pc-my-detail-scroll{padding:16px}
+ .pc-my-detail-footer{padding:12px 16px}
+}
+@media(max-width:540px){.pc-modal-root>.pc-my-appointment-dialog.modal-wide{max-height:calc(100dvh - 24px)}}

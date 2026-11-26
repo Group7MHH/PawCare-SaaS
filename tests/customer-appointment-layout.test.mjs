@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+test('Customer appointments have a full-width wrapping list and on-demand modal',()=>{
+ const page=read('frontend/src/pages/MyAppointments.tsx');
+ const css=read('frontend/src/my-appointments.css');
+ assert.ok(page.includes('className="pc-my-appointments"'));
+ assert.ok(!page.includes('pc-appointment-detail-rail'));
+ assert.ok(page.includes('setSelectedId(a.id)'));
+ assert.ok(page.includes('{selected&&<Modal'));
+ assert.ok(page.includes('onClose={()=>setSelectedId(null)}'));
+ assert.ok(page.includes('<PaymentPanel key={selected.id} appointmentId={selected.id}/>'));
+ assert.ok(page.includes('canCancel(selected)'));
+ assert.ok(css.includes('table-layout:fixed'));
+ assert.ok(css.includes('overflow-wrap:anywhere'));
+ assert.ok(css.includes('content:attr(data-label)'));
+ assert.ok(css.includes('grid-template-columns:minmax(0,1fr)'));
+ assert.ok(read('frontend/src/main.tsx').includes("import './my-appointments.css'"));
+});
