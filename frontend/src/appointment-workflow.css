@@ -94,3 +94,35 @@
  .pc-appt-detail-hero .pc-aw-state{max-width:none;width:100%}
  .pc-appt-manage-pane>.form-stack{grid-template-columns:1fr}
 }
+
+/* Multi-service appointments must wrap within their own column. */
+.pc-aw-panel{min-width:0}
+.pc-aw-panel .table-scroll{min-width:0;width:100%}
+.pc-aw-panel .data-table{table-layout:fixed;min-width:0;width:100%;white-space:normal}
+.pc-aw-col-id{width:8%}.pc-aw-col-customer{width:15%}.pc-aw-col-service{width:25%}
+.pc-aw-col-time{width:14%}.pc-aw-col-state{width:18%}.pc-aw-col-payment{width:12%}.pc-aw-col-action{width:8%}
+.pc-aw-panel .data-table :is(th,td){white-space:normal;overflow-wrap:anywhere;word-break:normal;padding:12px 9px;min-width:0;max-width:none}
+.pc-aw-panel .data-table :is(th,td):nth-child(5){min-width:0}
+.pc-aw-panel .pc-aw-state{min-width:0;max-width:100%}
+.pc-aw-state-title{flex-wrap:wrap;min-width:0;align-items:baseline}
+.pc-aw-state-title>strong{min-width:0;overflow-wrap:anywhere}
+.pc-aw-panel .pc-staff-pay-tag{white-space:normal;max-width:100%;overflow-wrap:anywhere;line-height:1.5}
+.pc-aw-panel .pc-aw-details{white-space:normal}
+.pc-aw-panel .pc-aw-secondary{white-space:normal;overflow-wrap:anywhere}
+.pc-appt-detail-service{min-width:0;flex:1;overflow-wrap:anywhere}
+.pc-appt-detail-hero>.pc-aw-state{flex:0 1 230px;min-width:0;overflow-wrap:anywhere}
+.pc-appt-detail-top{min-height:0;max-height:40dvh;overflow-y:auto}
+.nb-task-details h3,.nb-slot-detail span,.nb-admin-appointment-main strong,.nb-admin-appointment-main small,.nb-completed-card small,.nb-completed-card>div:last-child strong,.pc-wallet-item-main strong{white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.nb-task-action,.nb-completed-card{min-width:0}
+@media(max-width:1100px){
+ .pc-aw-panel .table-scroll{border:0}
+ .pc-aw-panel .data-table,.pc-aw-panel .data-table tbody{display:block}
+ .pc-aw-panel .data-table colgroup{display:none}
+ .pc-aw-panel .data-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .pc-aw-panel .data-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding:15px;border:1px solid #e1e7e5;border-radius:12px;margin-bottom:12px}
+ .pc-aw-panel .data-table tbody td{display:flex;flex-direction:column;align-items:flex-start;gap:5px;border:0;padding:0;min-width:0}
+ .pc-aw-panel .data-table td[data-label]::before{content:attr(data-label);font-size:11px;font-weight:650;color:#71828b}
+ .pc-aw-panel .pc-aw-service,.pc-aw-panel .pc-aw-action-cell{grid-column:1/-1}
+ .pc-aw-panel .pc-aw-action-cell{border-top:1px solid #e5ebe9;padding-top:9px;align-items:flex-end}
+}
+@media(max-width:540px){.pc-appt-detail-hero>.pc-aw-state{flex:auto;width:100%}.pc-aw-panel .data-table tbody tr{gap:10px}}
