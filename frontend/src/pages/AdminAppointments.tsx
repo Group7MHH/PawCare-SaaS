@@ -79,15 +79,15 @@ export function AdminAppointments(){const {user}=useAuth();const [searchParams,s
    </div>
   </div>
   {list.isLoading?<Loading/>:list.error?<ErrorNotice message={errorMessage(list.error)}/>:!list.data?.items.length?<Empty title="Chưa có lịch hẹn phù hợp" description="Thử chọn bộ lọc khác hoặc thay đổi từ khóa tìm kiếm."/>:
-   <TableWrap><thead><tr><th>MÃ LỊCH</th><th>KHÁCH HÀNG / THÚ CƯNG</th><th>DỊCH VỤ</th><th>THỜI GIAN</th><th>TRẠNG THÁI / NHÂN VIÊN</th><th>THANH TOÁN</th><th>THAO TÁC</th></tr></thead>
+   <TableWrap><colgroup>{["id","customer","service","time","state","payment","action"].map(name=><col key={name} className={`pc-aw-col-${name}`}/>)}</colgroup><thead><tr><th>MÃ LỊCH</th><th>KHÁCH HÀNG / THÚ CƯNG</th><th>DỊCH VỤ</th><th>THỜI GIAN</th><th>TRẠNG THÁI / NHÂN VIÊN</th><th>THANH TOÁN</th><th>THAO TÁC</th></tr></thead>
     <tbody>{list.data.items.map(a=><tr key={a.id} className={a.is_overdue?'pc-aw-overdue-row':''}>
-     <td className="strong pc-aw-id">#{String(a.id).padStart(4,'0')}</td>
-     <td><strong className="pc-aw-primary">{a.customer_name}</strong><small className="pc-aw-secondary">{a.pet_name}</small></td>
-     <td className="pc-aw-service">{a.service_name}<small className="pc-aw-secondary">{money(a.price_snapshot)}</small></td>
-     <td className="pc-aw-time">{dateTime(a.starts_at)}{a.is_overdue&&<small className="pc-aw-overdue"><AlertTriangle size={12}/> Quá giờ hẹn</small>}</td>
-     <td><AppointmentProgress appointment={a}/></td>
-     <td>{user?.role==='staff'&&a.staff_id!==user.id?<span className="muted-text">Sau khi nhận lịch</span>:<span className={'pc-staff-pay-tag pc-staff-pay-tag--'+(a.payment_status||'unpaid')}>{paymentLabels[a.payment_status||'unpaid']||'Chưa thanh toán'}</span>}</td>
-     <td><button type="button" className="table-action pc-aw-details" onClick={()=>open(a)}>Chi tiết</button></td>
+     <td data-label="Mã lịch" className="strong pc-aw-id">#{String(a.id).padStart(4,'0')}</td>
+     <td data-label="Khách hàng / thú cưng"><strong className="pc-aw-primary">{a.customer_name}</strong><small className="pc-aw-secondary">{a.pet_name}</small></td>
+     <td data-label="Dịch vụ" className="pc-aw-service">{a.service_name}<small className="pc-aw-secondary">{money(a.price_snapshot)}</small></td>
+     <td data-label="Thời gian" className="pc-aw-time">{dateTime(a.starts_at)}{a.is_overdue&&<small className="pc-aw-overdue"><AlertTriangle size={12}/> Quá giờ hẹn</small>}</td>
+     <td data-label="Trạng thái / nhân viên"><AppointmentProgress appointment={a}/></td>
+     <td data-label="Thanh toán">{user?.role==='staff'&&a.staff_id!==user.id?<span className="muted-text">Sau khi nhận lịch</span>:<span className={'pc-staff-pay-tag pc-staff-pay-tag--'+(a.payment_status||'unpaid')}>{paymentLabels[a.payment_status||'unpaid']||'Chưa thanh toán'}</span>}</td>
+     <td className="pc-aw-action-cell"><button type="button" className="table-action pc-aw-details" onClick={()=>open(a)}>Chi tiết</button></td>
     </tr>)}</tbody></TableWrap>}
    <div className="pagination"><span>{list.data?.total||0} lịch hẹn · Trang {page}</span><div><button type="button" className="icon-button" aria-label="Trang trước" disabled={page===1} onClick={()=>setPage(page-1)}><ChevronLeft size={17}/></button><span className="page-number">{page}</span><button type="button" className="icon-button" aria-label="Trang sau" disabled={page*15>=(list.data?.total||0)} onClick={()=>setPage(page+1)}><ChevronRight size={17}/></button></div></div>
  </Panel>
